@@ -1,3 +1,0 @@
-[submodule "cjq_experiment/jq"]
-	path = cjq_experiment/jq
-	url = git@github.com:JohnDRubio/jq.git
