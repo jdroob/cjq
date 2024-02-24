@@ -1,0 +1,9 @@
+Test #1: '@base64' at line number 4
+Test #2: '(@base64|@base64d)' at line number 9
+Test #3: '@base64' at line number 14
+Test #4: '@base64d' at line number 18
+Test #5: '@base64d' at line number 23
+Test #6: '. | try @base64d catch .' at line number 28
+Test #7: '. | try @base64d catch .' at line number 33
+7 of 7 tests passed (0 malformed, 0 skipped)
+PASS tests/base64test (exit status: 0)

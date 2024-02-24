@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Download jq</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/output/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/output/icon.png" type="image/png">
+    <link rel="canonical" href="https://jqlang.github.io/jq/download/">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.1/dist/cosmo/bootstrap.min.css"
+      integrity="sha384-dulfW0vmzZ638jigSgZXvDxMmd70GCnIv6oa+riKq6Kk4E0MKf7qmBfwP02wltv5" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+      integrity="sha384-Ay26V7L8bsJTsX9Sxclnvsn+hkdiwRnrjZJXqKmkIDobPgIIWBOVguEcQQLDuhfN" crossorigin="anonymous">
+    <link rel="stylesheet" href="/output/css/style.css" type="text/css">
+    <script>
+      (function() {
+        function setTheme(mediaQuery) {
+          document.documentElement.setAttribute('data-bs-theme',
+            document.documentElement.style.colorScheme = mediaQuery.matches ? 'dark' : 'light');
+        }
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        setTheme(mediaQuery); mediaQuery.addEventListener('change', setTheme);
+      })();
+    </script>
+  </head>
+
+  <body>
+    <div class="container visually-hidden-focusable">
+      <a class="d-inline-flex p-2" href="#main">Skip to main content</a>
+    </div>
+    <header class="navbar navbar-expand-md sticky-top bg-body-tertiary d-print-none">
+      <nav class="container-lg" aria-label="Page navigation">
+        <button type="button" class="navbar-toggler" data-bs-toggle="offcanvas" data-bs-target="#navbar-collapse"
+          aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle page navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <a class="navbar-brand" href="/output/" aria-label="Top page"><img src="/output/jq.svg" alt="jq logo" style="height:1.5rem"></a>
+        <div id="navbar-collapse" class="offcanvas offcanvas-start navbar-collapse w-auto" aria-labelledby="navbar-title">
+          <div class="offcanvas-header">
+            <h3 id="navbar-title" class="me-3">jq</h3>
+            <button type="button" class="d-md-none btn-close" data-bs-dismiss="offcanvas" aria-label="Close page navigation"></button>
+          </div>
+          <ul class="offcanvas-body navbar-nav me-auto text-nowrap">
+            <li class="nav-item d-md-none"><a class="nav-link" href="/output/">Top page</a></li>
+            <li class="nav-item"><a class="nav-link" href="/output/tutorial/">Tutorial</a></li>
+            <li class="nav-item"><a class="nav-link active" aria-current="page" href="/output/download/">Download</a></li>
+            <li class="nav-item"><a class="nav-link" href="/output/manual/">Manual</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://github.com/jqlang/jq" target="_blank" rel="noopener">GitHub</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://github.com/jqlang/jq/issues" target="_blank" rel="noopener">Issues</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://jqplay.org" target="_blank" rel="noopener">Try online!</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://raw.githubusercontent.com/jqlang/jq/master/NEWS.md" target="_blank" rel="noopener">News</a></li>
+          </ul>
+        </div>
+        <a class="d-md-none bi bi-github fs-4 text-body" href="https://github.com/jqlang/jq" target="_blank" rel="noopener" aria-label="GitHub"></a>
+      </nav>
+    </header>
+
+    <main id="main" class="container-lg">
+      <h1>Download jq</h1>
+      <p>jq is written in C and has no runtime dependencies, so it should be
+possible to build it for nearly any platform. Prebuilt binaries are
+available for Linux, macOS and Windows.</p>
+<p>The binaries should just run, but on macOS and Linux you may need
+to make them executable first using <code>chmod +x jq</code>.</p>
+<p>jq is licensed under the MIT license. For all of the gory
+details, read the file <code>COPYING</code> in the source distribution.</p>
+<p>jq uses a C library for decimal number support. This is an ICU 1.8.1
+licensed code obtained from the ICU downloads archive.<br />
+<a href="https://download.icu-project.org/files/decNumber/decNumber-icu-368.zip">https://download.icu-project.org/files/decNumber/decNumber-icu-368.zip</a></p>
+<h3>Linux</h3>
+<ul>
+<li>
+<p>jq is in the official <a href="https://packages.debian.org/jq">Debian</a> and
+   <a href="https://packages.ubuntu.com/jq">Ubuntu</a> repositories. Install using
+   <code>sudo apt-get install jq</code>.</p>
+</li>
+<li>
+<p>jq is in the official <a href="https://src.fedoraproject.org/rpms/jq">Fedora</a> repository.
+   Install using <code>sudo dnf install jq</code>.</p>
+</li>
+<li>
+<p>jq is in the official <a href="https://software.opensuse.org/package/jq">openSUSE</a> repository.
+   Install using <code>sudo zypper install jq</code>.</p>
+</li>
+<li>
+<p>jq is in the official <a href="https://archlinux.org/packages/?q=jq">Arch</a> repository.
+   Install using <code>sudo pacman -S jq</code>.</p>
+</li>
+<li>
+<p>jq 1.7.1 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-arm64">ARM64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-i386">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.7 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-linux-amd64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-linux-arm64">ARM64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-linux-i386">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.6 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-linux64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-linux32">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.5 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.5/jq-linux64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.5/jq-linux32">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.4 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-linux-x86_64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-linux-x86">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.3 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.3/jq-linux-x86_64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.3/jq-linux-x86">i386</a>.</p>
+</li>
+</ul>
+<h3>macOS</h3>
+<ul>
+<li>
+<p>Use <a href="https://brew.sh/">Homebrew</a> to install jq with <code>brew install jq</code>.</p>
+</li>
+<li>
+<p>Use <a href="https://www.macports.org">MacPorts</a> to install jq with <code>port install jq</code>.</p>
+</li>
+<li>
+<p>Use <a href="https://finkproject.org">Fink</a> to install jq with <code>fink install jq</code>.</p>
+</li>
+<li>
+<p>jq 1.7.1 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-macos-amd64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-macos-arm64">ARM64</a>.</p>
+</li>
+<li>
+<p>jq 1.7 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-macos-amd64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-macos-arm64">ARM64</a>.</p>
+</li>
+<li>
+<p>jq 1.6 binary for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-osx-amd64">AMD64</a>.</p>
+</li>
+<li>
+<p>jq 1.5 binary for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.5/jq-osx-amd64">AMD64</a>.</p>
+</li>
+<li>
+<p>jq 1.4 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-osx-x86_64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-osx-x86">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.3 binaries for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.3/jq-osx-x86_64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.3/jq-osx-x86">i386</a>.</p>
+</li>
+</ul>
+<h3>FreeBSD</h3>
+<ul>
+<li>
+<p><code>pkg install jq</code> as root installs a pre-built
+   <a href="https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/pkgng-intro.html">binary package</a>.</p>
+</li>
+<li>
+<p><code>make -C /usr/ports/textproc/jq install clean</code> as root installs the
+   <a href="https://www.freshports.org/textproc/jq/">jq</a>
+   <a href="https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/ports-using.html">port</a>
+   from source.</p>
+</li>
+</ul>
+<h3>Solaris</h3>
+<ul>
+<li>
+<p><code>pkgutil -i jq</code> in <a href="https://www.opencsw.org/p/jq">OpenCSW</a> for Solaris
+   10+, Sparc and x86.</p>
+</li>
+<li>
+<p>jq 1.4 binaries for Solaris 11
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-solaris11-64">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-solaris11-32">i386</a>.</p>
+</li>
+</ul>
+<h3>Windows</h3>
+<ul>
+<li>
+<p>Use <a href="https://learn.microsoft.com/en-us/windows/package-manager/winget/">winget</a>
+   to install jq with <code>winget install jqlang.jq</code>.</p>
+</li>
+<li>
+<p>Use <a href="https://scoop.sh/">scoop</a> to install jq with <code>scoop install jq</code>.</p>
+</li>
+<li>
+<p>Use <a href="https://chocolatey.org/">Chocolatey NuGet</a> to install jq with
+   <code>chocolatey install jq</code>.</p>
+</li>
+<li>
+<p>jq 1.7.1 executables for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-windows-amd64.exe">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-windows-i386.exe">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.7 executables for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-windows-amd64.exe">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-windows-i386.exe">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.6 executables for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-win64.exe">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-win32.exe">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.5 executables for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.5/jq-win64.exe">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.5/jq-win32.exe">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.4 executables for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-win64.exe">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.4/jq-win32.exe">i386</a>.</p>
+</li>
+<li>
+<p>jq 1.3 executables for
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.3/jq-win64.exe">AMD64</a>
+   or
+   <a href="https://github.com/jqlang/jq/releases/download/jq-1.3/jq-win32.exe">i386</a>.</p>
+</li>
+</ul>
+<h3>Checksums and signatures</h3>
+<p>SHA-256 checksums are provided for all release and pre-release binaries.
+They can be found under
+<a href="https://github.com/jqlang/jq/tree/master/sig">sig/v1.x/sha256sum.txt</a>.
+The checksums for jq 1.7.1 are in
+<a href="https://raw.githubusercontent.com/jqlang/jq/master/sig/v1.7.1/sha256sum.txt">sig/v1.7.1/sha256sum.txt</a>.
+The checksums for jq 1.7 are in
+<a href="https://raw.githubusercontent.com/jqlang/jq/master/sig/v1.7/sha256sum.txt">sig/v1.7/sha256sum.txt</a>.
+The checksums for jq 1.6 are in
+<a href="https://raw.githubusercontent.com/jqlang/jq/master/sig/v1.6/sha256sum.txt">sig/v1.6/sha256sum.txt</a>.
+The checksums for jq 1.5 are in
+<a href="https://raw.githubusercontent.com/jqlang/jq/master/sig/v1.5/sha256sum.txt">sig/v1.5/sha256sum.txt</a>.</p>
+<p>Additionally, all release artifacts are signed by a jq release key.  We have two release keys, <a href="https://raw.githubusercontent.com/jqlang/jq/master/sig/jq-release-old.key">one for 1.6 and older releases</a>, and <a href="https://raw.githubusercontent.com/jqlang/jq/master/sig/jq-release-new.key">one for 1.7 and newer releases</a>.
+Signatures can be found under
+<a href="https://github.com/jqlang/jq/tree/master/sig">sig/v1.x/*.asc</a>.
+The signatures for jq 1.7.1 are in
+<a href="https://github.com/jqlang/jq/tree/master/sig/v1.7.1">sig/v1.7.1/*.asc</a>.
+The signatures for jq 1.7 are in
+<a href="https://github.com/jqlang/jq/tree/master/sig/v1.7">sig/v1.7/*.asc</a>.
+The signatures for jq 1.6 are in
+<a href="https://github.com/jqlang/jq/tree/master/sig/v1.6">sig/v1.6/*.asc</a>.
+The signatures for jq 1.5 are in
+<a href="https://github.com/jqlang/jq/tree/master/sig/v1.5">sig/v1.5/*.asc</a>.
+You can use <a href="https://gnupg.org/">GnuPG</a> to verify a signature by downloading
+the signature and running <code>gpg --verify signature.asc</code>.</p>
+<h3>From source on Linux, macOS, Cygwin, and other POSIX-like operating systems</h3>
+<ul>
+<li><a href="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-1.7.1.tar.gz">Source tarball for jq 1.7.1</a></li>
+<li><a href="https://github.com/jqlang/jq/releases/download/jq-1.7/jq-1.7.tar.gz">Source tarball for jq 1.7</a></li>
+<li><a href="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-1.6.tar.gz">Source tarball for jq 1.6</a></li>
+<li><a href="https://github.com/jqlang/jq/releases/download/jq-1.5/jq-1.5.tar.gz">Source tarball for jq 1.5</a></li>
+</ul>
+<p>You can build it using the usual <code>./configure &amp;&amp; make &amp;&amp; sudo
+make install</code> rigmarole.</p>
+<p>If you're interested in using the latest development version, try:</p>
+<pre><code>git clone --recursive https://github.com/jqlang/jq.git
+cd jq
+autoreconf -i
+./configure
+make
+sudo make install
+</code></pre>
+<p>To build it from a git clone, you'll need to install a few
+packages first:</p>
+<ul>
+<li><a href="https://gcc.gnu.org">GCC</a></li>
+<li><a href="https://www.gnu.org/software/make/">Make</a></li>
+<li><a href="https://www.gnu.org/software/automake/">Autotools</a></li>
+</ul>
+<p>For Linux systems, these will all be in your system's package
+manager, and if you do development on the machine they're most
+likely already installed.</p>
+<p>On macOS, these are all included in Apple's command line tools, which can
+be installed from <a href="https://developer.apple.com/xcode/">Xcode</a>. However,
+you may find that you need a newer version of Bison than the one provided
+by Apple. This can be found in <a href="https://brew.sh/">Homebrew</a> or
+<a href="https://macports.org/">MacPorts</a>.</p>
+<p>If you want to generate the lexer and parser from source you can use the
+<code>--enable-maintainer-mode</code> configure flag. This requires bison to be installed.
+<a href="https://github.com/westes/flex">Flex</a> and
+<a href="https://www.gnu.org/software/bison/">Bison</a>.</p>
+<h3>Docker</h3>
+<p>Docker image is available from
+<a href="https://github.com/jqlang/jq/pkgs/container/jq">GitHub Container Registry</a>.</p>
+<pre><code>docker run -i --rm ghcr.io/jqlang/jq -n 'range(3)'
+</code></pre>
+<h4>Building the documentation</h4>
+<p>jq's documentation is compiled into static HTML using Python.
+To build the docs, run <code>pipenv run python3 build_website.py --root /output</code>
+in the <code>docs/</code> directory. To serve them locally, you can run
+<code>python3 -m http.server</code>. You'll need a few Python dependencies,
+which can be installed by following the instructions in <code>docs/README.md</code>.</p>
+<p>The man page is built by <code>make jq.1</code>, or just <code>make</code>, also from
+the YAML docs, and you'll still need the Python dependencies to
+build the manpage.</p>
+    </main>
+
+    <footer class="bd-footer bg-body-tertiary">
+      <div class="py-3 text-center">
+        <p>
+          This website is made with <a href="https://getbootstrap.com" target="_blank" rel="noopener">Bootstrap</a>,
+          themed with <a href="https://bootswatch.com" target="_blank" rel="noopener">Bootswatch</a>.
+        </p>
+        <p>
+          jq is licensed under the MIT license (code) and the
+          <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC-BY-3.0</a> license (docs).
+        </p>
+      </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
+  </body>
+</html>
