@@ -41,3 +41,4 @@ experiment/jq
 experiment/src/builtin.o
 experiment/src/bytecode.o
 /experiment/src/.libs/*
+cjq/__pycache__/parser.cpython-311.pyc
