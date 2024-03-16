@@ -1,0 +1,19 @@
+Test #1: 'split(", ")' at line number 1
+Test #2: 'walk( if type == "object" then with_entries( .key |= sub( "^_+"; "") ) else . end )' at line number 5
+Test #3: 'test("foo")' at line number 9
+Test #4: '.[] | test("a b c # spaces are ignored"; "ix")' at line number 13
+Test #5: 'match("(abc)+"; "g")' at line number 18
+Test #6: 'match("foo")' at line number 23
+Test #7: 'match(["foo", "ig"])' at line number 27
+Test #8: 'match("foo (?<bar123>bar)? foo"; "ig")' at line number 32
+Test #9: '[ match("."; "g")] | length' at line number 37
+Test #10: 'capture("(?<a>[a-z]+)-(?<n>[0-9]+)")' at line number 41
+Test #11: 'scan("c")' at line number 45
+Test #12: 'split(", *"; null)' at line number 50
+Test #13: 'splits(", *")' at line number 54
+Test #14: 'sub("[^a-z]*(?<x>[a-z]+)"; "Z\(.x)"; "g")' at line number 61
+Test #15: '[sub("(?<a>.)"; "\(.a|ascii_upcase)", "\(.a|ascii_downcase)")]' at line number 65
+Test #16: 'gsub("(?<x>.)[^a]*"; "+\(.x)-")' at line number 69
+Test #17: '[gsub("p"; "a", "b")]' at line number 73
+17 of 17 tests passed (0 malformed, 0 skipped)
+PASS tests/manonigtest (exit status: 0)

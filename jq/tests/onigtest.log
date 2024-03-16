@@ -1,0 +1,42 @@
+Test #1: '[match("( )*"; "g")]' at line number 2
+Test #2: '[match("( )*"; "gn")]' at line number 6
+Test #3: '[match(""; "g")]' at line number 10
+Test #4: '[match("a"; "gi")]' at line number 14
+Test #5: '[match(["(bar)"])]' at line number 18
+Test #6: '[match("bar")]' at line number 23
+Test #7: '[match("bār")]' at line number 28
+Test #8: '[match(".+?\\b")]' at line number 32
+Test #9: '[match(["foo (?<bar123>bar)? foo", "ig"])]' at line number 36
+Test #10: '[test("( )*"; "gn")]' at line number 41
+Test #11: '[test("ā")]' at line number 45
+Test #12: 'capture("(?<a>[a-z]+)-(?<n>[0-9]+)")' at line number 49
+Test #13: '[.[] | sub(", "; ":")]' at line number 58
+Test #14: 'sub("^(?<head>.)"; "Head=\(.head) Tail=")' at line number 62
+Test #15: '[.[] | gsub(", "; ":")]' at line number 66
+Test #16: 'gsub("(?<d>\\d)"; ":\(.d);")' at line number 70
+Test #17: 'gsub("a";"b")' at line number 74
+Test #18: 'gsub("(.*)"; ""; "x")' at line number 78
+Test #19: 'gsub(""; "a"; "g")' at line number 82
+Test #20: 'gsub("^"; ""; "g")' at line number 86
+Test #21: 'gsub(""; "a"; "g")' at line number 90
+Test #22: 'gsub("$"; "a"; "g")' at line number 94
+Test #23: 'gsub("^"; "a")' at line number 98
+Test #24: 'gsub("(?=u)"; "u")' at line number 102
+Test #25: 'gsub("^.*a"; "b")' at line number 106
+Test #26: 'gsub("^.*?a"; "b")' at line number 110
+Test #27: '[gsub("a"; "b", "c")]' at line number 115
+Test #28: '[.[] | scan(", ")]' at line number 119
+Test #29: '[.[]|[[sub(", *";":")], [gsub(", *";":")], [scan(", *")]]]' at line number 123
+Test #30: '[.[]|[[sub(", +";":")], [gsub(", +";":")], [scan(", +")]]]' at line number 127
+Test #31: '[.[] | scan("b+"; "i")]' at line number 131
+Test #32: 'gsub("(?<x>.)[^a]*"; "+\(.x)-")' at line number 136
+Test #33: 'gsub("(?<x>.)(?<y>[0-9])"; "\(.x|ascii_downcase)\(.y)")' at line number 140
+Test #34: 'gsub("\\b(?<x>.)"; "\(.x|ascii_downcase)")' at line number 144
+Test #35: 'gsub("[^a-z]*(?<x>[a-z]*)"; "Z\(.x)")' at line number 148
+Test #36: 'sub("(?<x>.)"; "\(.x)!")' at line number 153
+Test #37: '[sub("a"; "b", "c")]' at line number 157
+Test #38: '[sub("(?<a>.)"; "\(.a|ascii_upcase)", "\(.a|ascii_downcase)", "c")]' at line number 161
+Test #39: '[gsub("(?<a>.)"; "\(.a|ascii_upcase)", "\(.a|ascii_downcase)", "c")]' at line number 165
+Test #40: '[splits("")]' at line number 170
+40 of 40 tests passed (0 malformed, 0 skipped)
+PASS tests/onigtest (exit status: 0)

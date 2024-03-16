@@ -1,0 +1,226 @@
+Test #1: '.' at line number 1
+Test #2: '.' at line number 5
+Test #3: '[., tojson]' at line number 9
+Test #4: '. < 0.12345678901234567890123456788' at line number 13
+Test #5: 'map([., . == 1]) | tojson' at line number 17
+Test #6: '. as $big | [$big, $big + 1] | map(. > 10000000000000000000000000000000)' at line number 21
+Test #7: '.foo' at line number 25
+Test #8: '.foo' at line number 29
+Test #9: '.["foo"]' at line number 33
+Test #10: '.foo?' at line number 37
+Test #11: '.foo?' at line number 41
+Test #12: '.["foo"]?' at line number 45
+Test #13: '[.foo?]' at line number 49
+Test #14: '.[0]' at line number 53
+Test #15: '.[2]' at line number 57
+Test #16: '.[-2]' at line number 61
+Test #17: '.[2:4]' at line number 65
+Test #18: '.[2:4]' at line number 69
+Test #19: '.[:3]' at line number 73
+Test #20: '.[-2:]' at line number 77
+Test #21: '.[]' at line number 81
+Test #22: '.[]' at line number 86
+Test #23: '.foo[]' at line number 89
+Test #24: '.[]' at line number 95
+Test #25: '.foo, .bar' at line number 100
+Test #26: '.user, .projects[]' at line number 105
+Test #27: '.[4,2]' at line number 111
+Test #28: '.[] | .name' at line number 116
+Test #29: '(. + 2) * 5' at line number 121
+Test #30: '[.user, .projects[]]' at line number 125
+Test #31: '[ .[] | . * 2]' at line number 129
+Test #32: '{user, title: .titles[]}' at line number 133
+Test #33: '{(.user): .titles}' at line number 138
+Test #34: '.. | .a?' at line number 142
+Test #35: '.a + 1' at line number 146
+Test #36: '.a + .b' at line number 150
+Test #37: '.a + null' at line number 154
+Test #38: '.a + 1' at line number 158
+Test #39: '{a: 1} + {b: 2} + {c: 3} + {a: 42}' at line number 162
+Test #40: '4 - .a' at line number 166
+Test #41: '. - ["xml", "yaml"]' at line number 170
+Test #42: '10 / . * 3' at line number 174
+Test #43: '. / ", "' at line number 178
+Test #44: '{"k": {"a": 1, "b": 2}} * {"k": {"a": 0,"c": 3}}' at line number 182
+Test #45: '.[] | (1 / .)?' at line number 186
+Test #46: 'map(abs)' at line number 191
+Test #47: '.[] | length' at line number 195
+Test #48: 'utf8bytelength' at line number 203
+Test #49: 'keys' at line number 207
+Test #50: 'keys' at line number 211
+Test #51: 'map(has("foo"))' at line number 215
+Test #52: 'map(has(2))' at line number 219
+Test #53: '.[] | in({"foo": 42})' at line number 223
+Test #54: 'map(in([0,1]))' at line number 228
+Test #55: 'map(.+1)' at line number 232
+Test #56: 'map_values(.+1)' at line number 236
+Test #57: 'map(., .)' at line number 240
+Test #58: 'map_values(. // empty)' at line number 244
+Test #59: 'pick(.a, .b.c, .x)' at line number 248
+Test #60: 'pick(.[2], .[0], .[0])' at line number 252
+Test #61: 'path(.a[0].b)' at line number 256
+Test #62: '[path(..)]' at line number 260
+Test #63: 'del(.foo)' at line number 264
+Test #64: 'del(.[1, 2])' at line number 268
+Test #65: 'getpath(["a","b"])' at line number 272
+Test #66: '[getpath(["a","b"], ["a","c"])]' at line number 276
+Test #67: 'setpath(["a","b"]; 1)' at line number 280
+Test #68: 'setpath(["a","b"]; 1)' at line number 284
+Test #69: 'setpath([0,"a"]; 1)' at line number 288
+Test #70: 'delpaths([["a","b"]])' at line number 292
+Test #71: 'to_entries' at line number 296
+Test #72: 'from_entries' at line number 300
+Test #73: 'with_entries(.key |= "KEY_" + .)' at line number 304
+Test #74: 'map(select(. >= 2))' at line number 308
+Test #75: '.[] | select(.id == "second")' at line number 312
+Test #76: '.[]|numbers' at line number 316
+Test #77: '1, empty, 2' at line number 320
+Test #78: '[1,2,empty,3]' at line number 325
+Test #79: 'try error catch .' at line number 329
+Test #80: 'try error("invalid value: \(.)") catch .' at line number 333
+Test #81: 'try error("\($__loc__)") catch .' at line number 337
+Test #82: '[paths]' at line number 341
+Test #83: '[paths(type == "number")]' at line number 345
+Test #84: 'add' at line number 349
+Test #85: 'add' at line number 353
+Test #86: 'add' at line number 357
+Test #87: 'any' at line number 361
+Test #88: 'any' at line number 365
+Test #89: 'any' at line number 369
+Test #90: 'all' at line number 373
+Test #91: 'all' at line number 377
+Test #92: 'all' at line number 381
+Test #93: 'flatten' at line number 385
+Test #94: 'flatten(1)' at line number 389
+Test #95: 'flatten' at line number 393
+Test #96: 'flatten' at line number 397
+Test #97: 'range(2; 4)' at line number 401
+Test #98: '[range(2; 4)]' at line number 406
+Test #99: '[range(4)]' at line number 410
+Test #100: '[range(0; 10; 3)]' at line number 414
+Test #101: '[range(0; 10; -1)]' at line number 418
+Test #102: '[range(0; -5; -1)]' at line number 422
+Test #103: 'floor' at line number 426
+Test #104: 'sqrt' at line number 430
+Test #105: '.[] | tonumber' at line number 434
+Test #106: '.[] | tostring' at line number 439
+Test #107: 'map(type)' at line number 445
+Test #108: '.[] | (infinite * .) < 0' at line number 449
+Test #109: 'infinite, nan | type' at line number 454
+Test #110: 'sort' at line number 459
+Test #111: 'sort_by(.foo)' at line number 463
+Test #112: 'sort_by(.foo, .bar)' at line number 467
+Test #113: 'group_by(.foo)' at line number 471
+Test #114: 'min' at line number 475
+Test #115: 'max_by(.foo)' at line number 479
+Test #116: 'unique' at line number 483
+Test #117: 'unique_by(.foo)' at line number 487
+Test #118: 'unique_by(length)' at line number 491
+Test #119: 'reverse' at line number 495
+Test #120: 'contains("bar")' at line number 499
+Test #121: 'contains(["baz", "bar"])' at line number 503
+Test #122: 'contains(["bazzzzz", "bar"])' at line number 507
+Test #123: 'contains({foo: 12, bar: [{barp: 12}]})' at line number 511
+Test #124: 'contains({foo: 12, bar: [{barp: 15}]})' at line number 515
+Test #125: 'indices(", ")' at line number 519
+Test #126: 'indices(1)' at line number 523
+Test #127: 'indices([1,2])' at line number 527
+Test #128: 'index(", ")' at line number 531
+Test #129: 'index(1)' at line number 535
+Test #130: 'index([1,2])' at line number 539
+Test #131: 'rindex(", ")' at line number 543
+Test #132: 'rindex(1)' at line number 547
+Test #133: 'rindex([1,2])' at line number 551
+Test #134: 'inside("foobar")' at line number 555
+Test #135: 'inside(["foobar", "foobaz", "blarp"])' at line number 559
+Test #136: 'inside(["foobar", "foobaz", "blarp"])' at line number 563
+Test #137: 'inside({"foo": 12, "bar":[1,2,{"barp":12, "blip":13}]})' at line number 567
+Test #138: 'inside({"foo": 12, "bar":[1,2,{"barp":12, "blip":13}]})' at line number 571
+Test #139: '[.[]|startswith("foo")]' at line number 575
+Test #140: '[.[]|endswith("foo")]' at line number 579
+Test #141: 'combinations' at line number 583
+Test #142: 'combinations(2)' at line number 590
+Test #143: '[.[]|ltrimstr("foo")]' at line number 597
+Test #144: '[.[]|rtrimstr("foo")]' at line number 601
+Test #145: 'explode' at line number 605
+Test #146: 'implode' at line number 609
+Test #147: 'join(", ")' at line number 613
+Test #148: 'join(" ")' at line number 617
+Test #149: 'ascii_upcase' at line number 621
+Test #150: '[while(.<100; .*2)]' at line number 625
+Test #151: '[repeat(.*2, error)?]' at line number 629
+Test #152: '[.,1]|until(.[0] < 1; [.[0] - 1, .[1] * .[0]])|.[1]' at line number 633
+Test #153: 'recurse(.foo[])' at line number 637
+Test #154: 'recurse' at line number 644
+Test #155: 'recurse(. * .; . < 20)' at line number 651
+Test #156: 'walk(if type == "array" then sort else . end)' at line number 657
+Test #157: '$ENV.PAGER' at line number 661
+Test #158: 'env.PAGER' at line number 665
+Test #159: 'transpose' at line number 669
+Test #160: 'bsearch(0)' at line number 673
+Test #161: 'bsearch(0)' at line number 677
+Test #162: 'bsearch(4) as $ix | if $ix < 0 then .[-(1+$ix)] = 4 else . end' at line number 681
+Test #163: '"The input was \(.), which is one less than \(.+1)"' at line number 685
+Test #164: '[.[]|tostring]' at line number 689
+Test #165: '[.[]|tojson]' at line number 693
+Test #166: '[.[]|tojson|fromjson]' at line number 697
+Test #167: '@html' at line number 701
+Test #168: '@sh "echo \(.)"' at line number 705
+Test #169: '@base64' at line number 709
+Test #170: '@base64d' at line number 713
+Test #171: 'fromdate' at line number 717
+Test #172: 'strptime("%Y-%m-%dT%H:%M:%SZ")' at line number 721
+Test #173: 'strptime("%Y-%m-%dT%H:%M:%SZ")|mktime' at line number 725
+Test #174: '. == false' at line number 729
+Test #175: '. == {"b": {"d": (4 + 1e-20), "c": 3}, "a":1}' at line number 733
+Test #176: '.[] == 1' at line number 737
+Test #177: 'if . == 0 then   "zero" elif . == 1 then   "one" else   "many" end' at line number 744
+Test #178: '. < 5' at line number 748
+Test #179: '42 and "a string"' at line number 752
+Test #180: '(true, false) or false' at line number 756
+Test #181: '(true, true) and (true, false)' at line number 761
+Test #182: '[true, false | not]' at line number 768
+Test #183: 'empty // 42' at line number 772
+Test #184: '.foo // 42' at line number 776
+Test #185: '.foo // 42' at line number 780
+Test #186: '(false, null, 1) // 42' at line number 784
+Test #187: '(false, null, 1) | . // 42' at line number 788
+Test #188: 'try .a catch ". is not an object"' at line number 794
+Test #189: '[.[]|try .a]' at line number 798
+Test #190: 'try error("some exception") catch .' at line number 802
+Test #191: '[.[] | .a?]' at line number 806
+Test #192: '[.[] | tonumber?]' at line number 810
+Test #193: '.bar as $x | .foo | . + $x' at line number 814
+Test #194: '. as $i|[(.*2|. as $i| $i), $i]' at line number 818
+Test #195: '. as [$a, $b, {c: $c}] | $a + $b + $c' at line number 822
+Test #196: '.[] as [$a, $b] | {a: $a, b: $b}' at line number 826
+Test #197: '.[] as {$a, $b, c: {$d, $e}} ?// {$a, $b, c: [{$d, $e}]} | {$a, $b, $d, $e}' at line number 832
+Test #198: '.[] as {$a, $b, c: {$d}} ?// {$a, $b, c: [{$e}]} | {$a, $b, $d, $e}' at line number 837
+Test #199: '.[] as [$a] ?// [$b] | if $a != null then error("err: \($a)") else {$a,$b} end' at line number 842
+Test #200: 'def addvalue(f): . + [f]; map(addvalue(.[0]))' at line number 846
+Test #201: 'def addvalue(f): f as $x | map(. + $x); addvalue(.[0])' at line number 850
+Test #202: 'isempty(empty)' at line number 854
+Test #203: 'isempty(.[])' at line number 858
+Test #204: 'isempty(.[])' at line number 862
+Test #205: '[limit(3;.[])]' at line number 866
+Test #206: '[first(range(.)), last(range(.)), nth(./2; range(.))]' at line number 870
+Test #207: '[range(.)]|[first, last, nth(5)]' at line number 874
+Test #208: 'reduce .[] as $item (0; . + $item)' at line number 878
+Test #209: 'reduce .[] as [$i,$j] (0; . + $i * $j)' at line number 882
+Test #210: 'reduce .[] as {$x,$y} (null; .x += $x | .y += [$y])' at line number 886
+Test #211: 'foreach .[] as $item (0; . + $item)' at line number 890
+Test #212: 'foreach .[] as $item (0; . + $item; [$item, . * 2])' at line number 898
+Test #213: 'foreach .[] as $item (0; . + 1; {index: ., $item})' at line number 906
+Test #214: 'def range(init; upto; by): def _range: if (by > 0 and . < upto) or (by < 0 and . > upto) then ., ((.+by)|_range) else . end; if by == 0 then init else init|_range end | select((by > 0 and . < upto) or (by < 0 and . > upto)); range(0; 10; 3)' at line number 912
+Test #215: 'def while(cond; update): def _while: if cond then ., (update | _while) else empty end; _while; [while(.<100; .*2)]' at line number 919
+Test #216: 'truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]])' at line number 923
+Test #217: 'fromstream(1|truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]]))' at line number 928
+Test #218: '. as $dot|fromstream($dot|tostream)|.==$dot' at line number 932
+Test #219: '(..|select(type=="boolean")) |= if . then 1 else 0 end' at line number 936
+Test #220: '.foo += 1' at line number 940
+Test #221: '.a = .b' at line number 944
+Test #222: '.a |= .b' at line number 948
+Test #223: '(.a, .b) = range(3)' at line number 952
+Test #224: '(.a, .b) |= range(3)' at line number 958
+224 of 224 tests passed (0 malformed, 0 skipped)
+PASS tests/mantest (exit status: 0)

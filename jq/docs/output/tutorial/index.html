@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Tutorial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/output/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/output/icon.png" type="image/png">
+    <link rel="canonical" href="https://jqlang.github.io/jq/tutorial/">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.1/dist/cosmo/bootstrap.min.css"
+      integrity="sha384-dulfW0vmzZ638jigSgZXvDxMmd70GCnIv6oa+riKq6Kk4E0MKf7qmBfwP02wltv5" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+      integrity="sha384-Ay26V7L8bsJTsX9Sxclnvsn+hkdiwRnrjZJXqKmkIDobPgIIWBOVguEcQQLDuhfN" crossorigin="anonymous">
+    <link rel="stylesheet" href="/output/css/style.css" type="text/css">
+    <script>
+      (function() {
+        function setTheme(mediaQuery) {
+          document.documentElement.setAttribute('data-bs-theme',
+            document.documentElement.style.colorScheme = mediaQuery.matches ? 'dark' : 'light');
+        }
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        setTheme(mediaQuery); mediaQuery.addEventListener('change', setTheme);
+      })();
+    </script>
+  </head>
+
+  <body>
+    <div class="container visually-hidden-focusable">
+      <a class="d-inline-flex p-2" href="#main">Skip to main content</a>
+    </div>
+    <header class="navbar navbar-expand-md sticky-top bg-body-tertiary d-print-none">
+      <nav class="container-lg" aria-label="Page navigation">
+        <button type="button" class="navbar-toggler" data-bs-toggle="offcanvas" data-bs-target="#navbar-collapse"
+          aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle page navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <a class="navbar-brand" href="/output/" aria-label="Top page"><img src="/output/jq.svg" alt="jq logo" style="height:1.5rem"></a>
+        <div id="navbar-collapse" class="offcanvas offcanvas-start navbar-collapse w-auto" aria-labelledby="navbar-title">
+          <div class="offcanvas-header">
+            <h3 id="navbar-title" class="me-3">jq</h3>
+            <button type="button" class="d-md-none btn-close" data-bs-dismiss="offcanvas" aria-label="Close page navigation"></button>
+          </div>
+          <ul class="offcanvas-body navbar-nav me-auto text-nowrap">
+            <li class="nav-item d-md-none"><a class="nav-link" href="/output/">Top page</a></li>
+            <li class="nav-item"><a class="nav-link active" aria-current="page" href="/output/tutorial/">Tutorial</a></li>
+            <li class="nav-item"><a class="nav-link" href="/output/download/">Download</a></li>
+            <li class="nav-item"><a class="nav-link" href="/output/manual/">Manual</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://github.com/jqlang/jq" target="_blank" rel="noopener">GitHub</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://github.com/jqlang/jq/issues" target="_blank" rel="noopener">Issues</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://jqplay.org" target="_blank" rel="noopener">Try online!</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://raw.githubusercontent.com/jqlang/jq/master/NEWS.md" target="_blank" rel="noopener">News</a></li>
+          </ul>
+        </div>
+        <a class="d-md-none bi bi-github fs-4 text-body" href="https://github.com/jqlang/jq" target="_blank" rel="noopener" aria-label="GitHub"></a>
+      </nav>
+    </header>
+
+    <main id="main" class="container-lg">
+      <h1>Tutorial</h1>
+      <p>GitHub has a JSON API, so let's play with that. This URL gets us the last
+5 commits from the jq repo.</p>
+      <div class="tutorial-example mb-3">
+        <div class="d-flex accordion-heading me-2">
+          <pre class="flex-grow-1 me-0 mb-0" tabindex="0">curl &#39;https://api.github.com/repos/jqlang/jq/commits?per_page=5&#39;</pre>
+          <button type="button" class="btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border border-start-0 d-print-none"
+            data-bs-toggle="collapse" data-bs-target="#result1" aria-expanded="false" aria-controls="result1">Show result</button>
+        </div>
+        <pre id="result1" class="accordion-body collapse p-3 border-top-0 d-print-block" tabindex="0">[
+  {
+    &#34;sha&#34;: &#34;cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+    &#34;node_id&#34;: &#34;C_kwDOAE3WVdoAKGNmZjUzMzZlYzcxYjZmZWUzOTZhOTViYjBlNGJlYTM2NWUwY2QxZTg&#34;,
+    &#34;commit&#34;: {
+      &#34;author&#34;: {
+        &#34;name&#34;: &#34;Mattias Wadman&#34;,
+        &#34;email&#34;: &#34;mattias.wadman@gmail.com&#34;,
+        &#34;date&#34;: &#34;2021-06-09T14:02:22Z&#34;
+      },
+      &#34;committer&#34;: {
+        &#34;name&#34;: &#34;Nico Williams&#34;,
+        &#34;email&#34;: &#34;nico@cryptonector.com&#34;,
+        &#34;date&#34;: &#34;2022-05-26T21:04:32Z&#34;
+      },
+      &#34;message&#34;: &#34;docs: Document repeat(exp)&#34;,
+      &#34;tree&#34;: {
+        &#34;sha&#34;: &#34;d67d5542df1f16d1a48e1fb75749f60482cd874b&#34;,
+        &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/git/trees/d67d5542df1f16d1a48e1fb75749f60482cd874b&#34;
+      },
+      &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/git/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+      &#34;comment_count&#34;: 0,
+      &#34;verification&#34;: {
+        &#34;verified&#34;: false,
+        &#34;reason&#34;: &#34;unsigned&#34;,
+        &#34;signature&#34;: null,
+        &#34;payload&#34;: null
+      }
+    },
+    &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+    &#34;html_url&#34;: &#34;https://github.com/jqlang/jq/commit/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+    &#34;comments_url&#34;: &#34;https://api.github.com/repos/jqlang/jq/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8/comments&#34;,
+    &#34;author&#34;: {
+...
+</pre>
+      </div>
+      <p>GitHub returns nicely formatted JSON. For servers that don't, it can be
+helpful to pipe the response through jq to pretty-print it. The simplest
+jq program is the expression <code>.</code>, which takes the input and produces it
+unchanged as output.</p>
+      <div class="tutorial-example mb-3">
+        <div class="d-flex accordion-heading me-2">
+          <pre class="flex-grow-1 me-0 mb-0" tabindex="0">curl &#39;https://api.github.com/repos/jqlang/jq/commits?per_page=5&#39; | jq &#39;.&#39;</pre>
+          <button type="button" class="btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border border-start-0 d-print-none"
+            data-bs-toggle="collapse" data-bs-target="#result2" aria-expanded="false" aria-controls="result2">Show result</button>
+        </div>
+        <pre id="result2" class="accordion-body collapse p-3 border-top-0 d-print-block" tabindex="0">[
+  {
+    &#34;sha&#34;: &#34;cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+    &#34;node_id&#34;: &#34;C_kwDOAE3WVdoAKGNmZjUzMzZlYzcxYjZmZWUzOTZhOTViYjBlNGJlYTM2NWUwY2QxZTg&#34;,
+    &#34;commit&#34;: {
+      &#34;author&#34;: {
+        &#34;name&#34;: &#34;Mattias Wadman&#34;,
+        &#34;email&#34;: &#34;mattias.wadman@gmail.com&#34;,
+        &#34;date&#34;: &#34;2021-06-09T14:02:22Z&#34;
+      },
+      &#34;committer&#34;: {
+        &#34;name&#34;: &#34;Nico Williams&#34;,
+        &#34;email&#34;: &#34;nico@cryptonector.com&#34;,
+        &#34;date&#34;: &#34;2022-05-26T21:04:32Z&#34;
+      },
+      &#34;message&#34;: &#34;docs: Document repeat(exp)&#34;,
+      &#34;tree&#34;: {
+        &#34;sha&#34;: &#34;d67d5542df1f16d1a48e1fb75749f60482cd874b&#34;,
+        &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/git/trees/d67d5542df1f16d1a48e1fb75749f60482cd874b&#34;
+      },
+      &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/git/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+      &#34;comment_count&#34;: 0,
+      &#34;verification&#34;: {
+        &#34;verified&#34;: false,
+        &#34;reason&#34;: &#34;unsigned&#34;,
+        &#34;signature&#34;: null,
+        &#34;payload&#34;: null
+      }
+    },
+    &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+    &#34;html_url&#34;: &#34;https://github.com/jqlang/jq/commit/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+    &#34;comments_url&#34;: &#34;https://api.github.com/repos/jqlang/jq/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8/comments&#34;,
+    &#34;author&#34;: {
+...
+</pre>
+      </div>
+      <p>We can use jq to extract just the first commit.</p>
+      <div class="tutorial-example mb-3">
+        <div class="d-flex accordion-heading me-2">
+          <pre class="flex-grow-1 me-0 mb-0" tabindex="0">curl &#39;https://api.github.com/repos/jqlang/jq/commits?per_page=5&#39; | jq &#39;.[0]&#39;</pre>
+          <button type="button" class="btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border border-start-0 d-print-none"
+            data-bs-toggle="collapse" data-bs-target="#result3" aria-expanded="false" aria-controls="result3">Show result</button>
+        </div>
+        <pre id="result3" class="accordion-body collapse p-3 border-top-0 d-print-block" tabindex="0">{
+  &#34;sha&#34;: &#34;cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+  &#34;node_id&#34;: &#34;C_kwDOAE3WVdoAKGNmZjUzMzZlYzcxYjZmZWUzOTZhOTViYjBlNGJlYTM2NWUwY2QxZTg&#34;,
+  &#34;commit&#34;: {
+    &#34;author&#34;: {
+      &#34;name&#34;: &#34;Mattias Wadman&#34;,
+      &#34;email&#34;: &#34;mattias.wadman@gmail.com&#34;,
+      &#34;date&#34;: &#34;2021-06-09T14:02:22Z&#34;
+    },
+    &#34;committer&#34;: {
+      &#34;name&#34;: &#34;Nico Williams&#34;,
+      &#34;email&#34;: &#34;nico@cryptonector.com&#34;,
+      &#34;date&#34;: &#34;2022-05-26T21:04:32Z&#34;
+    },
+    &#34;message&#34;: &#34;docs: Document repeat(exp)&#34;,
+    &#34;tree&#34;: {
+      &#34;sha&#34;: &#34;d67d5542df1f16d1a48e1fb75749f60482cd874b&#34;,
+      &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/git/trees/d67d5542df1f16d1a48e1fb75749f60482cd874b&#34;
+    },
+    &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/git/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+    &#34;comment_count&#34;: 0,
+    &#34;verification&#34;: {
+      &#34;verified&#34;: false,
+      &#34;reason&#34;: &#34;unsigned&#34;,
+      &#34;signature&#34;: null,
+      &#34;payload&#34;: null
+    }
+  },
+  &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+  &#34;html_url&#34;: &#34;https://github.com/jqlang/jq/commit/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8&#34;,
+  &#34;comments_url&#34;: &#34;https://api.github.com/repos/jqlang/jq/commits/cff5336ec71b6fee396a95bb0e4bea365e0cd1e8/comments&#34;,
+  &#34;author&#34;: {
+    &#34;login&#34;: &#34;wader&#34;,
+    &#34;id&#34;: 185566,
+    &#34;node_id&#34;: &#34;MDQ6VXNlcjE4NTU2Ng==&#34;,
+    &#34;avatar_url&#34;: &#34;https://avatars.githubusercontent.com/u/185566?v=4&#34;,
+    &#34;gravatar_id&#34;: &#34;&#34;,
+    &#34;url&#34;: &#34;https://api.github.com/users/wader&#34;,
+    &#34;html_url&#34;: &#34;https://github.com/wader&#34;,
+    &#34;followers_url&#34;: &#34;https://api.github.com/users/wader/followers&#34;,
+    &#34;following_url&#34;: &#34;https://api.github.com/users/wader/following{/other_user}&#34;,
+    &#34;gists_url&#34;: &#34;https://api.github.com/users/wader/gists{/gist_id}&#34;,
+    &#34;starred_url&#34;: &#34;https://api.github.com/users/wader/starred{/owner}{/repo}&#34;,
+    &#34;subscriptions_url&#34;: &#34;https://api.github.com/users/wader/subscriptions&#34;,
+    &#34;organizations_url&#34;: &#34;https://api.github.com/users/wader/orgs&#34;,
+    &#34;repos_url&#34;: &#34;https://api.github.com/users/wader/repos&#34;,
+    &#34;events_url&#34;: &#34;https://api.github.com/users/wader/events{/privacy}&#34;,
+    &#34;received_events_url&#34;: &#34;https://api.github.com/users/wader/received_events&#34;,
+    &#34;type&#34;: &#34;User&#34;,
+    &#34;site_admin&#34;: false
+  },
+  &#34;committer&#34;: {
+    &#34;login&#34;: &#34;nicowilliams&#34;,
+    &#34;id&#34;: 604851,
+    &#34;node_id&#34;: &#34;MDQ6VXNlcjYwNDg1MQ==&#34;,
+    &#34;avatar_url&#34;: &#34;https://avatars.githubusercontent.com/u/604851?v=4&#34;,
+    &#34;gravatar_id&#34;: &#34;&#34;,
+    &#34;url&#34;: &#34;https://api.github.com/users/nicowilliams&#34;,
+    &#34;html_url&#34;: &#34;https://github.com/nicowilliams&#34;,
+    &#34;followers_url&#34;: &#34;https://api.github.com/users/nicowilliams/followers&#34;,
+    &#34;following_url&#34;: &#34;https://api.github.com/users/nicowilliams/following{/other_user}&#34;,
+    &#34;gists_url&#34;: &#34;https://api.github.com/users/nicowilliams/gists{/gist_id}&#34;,
+    &#34;starred_url&#34;: &#34;https://api.github.com/users/nicowilliams/starred{/owner}{/repo}&#34;,
+    &#34;subscriptions_url&#34;: &#34;https://api.github.com/users/nicowilliams/subscriptions&#34;,
+    &#34;organizations_url&#34;: &#34;https://api.github.com/users/nicowilliams/orgs&#34;,
+    &#34;repos_url&#34;: &#34;https://api.github.com/users/nicowilliams/repos&#34;,
+    &#34;events_url&#34;: &#34;https://api.github.com/users/nicowilliams/events{/privacy}&#34;,
+    &#34;received_events_url&#34;: &#34;https://api.github.com/users/nicowilliams/received_events&#34;,
+    &#34;type&#34;: &#34;User&#34;,
+    &#34;site_admin&#34;: false
+  },
+  &#34;parents&#34;: [
+    {
+      &#34;sha&#34;: &#34;f2ad9517c72f6267ae317639ab56bbfd4a8653d4&#34;,
+      &#34;url&#34;: &#34;https://api.github.com/repos/jqlang/jq/commits/f2ad9517c72f6267ae317639ab56bbfd4a8653d4&#34;,
+      &#34;html_url&#34;: &#34;https://github.com/jqlang/jq/commit/f2ad9517c72f6267ae317639ab56bbfd4a8653d4&#34;
+    }
+  ]
+}
+</pre>
+      </div>
+      <p>For the rest of the examples, I'll leave out the <code>curl</code> command - it's not
+going to change.</p>
+<p>There's a lot of info we don't care about there, so we'll restrict it down
+to the most interesting fields.</p>
+      <div class="tutorial-example mb-3">
+        <div class="d-flex accordion-heading me-2">
+          <pre class="flex-grow-1 me-0 mb-0" tabindex="0">jq &#39;.[0] | {message: .commit.message, name: .commit.committer.name}&#39;</pre>
+          <button type="button" class="btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border border-start-0 d-print-none"
+            data-bs-toggle="collapse" data-bs-target="#result4" aria-expanded="false" aria-controls="result4">Show result</button>
+        </div>
+        <pre id="result4" class="accordion-body collapse p-3 border-top-0 d-print-block" tabindex="0">{
+  &#34;message&#34;: &#34;docs: Document repeat(exp)&#34;,
+  &#34;name&#34;: &#34;Nico Williams&#34;
+}
+</pre>
+      </div>
+      <p>The <code>|</code> operator in jq feeds the output of one filter (<code>.[0]</code> which gets
+the first element of the array in the response) into the input of another
+(<code>{...}</code> which builds an object out of those fields). You can access
+nested attributes, such as <code>.commit.message</code>.</p>
+<p>Now let's get the rest of the commits.</p>
+      <div class="tutorial-example mb-3">
+        <div class="d-flex accordion-heading me-2">
+          <pre class="flex-grow-1 me-0 mb-0" tabindex="0">jq &#39;.[] | {message: .commit.message, name: .commit.committer.name}&#39;</pre>
+          <button type="button" class="btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border border-start-0 d-print-none"
+            data-bs-toggle="collapse" data-bs-target="#result5" aria-expanded="false" aria-controls="result5">Show result</button>
+        </div>
+        <pre id="result5" class="accordion-body collapse p-3 border-top-0 d-print-block" tabindex="0">{
+  &#34;message&#34;: &#34;docs: Document repeat(exp)&#34;,
+  &#34;name&#34;: &#34;Nico Williams&#34;
+}
+{
+  &#34;message&#34;: &#34;Mention -n in IO-section and for input/inputs&#34;,
+  &#34;name&#34;: &#34;Nico Williams&#34;
+}
+{
+  &#34;message&#34;: &#34;Fix iterration problem for non decimal string\n\nWhen the string transformation to number failed, all following\ntransformation failed too.\n\nThis happend because status in decNumberFromString function is\nupdated just in error case. Reusing the DEC_CONTEXT that failed\nbefore results into error even if the string is valid number.&#34;,
+  &#34;name&#34;: &#34;Nico Williams&#34;
+}
+{
+  &#34;message&#34;: &#34;docs: point to Libera.Chat instead of Freenode&#34;,
+  &#34;name&#34;: &#34;Nico Williams&#34;
+}
+{
+  &#34;message&#34;: &#34;Missing \&#34;va_end\&#34; call. This was found by running the cppcheck static analysis where it shows as error.&#34;,
+  &#34;name&#34;: &#34;Nico Williams&#34;
+}
+</pre>
+      </div>
+      <p><code>.[]</code> returns each element of the array returned in the response, one at a
+time, which are all fed into
+<code>{message: .commit.message, name: .commit.committer.name}</code>.</p>
+<p>Data in jq is represented as streams of JSON values - every jq
+expression runs for each value in its input stream, and can
+produce any number of values to its output stream.</p>
+<p>Streams are serialised by just separating JSON values with
+whitespace. This is a <code>cat</code>-friendly format - you can just join
+two JSON streams together and get a valid JSON stream.</p>
+<p>If you want to get the output as a single array, you can tell jq to
+"collect" all of the answers by wrapping the filter in square
+brackets:</p>
+      <div class="tutorial-example mb-3">
+        <div class="d-flex accordion-heading me-2">
+          <pre class="flex-grow-1 me-0 mb-0" tabindex="0">jq &#39;[.[] | {message: .commit.message, name: .commit.committer.name}]&#39;</pre>
+          <button type="button" class="btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border border-start-0 d-print-none"
+            data-bs-toggle="collapse" data-bs-target="#result6" aria-expanded="false" aria-controls="result6">Show result</button>
+        </div>
+        <pre id="result6" class="accordion-body collapse p-3 border-top-0 d-print-block" tabindex="0">[
+  {
+    &#34;message&#34;: &#34;docs: Document repeat(exp)&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;
+  },
+  {
+    &#34;message&#34;: &#34;Mention -n in IO-section and for input/inputs&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;
+  },
+  {
+    &#34;message&#34;: &#34;Fix iterration problem for non decimal string\n\nWhen the string transformation to number failed, all following\ntransformation failed too.\n\nThis happend because status in decNumberFromString function is\nupdated just in error case. Reusing the DEC_CONTEXT that failed\nbefore results into error even if the string is valid number.&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;
+  },
+  {
+    &#34;message&#34;: &#34;docs: point to Libera.Chat instead of Freenode&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;
+  },
+  {
+    &#34;message&#34;: &#34;Missing \&#34;va_end\&#34; call. This was found by running the cppcheck static analysis where it shows as error.&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;
+  }
+]
+</pre>
+      </div>
+      <hr />
+<p>Next, let's try getting the URLs of the parent commits out of the
+API results as well. In each commit, the GitHub API includes information
+about "parent" commits. There can be one or many.</p>
+<pre><code>"parents": [
+  {
+    "sha": "f2ad9517c72f6267ae317639ab56bbfd4a8653d4",
+    "url": "https://api.github.com/repos/jqlang/jq/commits/f2ad9517c72f6267ae317639ab56bbfd4a8653d4",
+    "html_url": "https://github.com/jqlang/jq/commit/f2ad9517c72f6267ae317639ab56bbfd4a8653d4"
+  }
+]
+</code></pre>
+<p>We want to pull out all of the "html_url" fields inside that array of parent
+commits and make a simple list of strings to go along with the
+"message" and "author" fields we already have.</p>
+      <div class="tutorial-example mb-3">
+        <div class="d-flex accordion-heading me-2">
+          <pre class="flex-grow-1 me-0 mb-0" tabindex="0">jq &#39;[.[] | {message: .commit.message, name: .commit.committer.name, parents: [.parents[].html_url]}]&#39;</pre>
+          <button type="button" class="btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border border-start-0 d-print-none"
+            data-bs-toggle="collapse" data-bs-target="#result7" aria-expanded="false" aria-controls="result7">Show result</button>
+        </div>
+        <pre id="result7" class="accordion-body collapse p-3 border-top-0 d-print-block" tabindex="0">[
+  {
+    &#34;message&#34;: &#34;docs: Document repeat(exp)&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;,
+    &#34;parents&#34;: [
+      &#34;https://github.com/jqlang/jq/commit/f2ad9517c72f6267ae317639ab56bbfd4a8653d4&#34;
+    ]
+  },
+  {
+    &#34;message&#34;: &#34;Mention -n in IO-section and for input/inputs&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;,
+    &#34;parents&#34;: [
+      &#34;https://github.com/jqlang/jq/commit/c4d39c4d22f2b12225ca1b311708f7e084ad9ff8&#34;
+    ]
+  },
+  {
+    &#34;message&#34;: &#34;Fix iterration problem for non decimal string\n\nWhen the string transformation to number failed, all following\ntransformation failed too.\n\nThis happend because status in decNumberFromString function is\nupdated just in error case. Reusing the DEC_CONTEXT that failed\nbefore results into error even if the string is valid number.&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;,
+    &#34;parents&#34;: [
+      &#34;https://github.com/jqlang/jq/commit/174db0f93552bdb551ae1f3c5c64744df0ad8e2f&#34;
+    ]
+  },
+  {
+    &#34;message&#34;: &#34;docs: point to Libera.Chat instead of Freenode&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;,
+    &#34;parents&#34;: [
+      &#34;https://github.com/jqlang/jq/commit/29cf77977ef52eec708982b19bf9d2ec17443337&#34;
+    ]
+  },
+  {
+    &#34;message&#34;: &#34;Missing \&#34;va_end\&#34; call. This was found by running the cppcheck static analysis where it shows as error.&#34;,
+    &#34;name&#34;: &#34;Nico Williams&#34;,
+    &#34;parents&#34;: [
+      &#34;https://github.com/jqlang/jq/commit/55e6e2c21829bd866bd4b18ee254b05c9020320a&#34;
+    ]
+  }
+]
+</pre>
+      </div>
+      <p>Here we're making an object as before, but this time the <code>parents</code>
+field is being set to <code>[.parents[].html_url]</code>, which collects
+all of the parent commit URLs defined in the parents object.</p>
+      <hr />
+<p>Here endeth the tutorial! There's lots more to play with. Go
+read <a href="../manual/">the manual</a> if you're interested, and <a href="../download/">download
+jq</a> if you haven't already.</p>
+    </main>
+
+    <footer class="bd-footer bg-body-tertiary">
+      <div class="py-3 text-center">
+        <p>
+          This website is made with <a href="https://getbootstrap.com" target="_blank" rel="noopener">Bootstrap</a>,
+          themed with <a href="https://bootswatch.com" target="_blank" rel="noopener">Bootswatch</a>.
+        </p>
+        <p>
+          jq is licensed under the MIT license (code) and the
+          <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC-BY-3.0</a> license (docs).
+        </p>
+      </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
+  </body>
+</html>

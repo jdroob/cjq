@@ -1,0 +1,19 @@
+{
+	"id": "prod1",
+	"name": "Old Product",
+	"prices": [
+		{
+			"amount": 19.99,
+			"currency": "USD"
+		}
+	],
+	"tags": [
+		"tech",
+		"book",
+		"programming"
+	],
+	"prototype": false,
+	"meta": {
+		"test": 1
+	}
+}
