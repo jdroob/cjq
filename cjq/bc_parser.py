@@ -1,13 +1,9 @@
-'''
-  Name pending
-
-  Translate JQ Bytecode to JQ IR.
-'''
+# JQ Bytecode to JQ IR Translator
 
 def parse(bytecode):
-  '''
-    Generates intermediate representation (JQ IR) from JQ bytecode.
+    """
+    Parses JQ bytecode into intermediate representation (JQ IR).
 
-    JQ IR is more amenable for lowering to LLVM IR.
-  '''
-  pass
+    The JQ IR format facilitates easier conversion to LLVM IR.
+    """
+    pass
