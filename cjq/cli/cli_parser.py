@@ -1,4 +1,5 @@
 import sys
+from collections import namedtuple
 
 def parse_bytecode(stdout):
     """
@@ -13,6 +14,8 @@ def parse_bytecode(stdout):
     Returns:
         bytecode (list): A list of dictionaries representing the bytecode commands.
     """
+    BC_INSTR = namedtuple('BC_INSTR', ['opcode', 'command'])
+
     bytecode = []
     lines = stdout.strip().split('\n')
     for line in lines:
@@ -21,7 +24,7 @@ def parse_bytecode(stdout):
         parts = line.split(' ', 1)
         if len(parts) == 2:
             opcode, command = parts
-            bytecode.append({opcode: command.strip()})
+            bytecode.append(BC_INSTR(opcode, command.strip()))
     return bytecode
 
 def parse_command(argv):
