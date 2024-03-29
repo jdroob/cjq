@@ -180,7 +180,7 @@ enum {
 
 static int process(jq_state *jq, jv value, int flags, int dumpopts, int options) {
   int ret = JQ_OK_NO_OUTPUT; // No valid results && -e -> exit(4)
-  jq_start(jq, value, flags);
+  jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack?
   jv result;
   while (jv_is_valid(result = jq_next(jq))) {
     if ((options & RAW_OUTPUT) && jv_get_kind(result) == JV_KIND_STRING) {
@@ -293,6 +293,10 @@ int wmain(int argc, wchar_t* wargv[]) {
 int umain(int argc, char* argv[]) {
 #else /*}*/
 int main(int argc, char* argv[]) {
+  // printf("argc: %d\n", argc);
+  for (int i = 0; i<argc; ++i) {
+    printf("argv[%d]: %s\n",i,argv[i]);
+  } printf("\n");
 #endif
   jq_state *jq = NULL;
   jq_util_input_state *input_state = NULL;
@@ -350,18 +354,23 @@ int main(int argc, char* argv[]) {
     if (args_done || !isoptish(argv[i])) {
       if (!program) {
         program = argv[i];
+        // printf("HERE1\n");
+        // printf("%s",program);   // This prints out the actual program
       } else if (further_args_are_strings) {
         ARGS = jv_array_append(ARGS, jv_string(argv[i]));
+        // printf("HERE2\n");
       } else if (further_args_are_json) {
         jv v =  jv_parse(argv[i]);
+        // printf("HERE3\n");
         if (!jv_is_valid(v)) {
           fprintf(stderr, "%s: invalid JSON text passed to --jsonargs\n", progname);
           die();
         }
         ARGS = jv_array_append(ARGS, v);
-      } else {
+      } else {      // this is where the json files are read?
         jq_util_input_add_input(input_state, argv[i]);
         nfiles++;
+        // printf("HERE4\n");  
       }
     } else if (!strcmp(argv[i], "--")) {
       args_done = 1;
@@ -690,7 +699,9 @@ int main(int argc, char* argv[]) {
   }
   
   if (options & DUMP_DISASM) {
+    // jv data = jv_load_file(program, 1);
     jq_dump_disassembly(jq, 0);
+    // jv_show(ARGS, -1);
     printf("\n");
   }
 
@@ -720,8 +731,12 @@ int main(int argc, char* argv[]) {
     jv value;
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
+      // printf("VALUE:\n");
+      // jv_show(value, -1);    // Value holds all json values (as strings) concatenated
+      // printf("END\n");
       if (jv_is_valid(value)) {
-        ret = process(jq, value, jq_flags, dumpopts, options);
+        ret = process(jq, value, jq_flags, dumpopts, options);    // John: This must be where actual execution happens?
+        // printf("After process():\n");
         if (ret <= 0 && ret != JQ_OK_NO_OUTPUT)
           last_result = (ret != JQ_OK_NULL_KIND);
         if (jq_halted(jq))

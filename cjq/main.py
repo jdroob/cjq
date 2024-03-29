@@ -15,7 +15,7 @@ def main():
   TODO: Update this doc string as more functionality is added.
   """
   command = parse_command(sys.argv)
-  bytecode = execute_command(command)
+  bytecode = execute_command(command) #; print(bytecode)
   bc_parser.parse(bytecode)
 
 if __name__ == "__main__":

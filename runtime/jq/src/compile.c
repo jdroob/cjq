@@ -1160,7 +1160,7 @@ static int expand_call_arglist(block* b, jv args, jv *env) {
           locfile_locate(curr->locfile, curr->source, "jq: error: $%s is not defined", curr->symbol);
         else
           locfile_locate(curr->locfile, curr->source, "jq: error: %s/%d is not defined", curr->symbol, curr->nactuals);
-        errors++;
+        // errors++;    // John: UNCOMMENT THIS
         // don't process this instruction if it's not well-defined
         ret = BLOCK(ret, inst_block(curr));
         continue;
@@ -1388,6 +1388,7 @@ int block_compile(block b, struct bytecode** out, struct locfile* lf, jv args) {
   } else {
     *out = bc;
   }
+  nerrors = 0;    // John: DELETE THIS
   return nerrors;
 }
 

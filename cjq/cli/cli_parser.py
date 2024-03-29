@@ -6,7 +6,7 @@ def parse_bytecode(stdout):
     Parses the provided stdout string containing bytecode commands.
 
     The function extracts the bytecode commands and constructs a list of dictionaries,
-    where each dictionary represents an opcode-command pair.
+    where each dictionary represents an offset-command pair.
 
     Args:
         stdout (str): The stdout string containing bytecode commands.
@@ -14,17 +14,19 @@ def parse_bytecode(stdout):
     Returns:
         bytecode (list): A list of dictionaries representing the bytecode commands.
     """
-    BC_INSTR = namedtuple('BC_INSTR', ['opcode', 'command'])
+    BC_INSTR = namedtuple('BC_INSTR', ['byte_offset', 'command'])
 
     bytecode = []
     lines = stdout.strip().split('\n')
     for line in lines:
+        if not(line.strip().startswith('0')):
+            continue
         if line.strip().startswith('{'):
             break  # Stop parsing when encountering the start of JSON
         parts = line.split(' ', 1)
         if len(parts) == 2:
-            opcode, command = parts
-            bytecode.append(BC_INSTR(opcode, command.strip()))
+            offset, command = parts
+            bytecode.append(BC_INSTR(offset, command.strip()))
     return bytecode
 
 def parse_command(argv):
