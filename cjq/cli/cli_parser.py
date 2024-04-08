@@ -20,7 +20,7 @@ def parse_bytecode(stdout):
     lines = stdout.strip().split('\n')
     for line in lines:
         if not(line.strip().startswith('0')):
-            continue
+            continue    # Start parsing when encountering first Bytecode instr
         if line.strip().startswith('{'):
             break  # Stop parsing when encountering the start of JSON
         parts = line.split(' ', 1)
@@ -29,34 +29,34 @@ def parse_bytecode(stdout):
             bytecode.append(BC_INSTR(offset, command.strip()))
     return bytecode
 
-def parse_command(argv):
+def parse_program(jq_program):
     """
-    Parses the command line input provided by the user.
+    Parses the jq_program input provided by the user.
 
     The command is expected to be of the form:
     ```
-    python <path-to-main>/main.py '<string with jq commands>' <path-to-one-or-more-json-files>.json
+    python path/to/main.py -s '<string with jq commands>' <path-to-one-or-more-json-files>.json
     ```
     and it parses the command such that it appears as:
     ```
-    ./runtime/jq/jq -s '<string with jq commands>' <path-to-one-or-more-json-files>.json --debug-dump-disasm
+    ./runtime/jq/jq -s '<string with jq commands>' --debug-dump-disasm
     ```
 
     Args:
-        argv (list): List of command line arguments.
+        jq_program (list): List of command line arguments.
 
     Returns:
         command (str): The parsed command.
     """
-    if len(argv) < 4:
-        print("Usage: python script.py '<string with jq commands>' <path-to-one-or-more-json-files>.json")
-        sys.exit(1)
+    # if len(argv) < 4:
+    #     print("Usage: python script.py '<string with jq commands>' <path-to-one-or-more-json-files>.json")
+    #     sys.exit(1)
 
-    jq_commands = argv[1]
-    json_files = argv[2:]
+    # jq_commands = argv[1]
+    # json_files = argv[2:]
     
     jq_path = "./runtime/jq/jq"
     debug_dump_disasm = "--debug-dump-disasm"
 
-    command = f"{jq_path} -s '{jq_commands}' {' '.join(json_files)} {debug_dump_disasm}"
+    command = f"{jq_path} -s '{jq_program}' '' {debug_dump_disasm}"
     return command

@@ -73,3 +73,11 @@ runtime/jq/src/.deps/util.Plo
 runtime/jq/src/decNumber/.deps/decContext.Plo
 runtime/jq/src/decNumber/.deps/decNumber.Plo
 runtime/jq/jq
+test.ll
+a.out
+*.ll
+*.out
+*.Plo
+
+*.Plo
+

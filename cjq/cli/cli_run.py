@@ -20,11 +20,12 @@ def execute_command(command):
     """
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
-        if result.returncode == 0:
+        # if result.returncode == 0:
             # print(parse_bytecode(result.stdout))
-            return parse_bytecode(result.stdout)
-        else:
-            print("Error executing command.")
-            print("Error message:", result.stderr)
+        return parse_bytecode(result.stdout)
+        #TODO: Fixme - returncode currently error code as band-aid solution for extracting bytecode expediently
+        # else:
+        #     print("Error executing command.")
+        #     print("Error message:", result.stderr)
     except Exception as e:
         print("Exception occurred:", str(e))

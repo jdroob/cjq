@@ -703,6 +703,12 @@ int main(int argc, char* argv[]) {
     jq_dump_disassembly(jq, 0);
     // jv_show(ARGS, -1);
     printf("\n");
+    ret = JQ_OK;
+    jq_util_input_add_input(input_state, "-");
+    break;
+    goto out;
+    // jq_exit(ret);
+    // return 0;
   }
 
   if ((options & SEQ))
@@ -722,8 +728,10 @@ int main(int argc, char* argv[]) {
   // Let jq program call `stderr` builtin and have that go somewhere
   jq_set_stderr_cb(jq, stderr_cb, &dumpopts);
 
-  if (nfiles == 0)
+  if (nfiles == 0) {
     jq_util_input_add_input(input_state, "-");
+  }
+
 
   if (options & PROVIDE_NULL) {
     ret = process(jq, jv_null(), jq_flags, dumpopts, options);
@@ -732,7 +740,7 @@ int main(int argc, char* argv[]) {
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       // printf("VALUE:\n");
-      // jv_show(value, -1);    // Value holds all json values (as strings) concatenated
+      // jv_show(value, -1);    // value holds all JSON files (as strings) concatenated
       // printf("END\n");
       if (jv_is_valid(value)) {
         ret = process(jq, value, jq_flags, dumpopts, options);    // John: This must be where actual execution happens?
