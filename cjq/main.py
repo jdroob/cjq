@@ -1,16 +1,9 @@
-from __future__ import print_function
 import argparse
-from ctypes import *
 import llvmlite.binding as llvm
 
 from cli.cli_parser import parse_program
 from cli.cli_run import execute_command
 from bc_parser import parse
-
-# All these initializations are required for code generation!
-llvm.initialize()
-llvm.initialize_native_target()
-llvm.initialize_native_asmprinter()  # yes, even this one
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Compile and execute jq program.")
@@ -48,23 +41,23 @@ def create_execution_engine():
     engine = llvm.create_mcjit_compiler(backing_mod, target_machine)
     return engine
 
-def compile_ir(engine, llvm_ir):
+def compile_ir(llvm_ir):
     try:
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
-        engine.add_module(mod)
-        engine.finalize_object()
-        engine.run_static_constructors()
         return mod
     except Exception as e:
         print("Error compiling LLVM IR:", e)
         exit(1)
 
 def execute_jq_program(engine, func_ptr, mod, input_files):
+    from ctypes import CFUNCTYPE, c_int
+
     if func_ptr is not None:
+      # Turn into a Python callable using ctypes
         cfunc = CFUNCTYPE(c_int)(func_ptr)
         res = cfunc()
-        # print("main(...) =", res)   # Debug
+        return res
     else:
         print("Error: Function pointer is null.")
 
@@ -91,12 +84,35 @@ def main():
         exit(1)
 
     llvm_ir = generate_llvm_ir(jq_program)
-    engine = create_execution_engine()
-    mod = compile_ir(engine, llvm_ir)
+    mod = compile_ir(llvm_ir)
     print(mod)
-    func_ptr = engine.get_function_address('test')
-    execute_jq_program(engine, func_ptr, mod, args.input_files)
+
+    ### NOTE:  One feature of LLVM is that it can compile it's own code to 
+    ###        executable machine instructions without ever being written to a file or using clang.
+    ###        You can do this entirely in Python and have Python call the resulting function.
+    ###        The below code runs entirely inside an active Python interpreter process. 
+    ###        If you can't get clang to work, you can always use this as a fallback.
+
+    ### For JIT compilation, uncomment from...
+    # # HERE ...
+
+    # # All these initializations are required for code generation!
+    # llvm.initialize()
+    # llvm.initialize_native_target()
+    # llvm.initialize_native_asmprinter()  # yes, even this one
+    
+    # engine = create_execution_engine()
+    # engine.add_module(mod)
+    # engine.finalize_object()
+    # engine.run_static_constructors()
+    # # Look up the function pointer (a Python int)
+    # func_ptr = engine.get_function_address('test')
+    # res = execute_jq_program(engine, func_ptr, mod, args.input_files)
+    # print("main(...) =", res)   # Debug
     # print_asm(engine, mod)  # Debug
+
+    # # ... TO HERE
+
 
 if __name__ == "__main__":
     main()
