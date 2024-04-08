@@ -34,10 +34,10 @@ def parse(bytecode):
         match instr.command:
             case 'TOP':
                 pass
-                # print('do some LLVM stuff')
+                # print('TOP actions')   # Debug
                 #TODO - just return main module (no-op) skeleton
             case _:
                 pass
-                # print('some other stuff')
+                # print('Error: Unable to match to a bytecode instruction')     # Debug
 
     return module

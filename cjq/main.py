@@ -64,7 +64,7 @@ def execute_jq_program(engine, func_ptr, mod, input_files):
     if func_ptr is not None:
         cfunc = CFUNCTYPE(c_int)(func_ptr)
         res = cfunc()
-        # print("main(...) =", res)
+        # print("main(...) =", res)   # Debug
     else:
         print("Error: Function pointer is null.")
 
@@ -96,7 +96,7 @@ def main():
     print(mod)
     func_ptr = engine.get_function_address('test')
     execute_jq_program(engine, func_ptr, mod, args.input_files)
-    # print_asm(engine, mod)
+    # print_asm(engine, mod)  # Debug
 
 if __name__ == "__main__":
     main()
