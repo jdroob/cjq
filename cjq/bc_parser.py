@@ -10,7 +10,7 @@ def create_skeleton():
 
     # Define the main function
     main_func_type = ir.FunctionType(ir.IntType(32), [])
-    main_func = ir.Function(module, main_func_type, "test")
+    main_func = ir.Function(module, main_func_type, "jqfunc")
 
     # Define the main function body
     main_block = main_func.append_basic_block("entry")
