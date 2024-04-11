@@ -1,11 +1,13 @@
 #include <stdio.h>
-#include <stdlib.h> // For memory allocation functions
+#include <stdlib.h> 
 #include <json-c/json.h>
 #include <memory.h>
 
+const unsigned short MAX_JSON_SIZE = 65535;
+
 char* readJSON(const char* filename) {
     FILE *fp;
-    char buffer[1024];
+    char buffer[MAX_JSON_SIZE];
     struct json_object *parsed_json;
 
     fp = fopen(filename, "r");

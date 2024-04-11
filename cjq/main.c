@@ -5,9 +5,6 @@
 
 #include "clib/lib.h"
 
-extern char* data;
-extern char x;
-extern char* y;
 extern void jqfunc(char* c);
 
 bool is_json_file(const char *filename) {
@@ -16,7 +13,6 @@ bool is_json_file(const char *filename) {
 }
 
 int main(int argc, char *argv[]) {
-    printf("BEFORE readJSON():\ndata: %s\n", data);  // Debug
     if (argc < 2) {
         printf("Usage: %s <filename1> [<filename2> ...]\n", argv[0]);
         return 1;
@@ -61,8 +57,6 @@ int main(int argc, char *argv[]) {
         data_size = new_size;
     }
 
-    printf("AFTER readJSON():\ndata: %s\n", input_data);  // Debug
-    printf("Address of input_data: %i\n",&input_data[0]);
     jqfunc(input_data); // Pass data to jqfunc
     free(input_data); // Free data at the end
 
