@@ -567,7 +567,7 @@ BISON_VERSION =
 BUNDLER = 
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -pthread
+CFLAGS = -g -O0 -pthread
 CPP = gcc -E
 CPPFLAGS = 
 CSCOPE = cscope
@@ -1929,7 +1929,7 @@ src/main.c: src/version.h src/config_opts.inc
 
 src/builtin.inc: $(srcdir)/src/builtin.jq
 	mkdir -p src
-	$(AM_V_GEN) od -v -A n -t o1 -- $< | \
+	$(AM_V_GEN) od -v -A n -t o0 -- $< | \
 	sed -e 's/$$/ /' \
 	    -e 's/\([0123456789]\) /\1, /g' \
 	    -e 's/ $$//' \

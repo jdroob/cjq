@@ -39,11 +39,8 @@ def parse(bytecode):
     for instr in bytecode:
         match instr.command:
             case 'TOP':
-                pass
-                # print('TOP actions')   # Debug
-                #TODO - just return main module (no-op) skeleton
+                pass    # This is actually all you need to do for this instruction
             case _:
                 pass
-                # print('Error: Unable to match to a bytecode instruction')     # Debug
 
     return module

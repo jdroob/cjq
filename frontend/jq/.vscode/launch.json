@@ -1,0 +1,22 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "name" :"Launch",
+      "type": "cppdbg",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/jq",
+      // "args": ["-s", "'.[0] as \\$a | .[1] as \\$b | \\$a * \\$b' ", "prod1.json", "prod2.json", "--debug-dump-disasm"]    // <-- Doesn't work :/
+      // "args": ["-s", "'walk( if type == \"object\" then with_entries( .key |= sub( \"^_+\"; \"\") ) else . end )'", "ex.json", "--debug-dump-disasm"]   // Roughly 300 bytecode instructions - going to need to weird cases like this
+      // "args": ["-s", ".[0] + .[1]", "prod1.json", "prod2.json", "--debug-dump-disasm"]
+      // "args": ["-s", ".", "prod1.json", "prod2.json", "--debug-dump-disasm"]
+      "args": ["-s", ".", "--debug-dump-disasm"]
+    }
+  ]
+
+}
