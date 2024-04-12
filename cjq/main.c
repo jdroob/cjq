@@ -7,7 +7,7 @@
 
 extern void jqfunc(char* c);
 
-bool is_json_file(const char *filename) {
+bool isJSONFile(const char *filename) {
     const char *ext = strrchr(filename, '.');
     return (ext && strcmp(ext, ".json") == 0);
 }
@@ -18,18 +18,18 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    size_t data_size = 1;
-    char *input_data = (char*)malloc(data_size);
-    if (input_data == NULL) {
+    size_t dataSize = 1;
+    char *inputData = (char*)malloc(dataSize);
+    if (inputData == NULL) {
         fprintf(stderr, "Failed to allocate memory\n");
         return 1;
     }
-    input_data[0] = '\0'; // Null-terminate the string
+    inputData[0] = '\0'; // Null-terminate the string
 
     for (int i = 1; i < argc; i++) {
         char *filename = argv[i];
 
-        if (!is_json_file(filename)) {
+        if (!isJSONFile(filename)) {
             continue;
         }
 
@@ -40,25 +40,25 @@ int main(int argc, char *argv[]) {
         }
 
         size_t jsonData_len = strlen(jsonData);
-        size_t new_size = data_size + jsonData_len;
+        size_t newSize = dataSize + jsonData_len;
 
-        char *temp = (char*)realloc(input_data, new_size + 1);
+        char *temp = (char*)realloc(inputData, newSize + 1);
         if (temp == NULL) {
             fprintf(stderr, "Failed to reallocate memory\n");
-            free(input_data);
+            free(inputData);
             free(jsonData);
             return 1;
         }
-        input_data = temp;
+        inputData = temp;
 
-        strcat(input_data, jsonData);
+        strcat(inputData, jsonData);
         free(jsonData); // Free jsonData here
 
-        data_size = new_size;
+        dataSize = newSize;
     }
 
-    jqfunc(input_data); // Pass data to jqfunc
-    free(input_data); // Free data at the end
+    jqfunc(inputData); // Pass data to jqfunc
+    free(inputData); // Free data at the end
 
     return 0;
 }
