@@ -1,6 +1,18 @@
 from llvmlite import ir, binding
 
 def create_skeleton():
+    """
+    Creates an LLVM module with a main function that accepts a pointer to JSON data.
+
+    Returns:
+        A tuple containing the LLVM module and an IRBuilder instance.
+
+    Example:
+        # Create a skeleton LLVM module
+        module, builder = create_skeleton()
+
+        # Now you can add more LLVM IR code using the provided IRBuilder instance.
+    """
     # Create an LLVM module
     module = ir.Module()
     module.triple = binding.get_process_triple()
@@ -20,7 +32,7 @@ def create_skeleton():
                             name='_print_str')
 
     # Call _print_str
-    # builder.call(_print_str, [json_data]) # DEBUG
+    builder.call(_print_str, [json_data]) # DEBUG
 
     # Return from main function
     builder.ret_void()
@@ -28,9 +40,9 @@ def create_skeleton():
     return module, builder
 
 
-def parse(bytecode):
+def lower(bytecode):
     """
-    Parses JQ bytecode into intermediate representation (LLVM IR).
+    Lowers JQ bytecode to LLVM IR.
     """
     # Generate main module skeleton
     module, builder = create_skeleton()

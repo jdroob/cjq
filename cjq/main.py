@@ -3,7 +3,7 @@ import llvmlite.binding as llvm
 
 from cli.cli_parser import parse_program
 from cli.cli_run import execute_command
-from bc_parser import parse
+from lowering import lower
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Compile and execute jq program.")
@@ -28,7 +28,7 @@ def generate_llvm_ir(jq_program):
     try:
         command = parse_program(jq_program)
         bytecode = execute_command(command)
-        llvm_ir = parse(bytecode)
+        llvm_ir = lower(bytecode)
         return llvm_ir
     except Exception as e:
         print("Error generating LLVM IR:", e)
