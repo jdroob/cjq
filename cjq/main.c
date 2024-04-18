@@ -13,69 +13,99 @@
 #include "frontend/src/version.h"
 #include "frontend/src/frontend_main.h"
 
-extern void jqfunc(char* c);
+#include <../../usr/include/python3.12/Python.h>      // TODO: yuck
+#include <../../usr/include/python3.12/pyconfig.h>      // TODO: yuck
 
-bool isJSONFile(const char *filename) {
-    const char *ext = strrchr(filename, '.');
-    return (ext && strcmp(ext, ".json") == 0);
+void cleanUp(compiled_jq_state* cjq_state) {
+    // Free memory allocated by frontend_main
+    jq_util_input_free(&cjq_state->input_state);
+    jq_teardown(&cjq_state->jq);
+}
+
+int call_jq_lower(compiled_jq_state* cjq_state) {
+    // Get the value of the HOME environment variable
+    char *home = getenv("HOME");
+    if (home == NULL) {
+        fprintf(stderr, "Failed to retrieve HOME environment variable\n");
+        return 1; // Or handle the error accordingly
+    }
+
+    // Construct the full path to the cjq directory
+    char path_to_cjq[256]; // Adjust the size as needed
+    snprintf(path_to_cjq, sizeof(path_to_cjq), "%s/cjq/cjq", home);
+
+    // Initialize Python Interpreter
+    Py_Initialize();
+
+    // Append paths to Python sys.path
+    PyRun_SimpleString("import sys");
+    // TODO: yuck - find way to generalize this
+    PyRun_SimpleString("sys.path.append('/home/rubio/anaconda3/envs/numbaEnv/lib/python3.12/site-packages/')\n");
+
+    // Now we can import llvmlite module
+    PyObject *pModule_llvmlite = PyImport_ImportModule("llvmlite");
+    if (!pModule_llvmlite) {
+        PyErr_Print();
+        fprintf(stderr, "Failed to import module 'llvmlite'\n");
+        return 1;
+    }
+    // Append the cjq directory to Python path
+    char python_code[512]; // Adjust the size as needed
+    snprintf(python_code, sizeof(python_code), "sys.path.append(\"%s\")", path_to_cjq);
+
+    // Now we can also import lowering module
+    PyRun_SimpleString(python_code);
+
+    // Import the required Python module
+    PyObject *pModuleLowering = PyImport_ImportModule("lowering");
+    if (!pModuleLowering) {
+        PyErr_Print();
+        fprintf(stderr, "Failed to import module 'lowering'\n");
+        return 1;
+    }
+
+    // Get the Python function jq_lower from the lowering module
+    PyObject *pFuncJqLower = PyObject_GetAttrString(pModuleLowering, "jq_lower");
+    if (!pFuncJqLower || !PyCallable_Check(pFuncJqLower)) {
+        if (PyErr_Occurred()) PyErr_Print();
+        fprintf(stderr, "Cannot find function 'jq_lower'\n");
+        return 1;
+    }
+
+    // Create a Python capsule object to pass the compiled_jq_state
+    PyObject *pArgsJqLower = PyTuple_Pack(1, PyCapsule_New(&cjq_state, NULL, NULL));
+
+    // Call the Python function with the compiled_jq_state argument
+    PyObject *pResult = PyObject_CallObject(pFuncJqLower, pArgsJqLower);
+    if (!pResult) {
+        PyErr_Print();
+        fprintf(stderr, "Call to function 'jq_lower' failed\n");
+        return 1;
+    }
+
+    // Cleanup
+    Py_DECREF(pResult);
+    Py_DECREF(pArgsJqLower);
+    Py_DECREF(pFuncJqLower);
+    Py_DECREF(pModuleLowering);
+    Py_DECREF(pModule_llvmlite);
+
+    // Finalize Python
+    Py_Finalize();
+
+    // Return gracefully
+    return 0;
 }
 
 int main(int argc, char *argv[]) {
-    for (int i = 0; i<argc; ++i) {
-    printf("argv[%d]: %s\n",i,argv[i]);
-  } printf("\n");
-  compiled_jq_state cjq_state = frontend_main(argc, argv);
-    // if (argc < 2) {
-    //     printf("Usage: %s <filename1> [<filename2> ...]\n", argv[0]);
-    //     return 1;
-    // }
+    // Get parsed bytecode, pc, additional info from frontend_main
+    compiled_jq_state cjq_state = frontend_main(argc, argv);
 
-    // size_t dataSize = 1;
-    // char *inputData = (char*)malloc(dataSize);
-    // if (inputData == NULL) {
-    //     fprintf(stderr, "Failed to allocate memory\n");
-    //     return 1;
-    // }
-    // inputData[0] = '\0'; // Null-terminate the string
+    // Generate LLVM IR
+    int errorCode = call_jq_lower(&cjq_state);  // TODO: error handling
 
-    // for (int i = 1; i < argc; i++) {
-    //     char *filename = argv[i];
+    // Free up resources
+    cleanUp(&cjq_state);
 
-    //     if (!isJSONFile(filename)) {
-    //         continue;
-    //     }
-
-    //     char *jsonData = readJSON(filename);
-    //     if (jsonData == NULL) {
-    //         printf("Failed to read data from file: %s\n", filename);
-    //         continue;
-    //     }
-
-    //     size_t jsonData_len = strlen(jsonData);
-    //     size_t newSize = dataSize + jsonData_len;
-
-    //     char *temp = (char*)realloc(inputData, newSize + 1);
-    //     if (temp == NULL) {
-    //         fprintf(stderr, "Failed to reallocate memory\n");
-    //         free(inputData);
-    //         free(jsonData);
-    //         return 1;
-    //     }
-    //     inputData = temp;
-
-    //     strcat(inputData, jsonData);
-    //     free(jsonData); // Free jsonData here
-
-    //     dataSize = newSize;
-    // }
-
-    // TODO: Run frontend here - bytecode should be stored in global that will be available
-    //  to functions called in jqfunc
-    // jqfunc(inputData); // Pass data to jqfunc
-    // free(inputData); // Free data at the end
-
-    printf("Now we're back here\n");
-    jq_util_input_free(&cjq_state.input_state);
-    jq_teardown(&cjq_state.jq);
     return 0;
 }
