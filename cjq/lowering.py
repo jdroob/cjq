@@ -1,4 +1,6 @@
-from llvmlite import ir, binding
+from llvmlite import binding as llvm
+from llvmlite import ir
+import ctypes
 
 # def create_skeleton():
 #     """
@@ -39,27 +41,59 @@ from llvmlite import ir, binding
 
 #     return module, builder
 
-def jq_lower(cjq_state):
-    print("yoooo")
-    print("Calling jq_lower function from C")
-    # Access cjq_state members as needed
-    print(cjq_state)
+# Load the shared library containing the C function
+# get_opcode = ctypes.CDLL("./lowering.so")  # Replace with the actual path to the shared library
 
-def lower(bytecode):
+# # Define the function prototype to match the C function
+# get_opcode.call_c_function.argtypes = [ctypes.py_object, ctypes.POINTER(ctypes.c_uint16)]
+
+def jq_lower():
     """
-    Lowers JQ bytecode to LLVM IR.
+    Uses llvmlite C-binding feature to call C functions from llvmlite.
+    Specifically, 
     """
-    # Generate main module skeleton
-    # module, builder = create_skeleton()
+    # print("Calling cjq.lowering.jq_lower() function from cjq/main.c")
+   
+    # Create an LLVM module
+    module = ir.Module()
+    module.triple = llvm.get_process_triple()
     
-    # Build out rest of module according to bytecode instructions
-    for instr in bytecode:
-        match instr.command:
-            case 'TOP':
-                pass    # This is actually all you need to do for this instruction
-            case _:
-                pass
+    # Define the main function
+    main_func_type = ir.FunctionType(ir.VoidType(), [])
+    main_func = ir.Function(module, main_func_type, "jq_program")
+    main_block = main_func.append_basic_block("entry")
+    builder = ir.IRBuilder(main_block)
+    
+    # Declare _test_execute - this links this identifier to C function
+    _test_execute = ir.Function(module,
+                            ir.FunctionType(ir.VoidType(), []),
+                            name='_test_execute')
+    
+    # Call _test_execute
+    builder.call(_test_execute, []) 
+    
+    # Return from main function
+    builder.ret_void()
+    
+    return module
+    
+    # # Access jq and PC members   # TODO: Call C function that will cast this back to a uint16_t* type
+    # print("Calling the C function get_opcode()")
+    # # jq_lowering = ctypes.CDLL("/home/rubio/cjq/cjq/jq_lowering.so")
+    # # jq_lowering.get_opcode(jq, pc)
+    # # jq_lowering.display()
+    # # jq_lowering.call_c_function(jq)
+    # print("Returning from get_opcode()")
+    
+def generate_llvm_ir():
+    try:
+        llvm_ir = jq_lower()
+        mod = llvm.parse_assembly(str(llvm_ir))
+        mod.verify()
+        print(mod)
+    except Exception as e:
+        print("Error generating LLVM IR:", e)
+        exit(1)
 
-    # return module
-
-# print('hi')
+if __name__ == "__main__":
+    generate_llvm_ir()

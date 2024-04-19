@@ -116,3 +116,12 @@ runtime/jq/src/.deps/parser.Plo
 runtime/jq/src/.deps/util.Plo
 runtime/jq/src/decNumber/.deps/decContext.Plo
 runtime/jq/src/decNumber/.deps/decNumber.Plo
+cjq/frontend/.vscode/c_cpp_properties.json
+cjq/frontend/.vscode/launch.json
+cjq/frontend/.vscode/settings.json
+cjq/frontend/frontend
+entry
+.vs/slnx.sqlite
+cjq/frontend/src/.dirstamp
+cjq/tests/prod1.json
+cjq/tests/prod2.json
