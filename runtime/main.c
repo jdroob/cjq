@@ -1,5 +1,5 @@
 
-extern void jq_program(void*);
+extern void jq_program();
 
 int main(int argc, char *argv[]) {
   // TODO: This program should take in path(s) to JSON file(s)

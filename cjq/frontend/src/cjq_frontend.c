@@ -36,16 +36,14 @@ extern void jv_tsd_dtoa_ctx_init();
 #include "jv_alloc.h"
 #include "util.h"
 #include "version.h"
-#include "frontend_main.h"
+#include "cjq_frontend.h"
 #include "config_opts.inc"
-// #include "execute.c"
 
 int jq_testsuite(jv lib_dirs, int verbose, int argc, char* argv[]);
 
 static const char* progname;
 
-extern uint16_t* stack_restore(jq_state *jq); // Make global so it can be used in frontend_main.c
-extern compiled_jq_state cjq_state;
+extern uint16_t* stack_restore(jq_state *jq); // Declare global so we can use it here
 
 /*
  * For a longer help message we could use a better option parsing
@@ -186,7 +184,7 @@ enum {
 static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
                    uint8_t* opcode_list, int* opcode_list_len, int tracing) {
   int ret = JQ_OK_NO_OUTPUT; // No valid results && -e -> exit(4)
-  jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack?
+  jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack
   jv result;
   while (jv_is_valid(result = jq_next(jq, opcode_list, opcode_list_len, tracing))) {
     if ((options & RAW_OUTPUT) && jv_get_kind(result) == JV_KIND_STRING) {
@@ -295,21 +293,20 @@ void cjq_free() {
   free(cjq_state.pc);
 }
 
-void test_execute(jq_state *jq, jq_util_input_state* input_state, 
+void cjq_execute(jq_state *jq, jq_util_input_state* input_state, 
                   int* jq_flags, int* dumpopts, int* options, int* ret, int* last_result,
                   uint8_t* opcode_list, int* opcode_list_len, int tracing) {
   if (*options & PROVIDE_NULL) {
     *ret = process(jq, jv_null(), *jq_flags, *dumpopts, *options, opcode_list, opcode_list_len, tracing);
   } else {
-    jv value;   // JOHN: This is where the JSON data is stored
+    jv value;   // JOHN: This is where the JSON data is stored prior to execution
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       // printf("VALUE:\n");
       // jv_show(value, -1);    // value holds all JSON files (as strings) concatenated
       // printf("END\n");
       if (jv_is_valid(value)) {
-        *ret = process(jq, value, *jq_flags, *dumpopts, *options, opcode_list, opcode_list_len, tracing);    // John: This must be where actual execution happens?
-        // printf("After process():\n");
+        *ret = process(jq, value, *jq_flags, *dumpopts, *options, opcode_list, opcode_list_len, tracing);
         if (*ret <= 0 && *ret != JQ_OK_NO_OUTPUT)
           *last_result = (*ret != JQ_OK_NULL_KIND);
         if (jq_halted(jq))
@@ -371,7 +368,7 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int frontend_main(int argc, char* argv[]) {
+int cjq_parse(int argc, char* argv[]) {
   // printf("argc: %d\n", argc);
   for (int i = 0; i<argc; ++i) {
     printf("argv[%d]: %s\n",i,argv[i]);
@@ -442,14 +439,10 @@ int frontend_main(int argc, char* argv[]) {
     if (args_done || !isoptish(argv[i])) {
       if (!program) {
         program = argv[i];
-        // printf("HERE1\n");
-        // printf("%s",program);   // This prints out the actual program
       } else if (further_args_are_strings) {
         ARGS = jv_array_append(ARGS, jv_string(argv[i]));
-        // printf("HERE2\n");
       } else if (further_args_are_json) {
         jv v =  jv_parse(argv[i]);
-        // printf("HERE3\n");
         if (!jv_is_valid(v)) {
           fprintf(stderr, "%s: invalid JSON text passed to --jsonargs\n", progname);
           die();
@@ -459,7 +452,6 @@ int frontend_main(int argc, char* argv[]) {
         jq_util_input_add_input(input_state, argv[i]);
         jq_util_input_add_input(cjq_input_state, argv[i]);
         nfiles++;
-        // printf("HERE4\n");  
       }
     } else if (!strcmp(argv[i], "--")) {
       args_done = 1;
@@ -752,7 +744,7 @@ int frontend_main(int argc, char* argv[]) {
       exit(2);
     }
 
-    jv data = jv_load_file(program, 1);
+    jv data = jv_load_file(program, 1);   // JOHN: This loads jq program from *.jq file
     if (!jv_is_valid(data)) {
       data = jv_invalid_get_msg(data);
       fprintf(stderr, "%s: %s\n", progname, jv_string_value(data));
@@ -788,17 +780,9 @@ int frontend_main(int argc, char* argv[]) {
   }
   
   if (options & DUMP_DISASM) {
-    // jv data = jv_load_file(program, 1);  // JOHN: You added this
     jq_dump_disassembly(jq, 0);
-    // jv_show(ARGS, -1); // JOHN: You added this
     printf("\n");  
-    // ret = JQ_OK; // JOHN: You added this
-
-    // jq_util_input_add_input(input_state, "-"); // JOHN: You added this
-
-    // goto out;  // JOHN: You added this
-    // jq_exit(ret);  // JOHN: You added this
-    // return 0;  // JOHN: You added this
+    ret = JQ_OK; // JOHN: Added this to guarantee this function returns
   }
 
   if ((options & SEQ))
@@ -828,46 +812,10 @@ int frontend_main(int argc, char* argv[]) {
     jq_util_input_add_input(cjq_input_state, "-");
   }
 
-  // Tracing run
-  test_execute(jq, input_state, &jq_flags, &dumpopts, &options, &ret, &last_result, opcode_list, &opcode_list_len, 1);
+  // JOHN: DEBUG
+  // cjq_execute(jq, input_state, &jq_flags, &dumpopts, &options, &ret, &last_result, opcode_list, &opcode_list_len, 1);
 
-
-  // if (options & PROVIDE_NULL) {
-  //   ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, &opcode_list_len);
-  // } else {
-  //   jv value;   // JOHN: This is where the JSON data is stored
-  //   while (jq_util_input_errors(input_state) == 0 &&
-  //          (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
-  //     // printf("VALUE:\n");
-  //     // jv_show(value, -1);    // value holds all JSON files (as strings) concatenated
-  //     // printf("END\n");
-  //     if (jv_is_valid(value)) {
-  //       ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, &opcode_list_len);    // John: This must be where actual execution happens?
-  //       // printf("After process():\n");
-  //       if (ret <= 0 && ret != JQ_OK_NO_OUTPUT)
-  //         last_result = (ret != JQ_OK_NULL_KIND);
-  //       if (jq_halted(jq))
-  //         break;
-  //       continue;
-  //     }
-
-  //     // Parse error
-  //     jv msg = jv_invalid_get_msg(value);
-  //     if (!(options & SEQ)) {
-  //       ret = JQ_ERROR_UNKNOWN;
-  //       fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
-  //       jv_free(msg);
-  //       break;
-  //     }
-  //     // --seq -> errors are not fatal
-  //     fprintf(stderr, "jq: ignoring parse error: %s\n", jv_string_value(msg));
-  //     jv_free(msg);
-  //   }
-  // }
-
-  // if (jq_util_input_errors(input_state) != 0)
-  //   ret = JQ_ERROR_SYSTEM;
-
+ 
 out:
   badwrite = ferror(stdout);
 // JOHN: Commented below code out because it was preventing further printing
@@ -885,7 +833,7 @@ out:
   jv_free(ARGS);
   jv_free(program_arguments);
 
-  // jq_util_input_free(&input_state);
+  // jq_util_input_free(&input_state);  // JOHN: Now handled in cjq/main
   // jq_teardown(&jq);
 
   if (options & EXIT_STATUS) {
@@ -898,6 +846,5 @@ out:
         default: jq_exit_with_status(JQ_OK);
       }
   } else
-    // jq_exit(ret);
     return 0;
 }
