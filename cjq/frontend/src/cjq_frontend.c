@@ -270,6 +270,7 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
   int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
   uint16_t* ppc = malloc(sizeof(uint16_t)); *ppc = *pc; 
+  int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
 
   cjq_state.ret = pret;
   cjq_state.jq_flags = pjq_flags;
@@ -281,6 +282,7 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   cjq_state.opcode_list = opcode_list;
   cjq_state.input_state = input_state;
   cjq_state.jq = jq;
+  cjq_state.backtracking = pbacktracking;
 }
 
 void cjq_free() {
@@ -291,6 +293,7 @@ void cjq_free() {
   free(cjq_state.last_result);
   free(cjq_state.opcode_list_len);
   free(cjq_state.pc);
+  free(cjq_state.backtracking);
 }
 
 void cjq_execute(jq_state *jq, jq_util_input_state* input_state, 

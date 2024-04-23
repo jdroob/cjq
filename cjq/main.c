@@ -21,12 +21,13 @@
 
 // Globals
 compiled_jq_state cjq_state;
-extern void jq_program();
+// extern void jq_program();
 
 void clean_up(compiled_jq_state* cjq_state) {
     // Free memory allocated by cjq_frontend
     jq_util_input_free(&(cjq_state->input_state));
     jq_teardown(&(cjq_state->jq));
+    cjq_free();
 }
 
 int get_llvm_ir() {
@@ -77,8 +78,18 @@ int get_llvm_ir() {
         return 1;
     }
 
-    // Call jq_lower
-    PyObject *pResult = PyObject_CallObject(pFuncGenerateLLVMIR, NULL);
+    compiled_jq_state *pcjq_state = &cjq_state;
+    printf("Actual address: %p\n", pcjq_state);
+
+    // Convert the pointer to a Python integer object
+    PyObject *cjq_state_ptr = PyLong_FromVoidPtr((void*)pcjq_state);
+    printf("current pc: %i\n", *pcjq_state->pc);
+
+    printf("PyObject address: %p\n",cjq_state_ptr);
+    // printf("Value at cjq_state_ptr: %d\n", *cjq_state_ptr);
+
+    // Call generate_llvm_ir
+    PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, cjq_state_ptr, NULL);
     
     // Cleanup
     Py_DECREF(pResult);
@@ -92,14 +103,16 @@ int get_llvm_ir() {
 }
 
 int main(int argc, char *argv[]) {
-    // Generate LLVM IR
-    // int errorCode = get_llvm_ir();  // TODO: refactor + error handling
-    
     // Parse source code & prepare setup for lowering
-    int error_code = cjq_parse(argc, argv);
+    int parse_error = cjq_parse(argc, argv);
+    
+    // Generate LLVM IR
+    int gen_ir_error = get_llvm_ir();  // TODO: refactor + error handling
 
+    // TODO: INSTEAD GOING TO CALL PYTHON FUNCTION THAT BUILDS LLVM PROGRAM BASED OFF OF CJQ_STATE
+    // TODO: IN RUNTIME/MAIN.C, the resulting LLVM function will be called :)
     // Execute compiled program
-    jq_program();
+    // jq_program();
 
     // Free up resources
     // clean_up(&cjq_state);     // TODO: Fixme
