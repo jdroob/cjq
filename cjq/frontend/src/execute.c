@@ -359,7 +359,7 @@ jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, int tracing
       return jv_invalid();
     }
     uint16_t opcode = *pc;
-    if (tracing) {    // JOHN: Do somehthing similar in process to avoid printing twice?
+    if (tracing) {    // JOHN: Do something similar in process to avoid printing twice?
       idx = *opcode_list_len; ++(*opcode_list_len);
       opcode_list[idx] = (uint8_t)opcode;  // JOHN: This is gross
     }

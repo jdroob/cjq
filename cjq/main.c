@@ -81,7 +81,8 @@ int get_llvm_ir() {
     compiled_jq_state *pcjq_state = &cjq_state;
     printf("Actual address: %p\n", pcjq_state);
 
-    // Convert the pointer to a Python integer object
+    // Convert cjq_state pointer to a Python integer object
+    // Create PyObject pointer that points to this Python object
     PyObject *cjq_state_ptr = PyLong_FromVoidPtr((void*)pcjq_state);
     printf("current pc: %i\n", *pcjq_state->pc);
 
@@ -90,7 +91,7 @@ int get_llvm_ir() {
 
     // Call generate_llvm_ir
     PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, cjq_state_ptr, NULL);
-    
+    printf("Back in cjq/main.c\n");
     // Cleanup
     Py_DECREF(pResult);
     Py_DECREF(pFuncGenerateLLVMIR);
@@ -109,13 +110,13 @@ int main(int argc, char *argv[]) {
     // Generate LLVM IR
     int gen_ir_error = get_llvm_ir();  // TODO: refactor + error handling
 
-    // TODO: INSTEAD GOING TO CALL PYTHON FUNCTION THAT BUILDS LLVM PROGRAM BASED OFF OF CJQ_STATE
+    // TODO: CALLLING PYTHON FUNCTION THAT BUILDS LLVM PROGRAM BASED OFF OF CJQ_STATE
     // TODO: IN RUNTIME/MAIN.C, the resulting LLVM function will be called :)
     // Execute compiled program
     // jq_program();
 
     // Free up resources
-    // clean_up(&cjq_state);     // TODO: Fixme
+    clean_up(&cjq_state);     // TODO: Fixme
 
     return 0;
 }

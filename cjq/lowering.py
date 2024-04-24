@@ -25,11 +25,10 @@ def jq_lower(cjq_state_ptr):
     main_block = main_func.append_basic_block("entry")
     builder = ir.IRBuilder(main_block)
     
-    # Get list of opcodes
-    # TODO: testing, can we call Python function from main.c and then call get_opcode from lowering.py?
     # Define the argument types for the C function
     jq_util_funcs._get_opcode.argtypes = [c_void_p]
     jq_util_funcs._get_opcode.restype = c_uint16  # Assuming _get_opcode returns uint16_t
+    # Get current opcode from cjq_state
     opcode = jq_util_funcs._get_opcode(cjq_state_ptr)
     print("Made it to back to jq_lower")
     print(f"This is the opcode we got from lowering.py: {opcode}")
