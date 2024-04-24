@@ -126,3 +126,4 @@ cjq/frontend/src/.dirstamp
 cjq/tests/prod1.json
 cjq/tests/prod2.json
 *.so
+llvm_gen

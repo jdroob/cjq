@@ -815,8 +815,8 @@ int cjq_parse(int argc, char* argv[]) {
     jq_util_input_add_input(cjq_input_state, "-");
   }
 
-  // JOHN: DEBUG
-  // cjq_execute(jq, input_state, &jq_flags, &dumpopts, &options, &ret, &last_result, opcode_list, &opcode_list_len, 1);
+  // JOHN: tracing run
+  cjq_execute(jq, input_state, &jq_flags, &dumpopts, &options, &ret, &last_result, opcode_list, &opcode_list_len, 1);
 
  
 out:
