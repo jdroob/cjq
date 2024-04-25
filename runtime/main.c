@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   // TODO: Eventually, we want this to only gather necessary information on JSON data
   //       and to NOT re-compile to bytecode since by this point we'll already
   //       have the LLVM that contains a sequence of opcode-function calls
-  int parse_error = cjq_parse(argc, argv);
+  int parse_error = cjq_parse(argc, argv);    // This call really just needs to populate cjq_state (i.e. get bc->constants, etc. and get data pushed to stack)
   // TODO: This program should take in path(s) to JSON file(s)
   // TODO: These JSON file(s) should be passed to jqlib function that
   //       sets up requisite data structures and converts JSON data
