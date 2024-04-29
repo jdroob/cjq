@@ -17,14 +17,14 @@ uint16_t _get_opcode(void* cjq_state_ptr) {
     // return opcode;
 }
 
-int _get_opcode_list_len(void* cjq_state_ptr) {
+int _get_opcode_list_len(void* ocodes_ptr) {
     printf("Made it to _get_opcode_list_len\n");
-    return *((compiled_jq_state*)cjq_state_ptr)->opcode_list_len;
+    return *((trace*)ocodes_ptr)->opcode_list_len;
 }
 
-uint8_t _opcode_list_at(void* cjq_state_ptr, int index) {
+uint8_t _opcode_list_at(void* ocodes_ptr, int index) {
     // printf("Made it to _opcode_list_at\n");
-    return ((compiled_jq_state*)cjq_state_ptr)->opcode_list[index];
+    return ((trace*)ocodes_ptr)->opcode_list[index];
 }
 
 int _get_num_opcodes() {

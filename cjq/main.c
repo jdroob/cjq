@@ -20,14 +20,12 @@
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 // Globals
-compiled_jq_state cjq_state;
-// extern void jq_program();
+trace opcodes;
+compiled_jq_state cjq_state;        // TODO: Remove after breaking up cjq_frontend into two pieces
 
-void clean_up(compiled_jq_state* cjq_state) {
-    // Free memory allocated by cjq_frontend
-    jq_util_input_free(&(cjq_state->input_state));
-    jq_teardown(&(cjq_state->jq));
-    cjq_free();
+void clean_up(trace *opcodes) {
+    free(opcodes->opcode_list);
+    free(opcodes->opcode_list_len);
 }
 
 int get_llvm_ir() {
@@ -78,19 +76,20 @@ int get_llvm_ir() {
         return 1;
     }
 
-    compiled_jq_state *pcjq_state = &cjq_state;
-    printf("Actual address: %p\n", pcjq_state);
+    // compiled_jq_state *pcjq_state = &cjq_state;
+    trace *popcodes = &opcodes;
+    printf("Actual address: %p\n", popcodes);
 
     // Convert cjq_state pointer to a Python integer object
     // Create PyObject pointer that points to this Python object
-    PyObject *cjq_state_ptr = PyLong_FromVoidPtr((void*)pcjq_state);
-    printf("current pc: %i\n", *pcjq_state->pc);
+    PyObject *opcodes_ptr = PyLong_FromVoidPtr((void*)popcodes);
+    // printf("current pc: %i\n", *pcjq_state->pc);
 
-    printf("PyObject address: %p\n",cjq_state_ptr);
+    printf("PyObject address: %p\n",opcodes_ptr);
     // printf("Value at cjq_state_ptr: %d\n", *cjq_state_ptr);
 
     // Call generate_llvm_ir
-    PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, cjq_state_ptr, NULL);
+    PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, NULL);
     printf("Back in cjq/main.c\n");
     // Cleanup
     Py_DECREF(pResult);
@@ -104,19 +103,14 @@ int get_llvm_ir() {
 }
 
 int main(int argc, char *argv[]) {
-    // Trace execution 
-    int trace_error = cjq_trace(argc, argv);        // This call should go through whole sequence of calls but not print
+    // Trace execution
+    int trace_error = cjq_trace(argc, argv);
     
     // Generate LLVM IR
-    int gen_ir_error = get_llvm_ir();  // TODO: refactor + error handling
+    int gen_ir_error = get_llvm_ir();
 
-    // TODO: CALLLING PYTHON FUNCTION THAT BUILDS LLVM PROGRAM BASED OFF OF CJQ_STATE
-    // TODO: IN RUNTIME/MAIN.C, the resulting LLVM function will be called :)
-    // Execute compiled program
-    // jq_program();
-
-    // Free up resources
-    clean_up(&cjq_state);     // TODO: Fixme
+    // Clean up
+    clean_up(&opcodes);
 
     return 0;
 }

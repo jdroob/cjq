@@ -4,12 +4,12 @@ from ctypes import *
 import sys
 
 
-def jq_lower(cjq_state_ptr):
+def jq_lower(ocodes_ptr):
     """
     Uses llvmlite C-binding feature to call cjq_execute from llvmlite.
     """
     print("Made it to jq_lower")
-    print(f"cjq_state_ptr passed to jq_lower: {hex(id(cjq_state_ptr))}")
+    print(f"ocodes_ptr passed to jq_lower: {hex(id(ocodes_ptr))}")
     # Need this to call C functions from Python
     so_file = "/home/rubio/cjq/jq_util.so"
     
@@ -92,14 +92,14 @@ def jq_lower(cjq_state_ptr):
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_opcode_list_len.restype = c_int
     # Get opcode_list length from cjq_state
-    opcode_list_len = jq_util_funcs._get_opcode_list_len(cjq_state_ptr)
+    opcode_list_len = jq_util_funcs._get_opcode_list_len(ocodes_ptr)
     print("Made it to back to jq_lower")
     print(f"This is the opcode list length we got from lowering.py: {opcode_list_len}")
     # Get all opcodes from opcode_list
     jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_int]
     jq_util_funcs._opcode_list_at.restype = c_uint8
     for i in range(opcode_list_len):
-        curr_opcode = jq_util_funcs._opcode_list_at(cjq_state_ptr, i)
+        curr_opcode = jq_util_funcs._opcode_list_at(ocodes_ptr, i)
         match curr_opcode:
             case 35:
                 builder.comment("Placeholder for call to TOP opcode-function")
@@ -182,11 +182,11 @@ def jq_lower(cjq_state_ptr):
     
     return module
     
-def generate_llvm_ir(cjq_state_ptr):
+def generate_llvm_ir(ocodes_ptr):
     try:
         print("Made it to generate_llvm_ir")
-        print(f"cjq_state_ptr passed to generate_llvm_ir: {hex(id(cjq_state_ptr))}")
-        llvm_ir = jq_lower(cjq_state_ptr)
+        print(f"cjq_state_ptr passed to generate_llvm_ir: {hex(id(ocodes_ptr))}")
+        llvm_ir = jq_lower(ocodes_ptr)
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
         print(mod)

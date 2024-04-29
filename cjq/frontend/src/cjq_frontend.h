@@ -19,6 +19,13 @@ typedef struct {
 
 extern compiled_jq_state cjq_state;
 
+typedef struct {
+    uint8_t* opcode_list;
+    int* opcode_list_len;
+} trace;
+
+extern trace opcodes;
+
 void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result, int opcode_list_len,
               uint8_t* opcode_list, jq_util_input_state* input_state, jq_state* jq,
               uint16_t* pc);
