@@ -266,15 +266,18 @@ void trace_init(uint8_t *opcode_list, int opcode_list_len) {
   opcodes.opcode_list_len = popcode_list_len;
 }
 
-void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result, int opcode_list_len,
-              uint8_t* opcode_list, jq_util_input_state* input_state, jq_state* jq,
-              uint16_t* pc) {
+void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
+ jq_util_input_state* input_state, jq_state* jq) {
+  jv tmp = jv_null();   // JOHN: Dummy value
+  jq_start(jq, tmp, 0); // JOHN: This is a dummy call so stack_restore will work
+  uint16_t* pc = stack_restore(jq);
+
   int* pret = malloc(sizeof(int)); *pret = ret;
   int* pjq_flags = malloc(sizeof(int)); *pjq_flags = jq_flags;
   int* poptions = malloc(sizeof(int)); *poptions = options;
   int* pdumpopts = malloc(sizeof(int)); *pdumpopts = dumpopts;
   int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
-  int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
+  // int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
   uint16_t* ppc = malloc(sizeof(uint16_t)); *ppc = *pc; 
   int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
 
@@ -283,12 +286,25 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   cjq_state.options = poptions;
   cjq_state.dumpopts = pdumpopts;
   cjq_state.last_result = plast_result;
-  cjq_state.opcode_list_len = popcode_list_len;
+  // cjq_state.opcode_list_len = popcode_list_len;
   cjq_state.pc = ppc;
-  cjq_state.opcode_list = opcode_list;
-  cjq_state.input_state = input_state;
+  // cjq_state.opcode_list = opcode_list;
+  // cjq_state.input_state = input_state;
   cjq_state.jq = jq;
   cjq_state.backtracking = pbacktracking;
+
+  jv *pvalue = malloc(sizeof(jv));
+  *pvalue = jq_util_input_next_input(input_state);
+  // Parse error
+  if (!jv_is_valid(*pvalue)) {
+    jv msg = jv_invalid_get_msg(*pvalue);
+    *cjq_state.ret = JQ_ERROR_UNKNOWN;
+    fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+    jv_free(msg);
+  }
+  cjq_state.value = pvalue;
+  pvalue = NULL;
+  jq_start(cjq_state.jq, *cjq_state.value, *cjq_state.jq_flags);
 }
 
 void cjq_free() {
@@ -297,7 +313,7 @@ void cjq_free() {
   free(cjq_state.options);
   free(cjq_state.dumpopts);
   free(cjq_state.last_result);
-  free(cjq_state.opcode_list_len);
+  free(cjq_state.value);
   free(cjq_state.pc);
   free(cjq_state.backtracking);
 }
@@ -906,12 +922,12 @@ int cjq_parse(int argc, char* argv[]) {
   int badwrite;
   int options = 0;
 
-  // TODO: JOHN: Make this dynamic
-  uint8_t* opcode_list = malloc(sizeof(uint8_t)*1000);
-  for (int i = 0; i < 1000; ++i) {
-    opcode_list[i] = -1;
-  }
-  int opcode_list_len = 0;
+  // // TODO: JOHN: Make this dynamic
+  // uint8_t* opcode_list = malloc(sizeof(uint8_t)*1000);
+  // for (int i = 0; i < 1000; ++i) {
+  //   opcode_list[i] = -1;
+  // }
+  // int opcode_list_len = 0;
 
 #ifdef HAVE_SETLOCALE
   (void) setlocale(LC_ALL, "");
@@ -1341,28 +1357,13 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  jv tmp = jv_null();   // JOHN: Dummy value
-  jq_start(jq, tmp, 0); // JOHN: This is a dummy call so stack_restore will work
-  uint16_t* pc = stack_restore(jq);
-  cjq_init(ret, jq_flags, options, dumpopts, last_result, opcode_list_len,
-           opcode_list, cjq_input_state, jq, pc);
-  jv *pvalue = malloc(sizeof(jv));
-  *pvalue = jq_util_input_next_input(cjq_state.input_state);
-  // Parse error
-  if (!jv_is_valid(*pvalue)) {
-    jv msg = jv_invalid_get_msg(*pvalue);
-    *cjq_state.ret = JQ_ERROR_UNKNOWN;
-    fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
-    jv_free(msg);
-  }
-  *cjq_state.ret = JQ_OK_NO_OUTPUT;
-  jq_start(cjq_state.jq, *pvalue, *cjq_state.jq_flags);
+  // jv tmp = jv_null();   // JOHN: Dummy value
+  // jq_start(jq, tmp, 0); // JOHN: This is a dummy call so stack_restore will work
+  // uint16_t* pc = stack_restore(jq);
+  cjq_init(ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
 
   jv_free(ARGS);
   jv_free(program_arguments);
-
-  // jq_util_input_free(&input_state);  // JOHN: Now handled in cjq/main
-  // jq_teardown(&jq);
 
   if (options & EXIT_STATUS) {
     if (ret != JQ_OK_NO_OUTPUT)

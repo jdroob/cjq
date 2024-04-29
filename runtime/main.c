@@ -17,6 +17,7 @@
 
 // Globals
 compiled_jq_state cjq_state;
+trace opcodes;
 extern void jq_program();
 
 void clean_up(compiled_jq_state* cjq_state) {
