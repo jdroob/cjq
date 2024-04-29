@@ -120,8 +120,8 @@ def jq_lower(cjq_state_ptr):
                 builder.comment("Placeholder for call to CALL_BUILTIN_plus opcode-function")
                 builder.call(_opcode_CALL_BUILTIN_plus, [])
             case 29:
-                builder.call(_opcode_RET, [])
                 builder.comment("Placeholder for call to RET opcode-function")
+                builder.call(_opcode_RET, [])
             case _:
                 print(curr_opcode)
                 print(curr_opcode+num_opcodes)

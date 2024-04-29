@@ -29,6 +29,7 @@ void cjq_execute(jq_state* jq, jq_util_input_state* input_state,
 
 void cjq_free();
 
+int cjq_trace(int argc, char *argv[]);
 int cjq_parse(int argc, char *argv[]);
 
 #endif  /* CJQ_FRONTEND_H */

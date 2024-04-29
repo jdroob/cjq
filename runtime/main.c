@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
   // TODO: These JSON file(s) should be passed to jqlib function that
   //       sets up requisite data structures and converts JSON data
   //       to proper type (some jv value or it's pushed onto the stack or something like that)
-
   // TODO: Converted JSON data should be passed to jq_program function
   jq_program();
 

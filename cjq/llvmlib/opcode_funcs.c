@@ -13,3 +13,31 @@ void _cjq_execute() {
                  cjq_state.last_result, cjq_state.opcode_list, 
                  cjq_state.opcode_list_len, 0);
 }
+
+void _opcode_TOP() {}
+
+void _opcode_BACKTRACK_TOP() {}
+
+void _opcode_SUBEXP_BEGIN() {}
+
+void _opcode_BACKTRACK_SUBEXP_BEGIN() {}
+
+void _opcode_PUSHK_UNDER() {}
+
+void _opcode_BACKTRACK_PUSHK_UNDER() {}
+
+void _opcode_INDEX() {}
+
+void _opcode_BACKTRACK_INDEX() {}
+
+void _opcode_SUBEXP_END() {}
+
+void _opcode_BACKTRACK_SUBEXP_END() {}
+
+void _opcode_CALL_BUILTIN_plus() {}
+
+void _opcode_BACKTRACK_CALL_BUILTIN_plus() {}
+
+void _opcode_RET() {}
+
+void _opcode_BACKTRACK_RET() {}

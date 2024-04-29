@@ -104,8 +104,8 @@ int get_llvm_ir() {
 }
 
 int main(int argc, char *argv[]) {
-    // Parse source code & prepare setup for lowering
-    int parse_error = cjq_parse(argc, argv);        // This call should go through whole sequence of calls but not print
+    // Trace execution 
+    int trace_error = cjq_trace(argc, argv);        // This call should go through whole sequence of calls but not print
     
     // Generate LLVM IR
     int gen_ir_error = get_llvm_ir();  // TODO: refactor + error handling
