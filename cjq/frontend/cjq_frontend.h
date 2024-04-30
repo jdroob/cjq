@@ -11,6 +11,7 @@ typedef struct {
     int* last_result;
     jq_util_input_state *input_state;
     jv *value;
+    jv *ret_value;
     jq_state* jq;
     uint16_t* pc;
     int* backtracking;

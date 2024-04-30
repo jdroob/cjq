@@ -11,6 +11,7 @@
 #include "../jq/src/jv_alloc.h"
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
+#include "../frontend/cjq_frontend.h"
 #include "cjq_trace.h"
 
 #define PY_SSIZE_T_CLEAN
@@ -20,6 +21,7 @@
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 // Globals
+compiled_jq_state cjq_state;      // Declared so opcode functions can reference this
 trace opcodes;
 
 void clean_up(trace *opcodes) {

@@ -281,6 +281,7 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   cjq_state.last_result = plast_result;
   cjq_state.pc = ppc;
   cjq_state.jq = jq;
+  cjq_state.ret_value = NULL;
   cjq_state.backtracking = pbacktracking;
 
   jv *pvalue = malloc(sizeof(jv));
@@ -304,6 +305,7 @@ void cjq_free() {
   free(cjq_state.dumpopts);
   free(cjq_state.last_result);
   free(cjq_state.value);
+  free(cjq_state.ret_value);
   free(cjq_state.pc);
   free(cjq_state.backtracking);
 }
