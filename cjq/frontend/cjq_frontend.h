@@ -9,9 +9,10 @@ typedef struct {
     int* dumpopts;
     int* options;
     int* last_result;
+    int* raising;
     jq_util_input_state *input_state;
     jv *value;
-    jv *ret_value;
+    jv *result;
     jq_state* jq;
     uint16_t* pc;
     int* backtracking;

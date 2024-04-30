@@ -113,5 +113,14 @@ int main(int argc, char *argv[]) {
     // Clean up
     clean_up(&opcodes);
 
+    // FOR DEBUGGING MEMORY LEAK
+    // int badwrite = ferror(stdout); *cjq_state.ret = 0;
+    // if (fclose(stdout)!=0 || badwrite) {  
+    //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
+    //     *cjq_state.ret = 2;
+    // }
+
+    // jq_exit(*cjq_state.ret);
+
     return 0;
 }

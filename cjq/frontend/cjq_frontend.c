@@ -271,18 +271,20 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   int* poptions = malloc(sizeof(int)); *poptions = options;
   int* pdumpopts = malloc(sizeof(int)); *pdumpopts = dumpopts;
   int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
-  uint16_t* ppc = malloc(sizeof(uint16_t)); *ppc = *pc; 
   int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
+  int* praising = malloc(sizeof(int)); *praising = 0;
+  uint16_t* ppc = malloc(sizeof(uint16_t)); *ppc = *pc; 
 
-  cjq_state.ret = pret;
-  cjq_state.jq_flags = pjq_flags;
-  cjq_state.options = poptions;
-  cjq_state.dumpopts = pdumpopts;
-  cjq_state.last_result = plast_result;
-  cjq_state.pc = ppc;
-  cjq_state.jq = jq;
-  cjq_state.ret_value = NULL;
-  cjq_state.backtracking = pbacktracking;
+  cjq_state.ret = pret; pret = NULL;
+  cjq_state.jq_flags = pjq_flags; pjq_flags = NULL;
+  cjq_state.options = poptions; poptions = NULL;
+  cjq_state.dumpopts = pdumpopts; pdumpopts = NULL;
+  cjq_state.last_result = plast_result; plast_result = NULL;
+  cjq_state.pc = ppc; ppc = NULL;
+  cjq_state.jq = jq; jq = NULL;
+  cjq_state.result = NULL;
+  cjq_state.backtracking = pbacktracking; pbacktracking = NULL;
+  cjq_state.raising = praising; praising = NULL;
 
   jv *pvalue = malloc(sizeof(jv));
   *pvalue = jq_util_input_next_input(input_state);
@@ -293,8 +295,7 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
     fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
     jv_free(msg);
   }
-  cjq_state.value = pvalue;
-  pvalue = NULL;
+  cjq_state.value = pvalue; pvalue = NULL;
   jq_start(cjq_state.jq, *cjq_state.value, *cjq_state.jq_flags);
 }
 
@@ -305,7 +306,7 @@ void cjq_free() {
   free(cjq_state.dumpopts);
   free(cjq_state.last_result);
   free(cjq_state.value);
-  free(cjq_state.ret_value);
+  free(cjq_state.result);
   free(cjq_state.pc);
   free(cjq_state.backtracking);
 }

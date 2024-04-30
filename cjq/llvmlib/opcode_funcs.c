@@ -336,6 +336,110 @@ static void set_error(jq_state *jq, jv value) {
   jq->error = value;
 }
 
+enum {
+  SLURP                 = 1,
+  RAW_INPUT             = 2,
+  PROVIDE_NULL          = 4,
+  RAW_OUTPUT            = 8,
+  RAW_OUTPUT0           = 16,
+  ASCII_OUTPUT          = 32,
+  COLOR_OUTPUT          = 64,
+  NO_COLOR_OUTPUT       = 128,
+  SORTED_OUTPUT         = 256,
+  FROM_FILE             = 512,
+  RAW_NO_LF             = 1024,
+  UNBUFFERED_OUTPUT     = 2048,
+  EXIT_STATUS           = 4096,
+  SEQ                   = 16384,
+  RUN_TESTS             = 32768,
+  /* debugging only */
+  DUMP_DISASM           = 65536,
+};
+
+enum {
+    JQ_OK              =  0,
+    JQ_OK_NULL_KIND    = -1, /* exit 0 if --exit-status is not set*/
+    JQ_ERROR_SYSTEM    =  2,
+    JQ_ERROR_COMPILE   =  3,
+    JQ_OK_NO_OUTPUT    = -4, /* exit 0 if --exit-status is not set*/
+    JQ_ERROR_UNKNOWN   =  5,
+};
+
+static void jq_error() {
+   if (jq_halted(cjq_state.jq)) {
+    // jq program invoked `halt` or `halt_error`
+    jv exit_code = jq_get_exit_code(cjq_state.jq);
+    if (!jv_is_valid(exit_code))
+      *cjq_state.ret = JQ_OK;
+    else if (jv_get_kind(exit_code) == JV_KIND_NUMBER)
+      *cjq_state.ret = jv_number_value(exit_code);
+    else
+      *cjq_state.ret = JQ_ERROR_UNKNOWN;
+    jv_free(exit_code);
+    jv error_message = jq_get_error_message(cjq_state.jq);
+    if (jv_get_kind(error_message) == JV_KIND_STRING) {
+      // No prefix should be added to the output of `halt_error`.
+      priv_fwrite(jv_string_value(error_message), jv_string_length_bytes(jv_copy(error_message)),
+          stderr, *cjq_state.dumpopts & JV_PRINT_ISATTY);
+    } else if (jv_get_kind(error_message) == JV_KIND_NULL) {
+      // Halt with no output
+    } else if (jv_is_valid(error_message)) {
+      error_message = jv_dump_string(error_message, 0);
+      fprintf(stderr, "%s\n", jv_string_value(error_message));
+    } // else no message on stderr; use --debug-trace to see a message
+    fflush(stderr);
+    jv_free(error_message);
+  } else if (jv_invalid_has_msg(jv_copy(*cjq_state.result))) {
+    // Uncaught jq exception
+    jv msg = jv_invalid_get_msg(jv_copy(*cjq_state.result));
+    jv input_pos = jq_util_input_get_position(cjq_state.jq);
+    if (jv_get_kind(msg) == JV_KIND_STRING) {
+      fprintf(stderr, "jq: error (at %s): %s\n",
+              jv_string_value(input_pos), jv_string_value(msg));
+    } else {
+      msg = jv_dump_string(msg, 0);
+      fprintf(stderr, "jq: error (at %s) (not a string): %s\n",
+              jv_string_value(input_pos), jv_string_value(msg));
+    }
+    *cjq_state.ret = JQ_ERROR_UNKNOWN;
+    jv_free(input_pos);
+    jv_free(msg);
+  }
+  jv_free(*cjq_state.result);
+}
+
+static void jq_print() {
+   if ((*cjq_state.options & RAW_OUTPUT) && jv_get_kind(*cjq_state.result) == JV_KIND_STRING) {
+      if (*cjq_state.options & ASCII_OUTPUT) {
+        jv_dumpf(jv_copy(*cjq_state.result), stdout, JV_PRINT_ASCII);
+      } else if ((*cjq_state.options & RAW_OUTPUT0) && strlen(jv_string_value(*cjq_state.result)) != (unsigned long)jv_string_length_bytes(jv_copy(*cjq_state.result))) {
+        jv_free(*cjq_state.result);
+        *cjq_state.result = jv_invalid_with_msg(jv_string(
+              "Cannot dump a string containing NUL with --raw-output0 option"));
+        jq_error();
+      } else {
+        priv_fwrite(jv_string_value(*cjq_state.result), jv_string_length_bytes(jv_copy(*cjq_state.result)),
+            stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
+      }
+      *cjq_state.ret = JQ_OK;
+      jv_free(*cjq_state.result);
+    } else {
+      if (jv_get_kind(*cjq_state.result) == JV_KIND_FALSE || jv_get_kind(*cjq_state.result) == JV_KIND_NULL)
+        *cjq_state.ret = JQ_OK_NULL_KIND;
+      else
+        *cjq_state.ret = JQ_OK;
+      if (*cjq_state.options & SEQ)
+        priv_fwrite("\036", 1, stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
+      jv_dump(*cjq_state.result, *cjq_state.dumpopts);  // JOHN: Where result of jq_next is printed
+    }
+    if (!(*cjq_state.options & RAW_NO_LF))
+      priv_fwrite("\n", 1, stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
+    if (*cjq_state.options & RAW_OUTPUT0)
+      priv_fwrite("\0", 1, stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
+    if (*cjq_state.options & UNBUFFERED_OUTPUT)
+      fflush(stdout);
+}
+
 void _cjq_execute() {
    // DEPRECATED
    
@@ -346,9 +450,38 @@ void _cjq_execute() {
    //               cjq_state.opcode_list_len, 0);
 }
 
-uint16_t* pc;
+static void _init() {
+   if (cjq_state.jq->halted) {
+      if (cjq_state.jq->debug_trace_enabled)
+        printf("\t<halted>\n");
+      *cjq_state.result = jv_invalid();
+      return;
+    }
+   *cjq_state.raising = 0;
+   if (*cjq_state.backtracking) {
+      // opcode = ON_BACKTRACK(opcode);   // No longer necessary :)
+      *cjq_state.backtracking = 0;
+      *cjq_state.raising = !jv_is_valid(cjq_state.jq->error);
+    }
+    cjq_state.pc++;
+}
 
-void _opcode_TOP() { /* This opcode does nothing */ }
+static void _do_backtrack() {
+   cjq_state.pc = stack_restore(cjq_state.jq);
+   if (!cjq_state.pc) {
+      if (!jv_is_valid(cjq_state.jq->error)) {
+         jv error = cjq_state.jq->error;
+         cjq_state.jq->error = jv_null();
+         *cjq_state.result = error;
+      }
+      *cjq_state.result = jv_invalid();
+   }
+   *cjq_state.backtracking = 1;
+}
+
+void _opcode_TOP() { 
+   _init();
+ }
 
 void _opcode_BACKTRACK_TOP() {}
 
@@ -373,24 +506,28 @@ void _opcode_CALL_BUILTIN_plus() {}
 void _opcode_BACKTRACK_CALL_BUILTIN_plus() {}
 
 void _opcode_RET() {
+   _init();
    jv value = stack_pop(cjq_state.jq);
    assert(cjq_state.jq->stk_top == frame_current(cjq_state.jq)->retdata);
    uint16_t* retaddr = frame_current(cjq_state.jq)->retaddr;
    if (retaddr) {
       // function return
-      pc = retaddr;
+      cjq_state.pc = retaddr;
       frame_pop(cjq_state.jq);
    } else {
       // top-level return, yielding value
       struct stack_pos spos = stack_get_pos(cjq_state.jq);
       stack_push(cjq_state.jq, jv_null());
-      stack_save(cjq_state.jq, pc - 1, spos);
-      cjq_state.ret_value = malloc(sizeof(jv));
-      *cjq_state.ret_value = value;
-      //TODO: Do printing stuff that would normally happen here
+      stack_save(cjq_state.jq, cjq_state.pc - 1, spos);
+      cjq_state.result = malloc(sizeof(jv));
+      *cjq_state.result = value;
+      jq_print();    // Printing works but there's also a memory leak issue when printing
       return;
    }
    stack_push(cjq_state.jq, value);
 }
 
-void _opcode_BACKTRACK_RET() {}
+void _opcode_BACKTRACK_RET() {
+   _init();
+   _do_backtrack();
+}
