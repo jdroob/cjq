@@ -388,6 +388,7 @@ void _opcode_RET() {
       cjq_state.ret_value = malloc(sizeof(jv));
       *cjq_state.ret_value = value;
       //TODO: Do printing stuff that would normally happen here
+      return;
    }
    stack_push(cjq_state.jq, value);
 }
