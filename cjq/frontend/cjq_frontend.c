@@ -271,7 +271,6 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   int* poptions = malloc(sizeof(int)); *poptions = options;
   int* pdumpopts = malloc(sizeof(int)); *pdumpopts = dumpopts;
   int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
-  // int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
   uint16_t* ppc = malloc(sizeof(uint16_t)); *ppc = *pc; 
   int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
 
@@ -280,10 +279,7 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   cjq_state.options = poptions;
   cjq_state.dumpopts = pdumpopts;
   cjq_state.last_result = plast_result;
-  // cjq_state.opcode_list_len = popcode_list_len;
   cjq_state.pc = ppc;
-  // cjq_state.opcode_list = opcode_list;
-  // cjq_state.input_state = input_state;
   cjq_state.jq = jq;
   cjq_state.backtracking = pbacktracking;
 
@@ -394,7 +390,6 @@ int cjq_parse(int argc, char* argv[]) {
   } printf("\n");
   #endif
   jq_state *jq = NULL;
-  jq_util_input_state *input_state = NULL;
   jq_util_input_state *cjq_input_state = NULL;
   int ret = JQ_OK_NO_OUTPUT;
   int compiled = 0;
@@ -403,13 +398,6 @@ int cjq_parse(int argc, char* argv[]) {
   int last_result = -1; /* -1 = no result, 0=null or false, 1=true */
   int badwrite;
   int options = 0;
-
-  // // TODO: JOHN: Make this dynamic
-  // uint8_t* opcode_list = malloc(sizeof(uint8_t)*1000);
-  // for (int i = 0; i < 1000; ++i) {
-  //   opcode_list[i] = -1;
-  // }
-  // int opcode_list_len = 0;
 
 #ifdef HAVE_SETLOCALE
   (void) setlocale(LC_ALL, "");
@@ -445,7 +433,6 @@ int cjq_parse(int argc, char* argv[]) {
   int dumpopts = JV_PRINT_INDENT_FLAGS(2);
   const char* program = 0;
 
-  input_state = jq_util_input_init(NULL, NULL); // XXX add err_cb
   cjq_input_state = jq_util_input_init(NULL, NULL); // XXX add err_cb
 
   int further_args_are_strings = 0;
@@ -468,7 +455,6 @@ int cjq_parse(int argc, char* argv[]) {
         }
         ARGS = jv_array_append(ARGS, v);
       } else {      // this is where the json files are read?
-        jq_util_input_add_input(input_state, argv[i]);
         jq_util_input_add_input(cjq_input_state, argv[i]);
         nfiles++;
       }
@@ -808,16 +794,13 @@ int cjq_parse(int argc, char* argv[]) {
     parser_flags |= JV_PARSE_SEQ;
 
   if ((options & RAW_INPUT)) {
-    jq_util_input_set_parser(input_state, NULL, (options & SLURP) ? 1 : 0);
     jq_util_input_set_parser(cjq_input_state, NULL, (options & SLURP) ? 1 : 0);
   }
   else {
-    jq_util_input_set_parser(input_state, jv_parser_new(parser_flags), (options & SLURP) ? 1 : 0);
     jq_util_input_set_parser(cjq_input_state, jv_parser_new(parser_flags), (options & SLURP) ? 1 : 0);
   }
 
   // Let jq program read from inputs
-  jq_set_input_cb(jq, jq_util_input_next_input_cb, input_state);
   jq_set_input_cb(jq, jq_util_input_next_input_cb, cjq_input_state);
 
   // Let jq program call `debug` builtin and have that go somewhere
@@ -827,7 +810,6 @@ int cjq_parse(int argc, char* argv[]) {
   jq_set_stderr_cb(jq, stderr_cb, &dumpopts);
 
   if (nfiles == 0) {
-    jq_util_input_add_input(input_state, "-");
     jq_util_input_add_input(cjq_input_state, "-");
   }
 
@@ -839,9 +821,6 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  // jv tmp = jv_null();   // JOHN: Dummy value
-  // jq_start(jq, tmp, 0); // JOHN: This is a dummy call so stack_restore will work
-  // uint16_t* pc = stack_restore(jq);
   cjq_init(ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
 
   jv_free(ARGS);

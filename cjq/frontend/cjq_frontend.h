@@ -9,8 +9,6 @@ typedef struct {
     int* dumpopts;
     int* options;
     int* last_result;
-    // uint8_t* opcode_list;
-    // int* opcode_list_len;
     jq_util_input_state *input_state;
     jv *value;
     jq_state* jq;

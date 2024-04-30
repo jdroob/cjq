@@ -16,7 +16,7 @@ void _cjq_execute() {
    //               cjq_state.opcode_list_len, 0);
 }
 
-void _opcode_TOP() {}
+void _opcode_TOP() { /* This opcode does nothing */ }
 
 void _opcode_BACKTRACK_TOP() {}
 

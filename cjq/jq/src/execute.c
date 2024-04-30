@@ -362,9 +362,9 @@ jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, int tracing
     if (tracing || backtracking) {    // JOHN: Do something similar in process to avoid printing twice?
       idx = *opcode_list_len; ++(*opcode_list_len);
       if (backtracking)
-        opcode_list[idx] = ON_BACKTRACK((uint8_t)opcode);  
+        opcode_list[idx] = ON_BACKTRACK(opcode);  
       else 
-        opcode_list[idx] = (uint8_t)opcode;  
+        opcode_list[idx] = opcode;  
     }
     if (backtracking)
       printf("opcode: %d\n", ON_BACKTRACK(opcode));

@@ -310,7 +310,6 @@ int cjq_trace(int argc, char* argv[]) {
 #endif
   jq_state *jq = NULL;
   jq_util_input_state *input_state = NULL;
-  // jq_util_input_state *cjq_input_state = NULL;
   int ret = JQ_OK_NO_OUTPUT;
   int compiled = 0;
   int parser_flags = 0;
@@ -361,7 +360,6 @@ int cjq_trace(int argc, char* argv[]) {
   const char* program = 0;
 
   input_state = jq_util_input_init(NULL, NULL); // XXX add err_cb
-  // cjq_input_state = jq_util_input_init(NULL, NULL); // XXX add err_cb
 
   int further_args_are_strings = 0;
   int further_args_are_json = 0;
@@ -384,7 +382,6 @@ int cjq_trace(int argc, char* argv[]) {
         ARGS = jv_array_append(ARGS, v);
       } else {      // this is where the json files are read?
         jq_util_input_add_input(input_state, argv[i]);
-        // jq_util_input_add_input(cjq_input_state, argv[i]);
         nfiles++;
       }
     } else if (!strcmp(argv[i], "--")) {
@@ -724,16 +721,13 @@ int cjq_trace(int argc, char* argv[]) {
 
   if ((options & RAW_INPUT)) {
     jq_util_input_set_parser(input_state, NULL, (options & SLURP) ? 1 : 0);
-    // jq_util_input_set_parser(cjq_input_state, NULL, (options & SLURP) ? 1 : 0);
   }
   else {
     jq_util_input_set_parser(input_state, jv_parser_new(parser_flags), (options & SLURP) ? 1 : 0);
-    // jq_util_input_set_parser(cjq_input_state, jv_parser_new(parser_flags), (options & SLURP) ? 1 : 0);
   }
 
   // Let jq program read from inputs
   jq_set_input_cb(jq, jq_util_input_next_input_cb, input_state);
-  // jq_set_input_cb(jq, jq_util_input_next_input_cb, cjq_input_state);
 
   // Let jq program call `debug` builtin and have that go somewhere
   jq_set_debug_cb(jq, debug_cb, &dumpopts);
@@ -743,7 +737,6 @@ int cjq_trace(int argc, char* argv[]) {
 
   if (nfiles == 0) {
     jq_util_input_add_input(input_state, "-");
-    // jq_util_input_add_input(cjq_input_state, "-");
   }
 
   // JOHN: tracing run
@@ -787,15 +780,8 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  // jv value = jv_null();   // JOHN: Dummy value
-  // jq_start(jq, value, 0); // JOHN: This is a dummy call so stack_restore will work
-  // uint16_t* pc = stack_restore(jq);
-
-  // cjq_init(ret, jq_flags, options, dumpopts, last_result, opcode_list_len,
-  //          opcode_list, cjq_input_state, jq, pc);
 
   trace_init(opcode_list, opcode_list_len);
-
   opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);
