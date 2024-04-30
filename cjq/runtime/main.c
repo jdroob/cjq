@@ -3,15 +3,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "../cjq/clib/lib.h"
+#include "../clib/lib.h"
 
-#include "../cjq/jq/src/compile.h"
-#include "../cjq/jq/src/jv.h"
-#include "../cjq/jq/src/jq.h"
-#include "../cjq/jq/src/jv_alloc.h"
-#include "../cjq/jq/src/util.h"
-#include "../cjq/jq/src/version.h"
-#include "../cjq/frontend/cjq_frontend.h"
+#include "../jq/src/compile.h"
+#include "../jq/src/jv.h"
+#include "../jq/src/jq.h"
+#include "../jq/src/jv_alloc.h"
+#include "../jq/src/util.h"
+#include "../jq/src/version.h"
+#include "../frontend/cjq_frontend.h"
 
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 

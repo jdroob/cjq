@@ -3,15 +3,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "clib/lib.h"
+#include "../clib/lib.h"
 
-#include "jq/src/compile.h"
-#include "jq/src/jv.h"
-#include "jq/src/jq.h"
-#include "jq/src/jv_alloc.h"
-#include "jq/src/util.h"
-#include "jq/src/version.h"
-#include "trace/cjq_trace.h"
+#include "../jq/src/compile.h"
+#include "../jq/src/jv.h"
+#include "../jq/src/jq.h"
+#include "../jq/src/jv_alloc.h"
+#include "../jq/src/util.h"
+#include "../jq/src/version.h"
+#include "cjq_trace.h"
 
 #define PY_SSIZE_T_CLEAN
 #include <../../usr/include/python3.12/Python.h>      // TODO: yuck
@@ -37,7 +37,7 @@ int get_llvm_ir() {
 
     // Construct full path to the cjq directory
     char path_to_cjq[256]; 
-    snprintf(path_to_cjq, sizeof(path_to_cjq), "%s/cjq/cjq", home);
+    snprintf(path_to_cjq, sizeof(path_to_cjq), "%s/cjq/cjq/trace", home);
 
     // Initialize CPython
     Py_Initialize();
