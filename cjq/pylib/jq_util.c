@@ -1,8 +1,9 @@
-#include "../frontend/src/cjq_frontend.h"
-#include "../frontend/src/bytecode.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../frontend/cjq_frontend.h"
+#include "../trace/cjq_trace.h"
+#include "../jq/src/bytecode.h"
 
 
 uint16_t _get_opcode(void* cjq_state_ptr) {

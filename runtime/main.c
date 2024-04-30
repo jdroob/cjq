@@ -5,19 +5,18 @@
 
 #include "../cjq/clib/lib.h"
 
-#include "../cjq/frontend/src/compile.h"
-#include "../cjq/frontend/src/jv.h"
-#include "../cjq/frontend/src/jq.h"
-#include "../cjq/frontend/src/jv_alloc.h"
-#include "../cjq/frontend/src/util.h"
-#include "../cjq/frontend/src/version.h"
-#include "../cjq/frontend/src/cjq_frontend.h"
+#include "../cjq/jq/src/compile.h"
+#include "../cjq/jq/src/jv.h"
+#include "../cjq/jq/src/jq.h"
+#include "../cjq/jq/src/jv_alloc.h"
+#include "../cjq/jq/src/util.h"
+#include "../cjq/jq/src/version.h"
+#include "../cjq/frontend/cjq_frontend.h"
 
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 // Globals
 compiled_jq_state cjq_state;
-trace opcodes;
 extern void jq_program();
 
 void clean_up(compiled_jq_state* cjq_state) {

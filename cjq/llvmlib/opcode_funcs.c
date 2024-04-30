@@ -3,7 +3,7 @@
    
    All side-effects to cjq_state attributes are exactly the same.
 */
-#include "../frontend/src/cjq_frontend.h"
+#include "../frontend/cjq_frontend.h"
 
 
 void _cjq_execute() {

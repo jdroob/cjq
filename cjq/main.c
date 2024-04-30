@@ -5,13 +5,13 @@
 
 #include "clib/lib.h"
 
-#include "frontend/src/compile.h"
-#include "frontend/src/jv.h"
-#include "frontend/src/jq.h"
-#include "frontend/src/jv_alloc.h"
-#include "frontend/src/util.h"
-#include "frontend/src/version.h"
-#include "frontend/src/cjq_frontend.h"
+#include "jq/src/compile.h"
+#include "jq/src/jv.h"
+#include "jq/src/jq.h"
+#include "jq/src/jv_alloc.h"
+#include "jq/src/util.h"
+#include "jq/src/version.h"
+#include "trace/cjq_trace.h"
 
 #define PY_SSIZE_T_CLEAN
 #include <../../usr/include/python3.12/Python.h>      // TODO: yuck
@@ -21,7 +21,6 @@
 
 // Globals
 trace opcodes;
-compiled_jq_state cjq_state;        // TODO: Remove after breaking up cjq_frontend into two pieces
 
 void clean_up(trace *opcodes) {
     free(opcodes->opcode_list);

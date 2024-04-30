@@ -128,3 +128,7 @@ cjq/tests/prod2.json
 *.so
 llvm_gen
 runjq
+cjq/jq/.vscode/c_cpp_properties.json
+cjq/jq/.vscode/launch.json
+cjq/jq/.vscode/settings.json
+cjq/jq/.vscode/*
