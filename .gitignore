@@ -132,3 +132,4 @@ cjq/jq/.vscode/c_cpp_properties.json
 cjq/jq/.vscode/launch.json
 cjq/jq/.vscode/settings.json
 cjq/jq/.vscode/*
+.gitmodules
