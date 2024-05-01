@@ -18,6 +18,10 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
    
     # Create LLVM module
     module = ir.Module()
+    # Set the data layout
+    #TODO: Find better way than hard-coding
+    data_layout_str = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+    module.data_layout = llvm.create_target_data(data_layout_str)
     module.triple = llvm.get_process_triple()
     
     # Create a void pointer type
