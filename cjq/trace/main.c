@@ -21,6 +21,7 @@
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 // Globals
+// TODO: Refactor to make these pointers that can be passed instead of globals
 compiled_jq_state cjq_state;      // Declared so opcode functions can reference this
 trace opcodes;
 

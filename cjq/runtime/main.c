@@ -16,6 +16,7 @@
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 // Globals
+// TODO: Refactor to make this a pointer that can be passed instead of global
 compiled_jq_state cjq_state;
 extern void jq_program();
 
