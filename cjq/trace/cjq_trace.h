@@ -8,9 +8,7 @@ typedef struct {
     int* opcode_list_len;
 } trace;
 
-extern trace opcodes;
-
-void trace_init(uint8_t *opcode_list, int opcode_list_len);
-int cjq_trace(int argc, char *argv[]);
+void trace_init(trace *opcodes, uint8_t *opcode_list, int opcode_list_len);
+int cjq_trace(int argc, char *argv[], trace *opcodes);
 
 #endif  /* CJQ_TRACE_H */

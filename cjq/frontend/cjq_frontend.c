@@ -260,7 +260,7 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
   return ret;
 }
 
-void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
+void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, int dumpopts, int last_result,
  jq_util_input_state* input_state, jq_state* jq) {
   jv tmp = jv_null();   // JOHN: Dummy value
   jq_start(jq, tmp, 0); // JOHN: This is a dummy call so stack_restore will work
@@ -275,40 +275,41 @@ void cjq_init(int ret, int jq_flags, int options, int dumpopts, int last_result,
   int* praising = malloc(sizeof(int)); *praising = 0;
   uint16_t* ppc = malloc(sizeof(uint16_t)); *ppc = *pc; 
 
-  cjq_state.ret = pret; pret = NULL;
-  cjq_state.jq_flags = pjq_flags; pjq_flags = NULL;
-  cjq_state.options = poptions; poptions = NULL;
-  cjq_state.dumpopts = pdumpopts; pdumpopts = NULL;
-  cjq_state.last_result = plast_result; plast_result = NULL;
-  cjq_state.pc = ppc; ppc = NULL;
-  cjq_state.jq = jq; jq = NULL;
-  cjq_state.result = NULL;
-  cjq_state.backtracking = pbacktracking; pbacktracking = NULL;
-  cjq_state.raising = praising; praising = NULL;
+  cjq_state->ret = pret; pret = NULL;
+  cjq_state->jq_flags = pjq_flags; pjq_flags = NULL;
+  cjq_state->options = poptions; poptions = NULL;
+  cjq_state->dumpopts = pdumpopts; pdumpopts = NULL;
+  cjq_state->last_result = plast_result; plast_result = NULL;
+  cjq_state->pc = ppc; ppc = NULL;
+  cjq_state->jq = jq; jq = NULL;
+  cjq_state->result = NULL;
+  cjq_state->backtracking = pbacktracking; pbacktracking = NULL;
+  cjq_state->raising = praising; praising = NULL;
 
   jv *pvalue = malloc(sizeof(jv));
   *pvalue = jq_util_input_next_input(input_state);
   // Parse error
   if (!jv_is_valid(*pvalue)) {
     jv msg = jv_invalid_get_msg(*pvalue);
-    *cjq_state.ret = JQ_ERROR_UNKNOWN;
+    *cjq_state->ret = JQ_ERROR_UNKNOWN;
     fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
     jv_free(msg);
   }
-  cjq_state.value = pvalue; pvalue = NULL;
-  jq_start(cjq_state.jq, *cjq_state.value, *cjq_state.jq_flags);
+  cjq_state->value = pvalue; pvalue = NULL;
+  jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
 }
 
-void cjq_free() {
-  free(cjq_state.ret);
-  free(cjq_state.jq_flags);
-  free(cjq_state.options);
-  free(cjq_state.dumpopts);
-  free(cjq_state.last_result);
-  free(cjq_state.value);
-  free(cjq_state.result);
-  free(cjq_state.pc);
-  free(cjq_state.backtracking);
+void cjq_free(compiled_jq_state *cjq_state) {
+  free(cjq_state->ret);
+  free(cjq_state->jq_flags);
+  free(cjq_state->options);
+  free(cjq_state->dumpopts);
+  free(cjq_state->last_result);
+  free(cjq_state->value);
+  free(cjq_state->result);
+  free(cjq_state->pc);
+  free(cjq_state->backtracking);
+  free(cjq_state);
 }
 
 void cjq_execute(jq_state *jq, jq_util_input_state* input_state, 
@@ -386,7 +387,7 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int cjq_parse(int argc, char* argv[]) {
+int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
   // printf("argc: %d\n", argc);
   for (int i = 0; i<argc; ++i) {
     printf("argv[%d]: %s\n",i,argv[i]);
@@ -824,7 +825,7 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  cjq_init(ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
+  cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
 
   jv_free(ARGS);
   jv_free(program_arguments);

@@ -20,17 +20,15 @@
 
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
-// Globals
-// TODO: Refactor to make these pointers that can be passed instead of globals
-compiled_jq_state cjq_state;      // Declared so opcode functions can reference this
-trace opcodes;
-
-void clean_up(trace *opcodes) {
+void clean_up(compiled_jq_state *cjq_state, trace *opcodes) {
     free(opcodes->opcode_list);
     free(opcodes->opcode_list_len);
+    free(opcodes);
+    free(cjq_state);    
+    // cjq_init should never have been called during this phase so cjq_free shouldn't be needed
 }
 
-int get_llvm_ir() {
+int get_llvm_ir(compiled_jq_state *cjq_state, trace *opcodes) {
     // Get value of HOME environment variable
     char *home = getenv("HOME");
     if (home == NULL) {
@@ -79,19 +77,20 @@ int get_llvm_ir() {
     }
 
     // compiled_jq_state *pcjq_state = &cjq_state;
-    trace *popcodes = &opcodes;
-    printf("Actual address: %p\n", popcodes);
+    printf("Actual address (opcodes): %p\n", opcodes);
+    printf("Actual address (cjq_state): %p\n", cjq_state);
 
     // Convert cjq_state pointer to a Python integer object
     // Create PyObject pointer that points to this Python object
-    PyObject *opcodes_ptr = PyLong_FromVoidPtr((void*)popcodes);
+    PyObject *opcodes_ptr = PyLong_FromVoidPtr((void*)opcodes);
+    PyObject *cjq_state_ptr = PyLong_FromVoidPtr((void*)cjq_state);
     // printf("current pc: %i\n", *pcjq_state->pc);
 
-    printf("PyObject address: %p\n",opcodes_ptr);
-    // printf("Value at cjq_state_ptr: %d\n", *cjq_state_ptr);
+    printf("PyObject address (opcodes_ptr): %p\n",opcodes_ptr);
+    printf("PyObject address (cjq_state_ptr): %p\n",cjq_state_ptr);
 
     // Call generate_llvm_ir
-    PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, NULL);
+    PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, cjq_state_ptr, NULL);
     printf("Back in cjq/main.c\n");
     // Cleanup
     Py_DECREF(pResult);
@@ -105,14 +104,20 @@ int get_llvm_ir() {
 }
 
 int main(int argc, char *argv[]) {
+    // For storing tracing information
+    trace *opcodes = malloc(sizeof(trace));
+
+    // Dummy cjq_state for passing to opcode functions in LLVM
+    compiled_jq_state *cjq_state = malloc(sizeof(compiled_jq_state));
+
     // Trace execution
-    int trace_error = cjq_trace(argc, argv);
+    int trace_error = cjq_trace(argc, argv, opcodes);
     
     // Generate LLVM IR
-    int gen_ir_error = get_llvm_ir();
+    int gen_ir_error = get_llvm_ir(cjq_state, opcodes);
 
     // Clean up
-    clean_up(&opcodes);
+    clean_up(cjq_state, opcodes);
 
     // FOR DEBUGGING MEMORY LEAK
     // int badwrite = ferror(stdout); *cjq_state.ret = 0;

@@ -260,10 +260,10 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
   return ret;
 }
 
-void trace_init(uint8_t *opcode_list, int opcode_list_len) {
+void trace_init(trace *opcodes, uint8_t *opcode_list, int opcode_list_len) {
   int *popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
-  opcodes.opcode_list = opcode_list;
-  opcodes.opcode_list_len = popcode_list_len;
+  opcodes->opcode_list = opcode_list;
+  opcodes->opcode_list_len = popcode_list_len;
 }
 
 static void debug_cb(void *data, jv input) {
@@ -302,7 +302,7 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int cjq_trace(int argc, char* argv[]) {
+int cjq_trace(int argc, char* argv[], trace *opcodes) {
   // printf("argc: %d\n", argc);
   for (int i = 0; i<argc; ++i) {
     printf("argv[%d]: %s\n",i,argv[i]);
@@ -740,7 +740,6 @@ int cjq_trace(int argc, char* argv[]) {
   }
 
   // JOHN: tracing run
-  // cjq_execute(jq, input_state, &jq_flags, &dumpopts, &options, &ret, &last_result, opcode_list, &opcode_list_len, 1);
   if (options & PROVIDE_NULL) {
     ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, &opcode_list_len, 1);
   } else {
@@ -781,7 +780,7 @@ out:
 //     ret = JQ_ERROR_SYSTEM;
 //   }
 
-  trace_init(opcode_list, opcode_list_len);
+  trace_init(opcodes, opcode_list, opcode_list_len);
   opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);

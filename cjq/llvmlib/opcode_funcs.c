@@ -365,22 +365,22 @@ enum {
     JQ_ERROR_UNKNOWN   =  5,
 };
 
-static void jq_error() {
-   if (jq_halted(cjq_state.jq)) {
+static void jq_error(compiled_jq_state *cjq_state) {
+   if (jq_halted(cjq_state->jq)) {
     // jq program invoked `halt` or `halt_error`
-    jv exit_code = jq_get_exit_code(cjq_state.jq);
+    jv exit_code = jq_get_exit_code(cjq_state->jq);
     if (!jv_is_valid(exit_code))
-      *cjq_state.ret = JQ_OK;
+      *cjq_state->ret = JQ_OK;
     else if (jv_get_kind(exit_code) == JV_KIND_NUMBER)
-      *cjq_state.ret = jv_number_value(exit_code);
+      *cjq_state->ret = jv_number_value(exit_code);
     else
-      *cjq_state.ret = JQ_ERROR_UNKNOWN;
+      *cjq_state->ret = JQ_ERROR_UNKNOWN;
     jv_free(exit_code);
-    jv error_message = jq_get_error_message(cjq_state.jq);
+    jv error_message = jq_get_error_message(cjq_state->jq);
     if (jv_get_kind(error_message) == JV_KIND_STRING) {
       // No prefix should be added to the output of `halt_error`.
       priv_fwrite(jv_string_value(error_message), jv_string_length_bytes(jv_copy(error_message)),
-          stderr, *cjq_state.dumpopts & JV_PRINT_ISATTY);
+          stderr, *cjq_state->dumpopts & JV_PRINT_ISATTY);
     } else if (jv_get_kind(error_message) == JV_KIND_NULL) {
       // Halt with no output
     } else if (jv_is_valid(error_message)) {
@@ -389,10 +389,10 @@ static void jq_error() {
     } // else no message on stderr; use --debug-trace to see a message
     fflush(stderr);
     jv_free(error_message);
-  } else if (jv_invalid_has_msg(jv_copy(*cjq_state.result))) {
+  } else if (jv_invalid_has_msg(jv_copy(*cjq_state->result))) {
     // Uncaught jq exception
-    jv msg = jv_invalid_get_msg(jv_copy(*cjq_state.result));
-    jv input_pos = jq_util_input_get_position(cjq_state.jq);
+    jv msg = jv_invalid_get_msg(jv_copy(*cjq_state->result));
+    jv input_pos = jq_util_input_get_position(cjq_state->jq);
     if (jv_get_kind(msg) == JV_KIND_STRING) {
       fprintf(stderr, "jq: error (at %s): %s\n",
               jv_string_value(input_pos), jv_string_value(msg));
@@ -401,42 +401,42 @@ static void jq_error() {
       fprintf(stderr, "jq: error (at %s) (not a string): %s\n",
               jv_string_value(input_pos), jv_string_value(msg));
     }
-    *cjq_state.ret = JQ_ERROR_UNKNOWN;
+    *cjq_state->ret = JQ_ERROR_UNKNOWN;
     jv_free(input_pos);
     jv_free(msg);
   }
-  jv_free(*cjq_state.result);
+  jv_free(*cjq_state->result);
 }
 
-static void jq_print() {
-   if ((*cjq_state.options & RAW_OUTPUT) && jv_get_kind(*cjq_state.result) == JV_KIND_STRING) {
-      if (*cjq_state.options & ASCII_OUTPUT) {
-        jv_dumpf(jv_copy(*cjq_state.result), stdout, JV_PRINT_ASCII);
-      } else if ((*cjq_state.options & RAW_OUTPUT0) && strlen(jv_string_value(*cjq_state.result)) != (unsigned long)jv_string_length_bytes(jv_copy(*cjq_state.result))) {
-        jv_free(*cjq_state.result);
-        *cjq_state.result = jv_invalid_with_msg(jv_string(
+static void jq_print(compiled_jq_state *cjq_state) {
+   if ((*cjq_state->options & RAW_OUTPUT) && jv_get_kind(*cjq_state->result) == JV_KIND_STRING) {
+      if (*cjq_state->options & ASCII_OUTPUT) {
+        jv_dumpf(jv_copy(*cjq_state->result), stdout, JV_PRINT_ASCII);
+      } else if ((*cjq_state->options & RAW_OUTPUT0) && strlen(jv_string_value(*cjq_state->result)) != (unsigned long)jv_string_length_bytes(jv_copy(*cjq_state->result))) {
+        jv_free(*cjq_state->result);
+        *cjq_state->result = jv_invalid_with_msg(jv_string(
               "Cannot dump a string containing NUL with --raw-output0 option"));
-        jq_error();
+        jq_error(cjq_state);
       } else {
-        priv_fwrite(jv_string_value(*cjq_state.result), jv_string_length_bytes(jv_copy(*cjq_state.result)),
-            stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
+        priv_fwrite(jv_string_value(*cjq_state->result), jv_string_length_bytes(jv_copy(*cjq_state->result)),
+            stdout, *cjq_state->dumpopts & JV_PRINT_ISATTY);
       }
-      *cjq_state.ret = JQ_OK;
-      jv_free(*cjq_state.result);
+      *cjq_state->ret = JQ_OK;
+      jv_free(*cjq_state->result);
     } else {
-      if (jv_get_kind(*cjq_state.result) == JV_KIND_FALSE || jv_get_kind(*cjq_state.result) == JV_KIND_NULL)
-        *cjq_state.ret = JQ_OK_NULL_KIND;
+      if (jv_get_kind(*cjq_state->result) == JV_KIND_FALSE || jv_get_kind(*cjq_state->result) == JV_KIND_NULL)
+        *cjq_state->ret = JQ_OK_NULL_KIND;
       else
-        *cjq_state.ret = JQ_OK;
-      if (*cjq_state.options & SEQ)
-        priv_fwrite("\036", 1, stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
-      jv_dump(*cjq_state.result, *cjq_state.dumpopts);  // JOHN: Where result of jq_next is printed
+        *cjq_state->ret = JQ_OK;
+      if (*cjq_state->options & SEQ)
+        priv_fwrite("\036", 1, stdout, *cjq_state->dumpopts & JV_PRINT_ISATTY);
+      jv_dump(*cjq_state->result, *cjq_state->dumpopts);  // JOHN: Where result of jq_next is printed
     }
-    if (!(*cjq_state.options & RAW_NO_LF))
-      priv_fwrite("\n", 1, stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
-    if (*cjq_state.options & RAW_OUTPUT0)
-      priv_fwrite("\0", 1, stdout, *cjq_state.dumpopts & JV_PRINT_ISATTY);
-    if (*cjq_state.options & UNBUFFERED_OUTPUT)
+    if (!(*cjq_state->options & RAW_NO_LF))
+      priv_fwrite("\n", 1, stdout, *cjq_state->dumpopts & JV_PRINT_ISATTY);
+    if (*cjq_state->options & RAW_OUTPUT0)
+      priv_fwrite("\0", 1, stdout, *cjq_state->dumpopts & JV_PRINT_ISATTY);
+    if (*cjq_state->options & UNBUFFERED_OUTPUT)
       fflush(stdout);
 }
 
@@ -450,84 +450,85 @@ void _cjq_execute() {
    //               cjq_state.opcode_list_len, 0);
 }
 
-static void _init() {
-   if (cjq_state.jq->halted) {
-      if (cjq_state.jq->debug_trace_enabled)
+static void _init(compiled_jq_state *cjq_state) {
+   if (cjq_state->jq->halted) {
+      if (cjq_state->jq->debug_trace_enabled)
         printf("\t<halted>\n");
-      *cjq_state.result = jv_invalid();
+      *cjq_state->result = jv_invalid();
       return;
     }
-   *cjq_state.raising = 0;
-   if (*cjq_state.backtracking) {
+   *cjq_state->raising = 0;
+   if (*cjq_state->backtracking) {
       // opcode = ON_BACKTRACK(opcode);   // No longer necessary :)
-      *cjq_state.backtracking = 0;
-      *cjq_state.raising = !jv_is_valid(cjq_state.jq->error);
+      *cjq_state->backtracking = 0;
+      *cjq_state->raising = !jv_is_valid(cjq_state->jq->error);
     }
-    cjq_state.pc++;
+    cjq_state->pc++;
 }
 
-static void _do_backtrack() {
-   cjq_state.pc = stack_restore(cjq_state.jq);
-   if (!cjq_state.pc) {
-      if (!jv_is_valid(cjq_state.jq->error)) {
-         jv error = cjq_state.jq->error;
-         cjq_state.jq->error = jv_null();
-         *cjq_state.result = error;
+static void _do_backtrack(compiled_jq_state *cjq_state) {
+   cjq_state->pc = stack_restore(cjq_state->jq);
+   if (!cjq_state->pc) {
+      if (!jv_is_valid(cjq_state->jq->error)) {
+         jv error = cjq_state->jq->error;
+         cjq_state->jq->error = jv_null();
+         *cjq_state->result = error;
       }
-      *cjq_state.result = jv_invalid();
+      *cjq_state->result = jv_invalid();
    }
-   *cjq_state.backtracking = 1;
+   *cjq_state->backtracking = 1;
 }
 
-void _opcode_TOP() { 
-   _init();
+void _opcode_TOP(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
  }
 
-void _opcode_BACKTRACK_TOP() {}
+void _opcode_BACKTRACK_TOP(void *cjq_state) {}
 
-void _opcode_SUBEXP_BEGIN() {}
+void _opcode_SUBEXP_BEGIN(void *cjq_state) {}
 
-void _opcode_BACKTRACK_SUBEXP_BEGIN() {}
+void _opcode_BACKTRACK_SUBEXP_BEGIN(void *cjq_state) {}
 
-void _opcode_PUSHK_UNDER() {}
+void _opcode_PUSHK_UNDER(void *cjq_state) {}
 
-void _opcode_BACKTRACK_PUSHK_UNDER() {}
+void _opcode_BACKTRACK_PUSHK_UNDER(void *cjq_state) {}
 
-void _opcode_INDEX() {}
+void _opcode_INDEX(void *cjq_state) {}
 
-void _opcode_BACKTRACK_INDEX() {}
+void _opcode_BACKTRACK_INDEX(void *cjq_state) {}
 
-void _opcode_SUBEXP_END() {}
+void _opcode_SUBEXP_END(void *cjq_state) {}
 
-void _opcode_BACKTRACK_SUBEXP_END() {}
+void _opcode_BACKTRACK_SUBEXP_END(void *cjq_state) {}
 
-void _opcode_CALL_BUILTIN_plus() {}
+void _opcode_CALL_BUILTIN_plus(void *cjq_state) {}
 
-void _opcode_BACKTRACK_CALL_BUILTIN_plus() {}
+void _opcode_BACKTRACK_CALL_BUILTIN_plus(void *cjq_state) {}
 
-void _opcode_RET() {
-   _init();
-   jv value = stack_pop(cjq_state.jq);
-   assert(cjq_state.jq->stk_top == frame_current(cjq_state.jq)->retdata);
-   uint16_t* retaddr = frame_current(cjq_state.jq)->retaddr;
+void _opcode_RET(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+   _init(pcjq_state);
+   jv value = stack_pop(pcjq_state->jq);
+   assert(pcjq_state->jq->stk_top == frame_current(pcjq_state->jq)->retdata);
+   uint16_t* retaddr = frame_current(pcjq_state->jq)->retaddr;
    if (retaddr) {
       // function return
-      cjq_state.pc = retaddr;
-      frame_pop(cjq_state.jq);
+      pcjq_state->pc = retaddr;
+      frame_pop(pcjq_state->jq);
    } else {
       // top-level return, yielding value
-      struct stack_pos spos = stack_get_pos(cjq_state.jq);
-      stack_push(cjq_state.jq, jv_null());
-      stack_save(cjq_state.jq, cjq_state.pc - 1, spos);
-      cjq_state.result = malloc(sizeof(jv));
-      *cjq_state.result = value;
-      jq_print();    // Printing works but there's also a memory leak issue when printing
+      struct stack_pos spos = stack_get_pos(pcjq_state->jq);
+      stack_push(pcjq_state->jq, jv_null());
+      stack_save(pcjq_state->jq, pcjq_state->pc - 1, spos);
+      pcjq_state->result = malloc(sizeof(jv));
+      *pcjq_state->result = value;
+      jq_print(cjq_state);    // Printing works but there's also a memory leak issue when printing
       return;
    }
-   stack_push(cjq_state.jq, value);
+   stack_push(pcjq_state->jq, value);
 }
 
-void _opcode_BACKTRACK_RET() {
-   _init();
-   _do_backtrack();
+void _opcode_BACKTRACK_RET(void *cjq_state) {
+   _init((compiled_jq_state*)cjq_state);
+   _do_backtrack((compiled_jq_state*)cjq_state);
 }
