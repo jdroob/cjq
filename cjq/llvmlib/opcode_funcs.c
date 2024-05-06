@@ -483,27 +483,63 @@ void _opcode_TOP(void *cjq_state) {
    _init((compiled_jq_state*)cjq_state);
  }
 
-void _opcode_BACKTRACK_TOP(void *cjq_state) {}
+void _opcode_BACKTRACK_TOP(void *cjq_state) {
+  // TODO: Delete?
+}
 
-void _opcode_SUBEXP_BEGIN(void *cjq_state) {}
+void _opcode_SUBEXP_BEGIN(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  jv v = stack_pop(pcjq_state->jq);
+  stack_push(pcjq_state->jq, jv_copy(v));
+  stack_push(pcjq_state->jq, v);
+  pcjq_state->jq->subexp_nest++;
+}
 
-void _opcode_BACKTRACK_SUBEXP_BEGIN(void *cjq_state) {}
+void _opcode_BACKTRACK_SUBEXP_BEGIN(void *cjq_state) {
+  // TODO: Delete?
+}
 
-void _opcode_PUSHK_UNDER(void *cjq_state) {}
+void _opcode_PUSHK_UNDER(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  jv v = jv_array_get(jv_copy(frame_current(pcjq_state->jq)->bc->constants), *pcjq_state->pc++);
+  assert(jv_is_valid(v));
+  jv v2 = stack_pop(pcjq_state->jq);
+  stack_push(pcjq_state->jq, v);
+  stack_push(pcjq_state->jq, v2);
+}
 
-void _opcode_BACKTRACK_PUSHK_UNDER(void *cjq_state) {}
+void _opcode_BACKTRACK_PUSHK_UNDER(void *cjq_state) {
+  // TODO: Delete?
+}
 
 void _opcode_INDEX(void *cjq_state) {}
 
-void _opcode_BACKTRACK_INDEX(void *cjq_state) {}
+void _opcode_BACKTRACK_INDEX(void *cjq_state) {
+  // TODO: Delete?
+}
 
-void _opcode_SUBEXP_END(void *cjq_state) {}
+void _opcode_SUBEXP_END(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  assert(pcjq_state->jq->subexp_nest > 0);
+  pcjq_state->jq->subexp_nest--;
+  jv a = stack_pop(pcjq_state->jq);
+  jv b = stack_pop(pcjq_state->jq);
+  stack_push(pcjq_state->jq, a);
+  stack_push(pcjq_state->jq, b);
+}
 
-void _opcode_BACKTRACK_SUBEXP_END(void *cjq_state) {}
+void _opcode_BACKTRACK_SUBEXP_END(void *cjq_state) {
+  // TODO: Delete?
+}
 
 void _opcode_CALL_BUILTIN_plus(void *cjq_state) {}
 
-void _opcode_BACKTRACK_CALL_BUILTIN_plus(void *cjq_state) {}
+void _opcode_BACKTRACK_CALL_BUILTIN_plus(void *cjq_state) {
+  // TODO: Delete?
+}
 
 void _opcode_RET(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
