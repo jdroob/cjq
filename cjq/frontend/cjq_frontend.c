@@ -43,43 +43,6 @@ extern void jv_tsd_dtoa_ctx_init();
 int jq_testsuite(jv lib_dirs, int verbose, int argc, char* argv[]);
 
 static const char* progname;
-extern uint16_t* stack_restore(jq_state *jq); // Declare global so we can use it here
-extern void jv_nomem_handler(jv_nomem_handler_f handler, void *data);
-
-typedef int stack_ptr;
-struct jq_state {
-  void (*nomem_handler)(void *);
-  void *nomem_handler_data;
-  struct bytecode* bc;
-
-  jq_msg_cb err_cb;
-  void *err_cb_data;
-  jv error;
-
-  struct stack stk;
-  stack_ptr curr_frame;
-  stack_ptr stk_top;
-  stack_ptr fork_top;
-
-  jv path;
-  jv value_at_path;
-  int subexp_nest;
-  int debug_trace_enabled;
-  int initial_execution;
-  unsigned next_label;
-
-  int halted;
-  jv exit_code;
-  jv error_message;
-
-  jv attrs;
-  jq_input_cb input_cb;
-  void *input_cb_data;
-  jq_msg_cb debug_cb;
-  void *debug_cb_data;
-  jq_msg_cb stderr_cb;
-  void *stderr_cb_data;
-};
 
 /*
  * For a longer help message we could use a better option parsing
