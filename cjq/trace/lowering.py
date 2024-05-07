@@ -77,13 +77,13 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_SUBEXP_END')
     
-    _opcode_CALL_BUILTIN_plus = ir.Function(module,
+    _opcode_CALL_BUILTIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_CALL_BUILTIN_plus')
+                            name='_opcode_CALL_BUILTIN')
     
-    _opcode_BACKTRACK_CALL_BUILTIN_plus = ir.Function(module,
+    _opcode_BACKTRACK_CALL_BUILTIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_BACKTRACK_CALL_BUILTIN_plus')
+                            name='_opcode_BACKTRACK_CALL_BUILTIN')
     
     _opcode_RET = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
@@ -129,8 +129,8 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
                 builder.comment("Placeholder for call to INDEX opcode-function")
                 builder.call(_opcode_INDEX, [_cjq_state_ptr])
             case 27:
-                builder.comment("Placeholder for call to CALL_BUILTIN_plus opcode-function")
-                builder.call(_opcode_CALL_BUILTIN_plus, [_cjq_state_ptr])
+                builder.comment("Placeholder for call to CALL_BUILTIN opcode-function")
+                builder.call(_opcode_CALL_BUILTIN, [_cjq_state_ptr])
             case 29:
                 builder.comment("Placeholder for call to RET opcode-function")
                 builder.call(_opcode_RET, [_cjq_state_ptr])
@@ -155,8 +155,8 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
                         builder.call(_opcode_BACKTRACK_SUBEXP_END, [_cjq_state_ptr])
                         builder.comment("Placeholder for call to _opcode_BACKTRACK_SUBEXP_END opcode-function")
                     elif curr_opcode == backtracking_opcodes[5]:
-                        builder.call(_opcode_BACKTRACK_CALL_BUILTIN_plus, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_CALL_BUILTIN_plus opcode-function")
+                        builder.call(_opcode_BACKTRACK_CALL_BUILTIN, [_cjq_state_ptr])
+                        builder.comment("Placeholder for call to _opcode_BACKTRACK_CALL_BUILTIN opcode-function")
                     elif curr_opcode == backtracking_opcodes[6]:
                         builder.call(_opcode_BACKTRACK_RET, [_cjq_state_ptr])
                         builder.comment("Placeholder for call to _opcode_BACKTRACK_RET opcode-function")

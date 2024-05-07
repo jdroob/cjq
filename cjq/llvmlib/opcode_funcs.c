@@ -464,6 +464,7 @@ static void _init(compiled_jq_state *cjq_state) {
       *cjq_state->raising = !jv_is_valid(cjq_state->jq->error);
     }
     cjq_state->pc++;
+    jv_nomem_handler(cjq_state->jq->nomem_handler, cjq_state->jq->nomem_handler_data);
 }
 
 static void _do_backtrack(compiled_jq_state *cjq_state) {
@@ -494,6 +495,7 @@ void _opcode_SUBEXP_BEGIN(void *cjq_state) {
   stack_push(pcjq_state->jq, jv_copy(v));
   stack_push(pcjq_state->jq, v);
   pcjq_state->jq->subexp_nest++;
+  return;
 }
 
 void _opcode_BACKTRACK_SUBEXP_BEGIN(void *cjq_state) {
@@ -514,7 +516,36 @@ void _opcode_BACKTRACK_PUSHK_UNDER(void *cjq_state) {
   // TODO: Delete?
 }
 
-void _opcode_INDEX(void *cjq_state) {}
+void _opcode_INDEX(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  jv t = stack_pop(pcjq_state->jq);
+  jv k = stack_pop(pcjq_state->jq);
+  // detect invalid path expression like path(reverse | .a)
+  if (!path_intact(pcjq_state->jq, jv_copy(t))) {
+    char keybuf[15];
+    char objbuf[30];
+    jv msg = jv_string_fmt(
+        "Invalid path expression near attempt to access element %s of %s",
+        jv_dump_string_trunc(k, keybuf, sizeof(keybuf)),
+        jv_dump_string_trunc(t, objbuf, sizeof(objbuf)));
+    set_error(pcjq_state->jq, jv_invalid_with_msg(msg));
+    _do_backtrack(pcjq_state);
+  }
+  jv v = jv_get(t, jv_copy(k));
+  if (jv_is_valid(v)) {
+    path_append(pcjq_state->jq, k, jv_copy(v));
+    stack_push(pcjq_state->jq, v);
+  } else {
+    jv_free(k);
+    if (*pcjq_state->pc == INDEX) 
+      set_error(pcjq_state->jq, v);
+    else
+      jv_free(v);
+      _do_backtrack(pcjq_state);
+  }
+  return;
+}
 
 void _opcode_BACKTRACK_INDEX(void *cjq_state) {
   // TODO: Delete?
@@ -529,15 +560,50 @@ void _opcode_SUBEXP_END(void *cjq_state) {
   jv b = stack_pop(pcjq_state->jq);
   stack_push(pcjq_state->jq, a);
   stack_push(pcjq_state->jq, b);
+  return;
 }
 
 void _opcode_BACKTRACK_SUBEXP_END(void *cjq_state) {
   // TODO: Delete?
 }
 
-void _opcode_CALL_BUILTIN_plus(void *cjq_state) {}
+void _opcode_CALL_BUILTIN(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  int nargs = *pcjq_state->pc++;
+  jv top = stack_pop(pcjq_state->jq);
+  jv *in = pcjq_state->cfunc_input;
+  in[0] = top;
+  for (int i = 1; i < nargs; i++) {
+    in[i] = stack_pop(pcjq_state->jq);
+  }
+  struct cfunction* function = &frame_current(pcjq_state->jq)->bc->globals->cfunctions[*pcjq_state->pc++];
+  switch (function->nargs) {
+  case 1: top = ((jv (*)(jq_state *, jv))function->fptr)(pcjq_state->jq, in[0]); break;
+  case 2: top = ((jv (*)(jq_state *, jv, jv))function->fptr)(pcjq_state->jq, in[0], in[1]); break;
+  case 3: top = ((jv (*)(jq_state *, jv, jv, jv))function->fptr)(pcjq_state->jq, in[0], in[1], in[2]); break;
+  case 4: top = ((jv (*)(jq_state *, jv, jv, jv, jv))function->fptr)(pcjq_state->jq, in[0], in[1], in[2], in[3]); break;
+  case 5: top = ((jv (*)(jq_state *, jv, jv, jv, jv, jv))function->fptr)(pcjq_state->jq, in[0], in[1], in[2], in[3], in[4]); break;
+  // FIXME: a) up to 7 arguments (input + 6), b) should assert
+  // because the compiler should not generate this error.
+  default: *pcjq_state->result = jv_invalid_with_msg(jv_string("Function takes too many arguments"));
+  return;
+  }
 
-void _opcode_BACKTRACK_CALL_BUILTIN_plus(void *cjq_state) {
+  if (jv_is_valid(top)) {
+    stack_push(pcjq_state->jq, top);
+  } else if (jv_invalid_has_msg(jv_copy(top))) {
+    set_error(pcjq_state->jq, top);
+    _do_backtrack(pcjq_state);
+  } else {
+    // C-coded function returns invalid w/o msg? -> backtrack, as if
+    // it had returned `empty`
+    _do_backtrack(pcjq_state);
+  }
+  return;
+}
+
+void _opcode_BACKTRACK_CALL_BUILTIN(void *cjq_state) {
   // TODO: Delete?
 }
 
@@ -562,6 +628,7 @@ void _opcode_RET(void *cjq_state) {
       return;
    }
    stack_push(pcjq_state->jq, value);
+   return;
 }
 
 void _opcode_BACKTRACK_RET(void *cjq_state) {
