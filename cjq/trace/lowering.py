@@ -171,31 +171,7 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
                         raise ValueError(f"Current backtracking opcode: {curr_opcode} does not match any existing opcodes")
                 else:
                     raise ValueError(f"Current opcode: {curr_opcode} does not match any existing opcodes")
- 
-    # Declare _cjq_execute - this links this identifier to C function
-    _cjq_execute = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), []),
-                            name='_cjq_execute')
-    
-    # # Declare _get_opcode - this links this identifier to C function
-    # _get_opcode = ir.Function(module,
-    #                         ir.FunctionType(ir.IntType(16), []),
-    #                         name='_get_opcode')
-    
-    # # For debugging - allows us to see 16-bit values returned from _get_opcode
-    # _print_uint16_t = ir.Function(module,
-    #                               ir.FunctionType(ir.VoidType(), [ir.IntType(16)]),
-    #                               name='_print_uint16_t')
-    
-    # Call _get_opcode
-    # opcode = builder.call(_get_opcode, []) 
-    
-    # # Debug - print opcode
-    # builder.call(_print_uint16_t, [opcode])
-    
-    # Call _cjq_execute
-    builder.call(_cjq_execute, []) 
-    
+      
     # Return from main
     builder.ret_void()
     
