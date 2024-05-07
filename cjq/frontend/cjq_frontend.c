@@ -298,10 +298,6 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
 
 void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, int dumpopts, int last_result,
  jq_util_input_state* input_state, jq_state* jq) {
-  jv tmp = jv_null();   // JOHN: Dummy value
-  jq_start(jq, tmp, 0); // JOHN: This is a dummy call so stack_restore will work
-  uint16_t* pc = stack_restore(jq);
-
   int* pret = malloc(sizeof(int)); *pret = ret;
   int* pjq_flags = malloc(sizeof(int)); *pjq_flags = jq_flags;
   int* poptions = malloc(sizeof(int)); *poptions = options;
@@ -309,7 +305,7 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
   int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
   int* praising = malloc(sizeof(int)); *praising = 0;
-  uint16_t* ppc = malloc(sizeof(uint16_t)); *ppc = *pc; 
+  uint16_t* ppc = malloc(sizeof(uint16_t));
   jv *pcfunc_input = malloc(sizeof(jv)*MAX_CFUNCTION_ARGS);
 
   cjq_state->ret = pret; pret = NULL;
@@ -334,7 +330,6 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
     jv_free(msg);
   }
   cjq_state->value = pvalue; pvalue = NULL;
-  jv_nomem_handler(cjq_state->jq->nomem_handler, cjq_state->jq->nomem_handler_data);
   jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
 }
 

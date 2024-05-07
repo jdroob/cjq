@@ -479,6 +479,16 @@ static void _do_backtrack(compiled_jq_state *cjq_state) {
    *cjq_state->backtracking = 1;
 }
 
+void _init_stack(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  jv_nomem_handler(pcjq_state->jq->nomem_handler, pcjq_state->jq->nomem_handler_data);
+
+  pcjq_state->pc = stack_restore(pcjq_state->jq);
+  assert(pcjq_state->pc);
+
+  *pcjq_state->backtracking = !pcjq_state->jq->initial_execution;
+}
+
 void _opcode_TOP(void *cjq_state) { 
    _init((compiled_jq_state*)cjq_state);
  }

@@ -37,6 +37,10 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     _cjq_state_ptr, = main_func.args
     
     # Define opcode-functions
+    _init_stack = ir.Function(module,
+                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
+                            name='_init_stack')
+    
     _opcode_TOP = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TOP')
@@ -92,6 +96,9 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     _opcode_BACKTRACK_RET = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_RET')
+    
+    # Initialize the stack
+    builder.call(_init_stack, [_cjq_state_ptr])
     
     # Define the argument types for the C function
     jq_util_funcs._get_num_opcodes.argtypes = []
