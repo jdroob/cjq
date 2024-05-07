@@ -464,7 +464,6 @@ static void _init(compiled_jq_state *cjq_state) {
       *cjq_state->raising = !jv_is_valid(cjq_state->jq->error);
     }
     cjq_state->pc++;
-    jv_nomem_handler(cjq_state->jq->nomem_handler, cjq_state->jq->nomem_handler_data);
 }
 
 static void _do_backtrack(compiled_jq_state *cjq_state) {
