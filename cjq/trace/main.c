@@ -23,11 +23,10 @@ void clean_up(compiled_jq_state *cjq_state, trace *opcodes) {
     free(opcodes->opcode_list);
     free(opcodes->opcode_list_len);
     free(opcodes);
-    free(cjq_state);    
-    // cjq_init should never have been called during this phase so cjq_free shouldn't be needed
+    free(cjq_state);
 }
 
-int initialize_python(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject **pModuleLowering) {
+int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject **pModuleLowering) {
     // Initialize CPython
     Py_Initialize();
     
@@ -98,7 +97,7 @@ int main(int argc, char *argv[]) {
     PyObject *pModule_llvmlite = NULL;
     PyObject *pModuleLowering = NULL;
 
-    if (initialize_python(path_to_cjq, &pModule_llvmlite, &pModuleLowering) != 0) {
+    if (init_cpython(path_to_cjq, &pModule_llvmlite, &pModuleLowering) != 0) {
         // Error occurred during Python initialization
         return 1;
     }
