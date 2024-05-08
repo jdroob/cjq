@@ -493,10 +493,6 @@ void _opcode_TOP(void *cjq_state) {
    _init((compiled_jq_state*)cjq_state);
  }
 
-void _opcode_BACKTRACK_TOP(void *cjq_state) {
-  // TODO: Delete?
-}
-
 void _opcode_SUBEXP_BEGIN(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
@@ -507,10 +503,6 @@ void _opcode_SUBEXP_BEGIN(void *cjq_state) {
   return;
 }
 
-void _opcode_BACKTRACK_SUBEXP_BEGIN(void *cjq_state) {
-  // TODO: Delete?
-}
-
 void _opcode_PUSHK_UNDER(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
@@ -519,10 +511,6 @@ void _opcode_PUSHK_UNDER(void *cjq_state) {
   jv v2 = stack_pop(pcjq_state->jq);
   stack_push(pcjq_state->jq, v);
   stack_push(pcjq_state->jq, v2);
-}
-
-void _opcode_BACKTRACK_PUSHK_UNDER(void *cjq_state) {
-  // TODO: Delete?
 }
 
 void _opcode_INDEX(void *cjq_state) {
@@ -556,10 +544,6 @@ void _opcode_INDEX(void *cjq_state) {
   return;
 }
 
-void _opcode_BACKTRACK_INDEX(void *cjq_state) {
-  // TODO: Delete?
-}
-
 void _opcode_SUBEXP_END(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
@@ -570,10 +554,6 @@ void _opcode_SUBEXP_END(void *cjq_state) {
   stack_push(pcjq_state->jq, a);
   stack_push(pcjq_state->jq, b);
   return;
-}
-
-void _opcode_BACKTRACK_SUBEXP_END(void *cjq_state) {
-  // TODO: Delete?
 }
 
 void _opcode_CALL_BUILTIN(void *cjq_state) {
@@ -610,10 +590,6 @@ void _opcode_CALL_BUILTIN(void *cjq_state) {
     _do_backtrack(pcjq_state);
   }
   return;
-}
-
-void _opcode_BACKTRACK_CALL_BUILTIN(void *cjq_state) {
-  // TODO: Delete?
 }
 
 void _opcode_RET(void *cjq_state) {

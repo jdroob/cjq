@@ -45,49 +45,25 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TOP')
     
-    _opcode_BACKTRACK_TOP = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_BACKTRACK_TOP')
-    
     _opcode_SUBEXP_BEGIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_SUBEXP_BEGIN')
-    
-    _opcode_BACKTRACK_SUBEXP_BEGIN = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_BACKTRACK_SUBEXP_BEGIN')
     
     _opcode_PUSHK_UNDER = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_PUSHK_UNDER')
     
-    _opcode_BACKTRACK_PUSHK_UNDER = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_BACKTRACK_PUSHK_UNDER')
-    
     _opcode_INDEX = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_INDEX')
-    
-    _opcode_BACKTRACK_INDEX = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_BACKTRACK_INDEX')
     
     _opcode_SUBEXP_END = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_SUBEXP_END')
     
-    _opcode_BACKTRACK_SUBEXP_END = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_BACKTRACK_SUBEXP_END')
-    
     _opcode_CALL_BUILTIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_CALL_BUILTIN')
-    
-    _opcode_BACKTRACK_CALL_BUILTIN = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_BACKTRACK_CALL_BUILTIN')
     
     _opcode_RET = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
@@ -121,52 +97,26 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
         curr_opcode = jq_util_funcs._opcode_list_at(ocodes_ptr, i)
         match curr_opcode:
             case 35:
-                builder.comment("Placeholder for call to TOP opcode-function")
                 builder.call(_opcode_TOP, [_cjq_state_ptr])
             case 23:
-                builder.comment("Placeholder for call to SUBEXP_BEGIN opcode-function")
                 builder.call(_opcode_SUBEXP_BEGIN, [_cjq_state_ptr])
             case 4:
-                builder.comment("Placeholder for call to PUSHK_UNDER opcode-function")
                 builder.call(_opcode_PUSHK_UNDER, [_cjq_state_ptr])
             case 24:
-                builder.comment("Placeholder for call to SUBEXP_END opcode-function")
                 builder.call(_opcode_SUBEXP_END, [_cjq_state_ptr])
             case 10:
-                builder.comment("Placeholder for call to INDEX opcode-function")
                 builder.call(_opcode_INDEX, [_cjq_state_ptr])
             case 27:
-                builder.comment("Placeholder for call to CALL_BUILTIN opcode-function")
                 builder.call(_opcode_CALL_BUILTIN, [_cjq_state_ptr])
             case 29:
-                builder.comment("Placeholder for call to RET opcode-function")
                 builder.call(_opcode_RET, [_cjq_state_ptr])
             case _:
                 print(curr_opcode)
                 print(curr_opcode+num_opcodes)
                 backtracking_opcodes = [35+num_opcodes, 23+num_opcodes, 4+num_opcodes, 10+num_opcodes, 24+num_opcodes, 27+num_opcodes, 29+num_opcodes]
                 if curr_opcode in backtracking_opcodes:
-                    if curr_opcode == backtracking_opcodes[0]:
-                        builder.call(_opcode_BACKTRACK_TOP, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_TOP opcode-function")
-                    elif curr_opcode == backtracking_opcodes[1]:
-                        builder.call(_opcode_BACKTRACK_SUBEXP_BEGIN, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_SUBEXP_BEGIN opcode-function")
-                    elif curr_opcode == backtracking_opcodes[2]:
-                        builder.call(_opcode_BACKTRACK_PUSHK_UNDER, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_PUSHK_UNDER opcode-function")
-                    elif curr_opcode == backtracking_opcodes[3]:
-                        builder.call(_opcode_BACKTRACK_INDEX, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_INDEX opcode-function")
-                    elif curr_opcode == backtracking_opcodes[4]:
-                        builder.call(_opcode_BACKTRACK_SUBEXP_END, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_SUBEXP_END opcode-function")
-                    elif curr_opcode == backtracking_opcodes[5]:
-                        builder.call(_opcode_BACKTRACK_CALL_BUILTIN, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_CALL_BUILTIN opcode-function")
-                    elif curr_opcode == backtracking_opcodes[6]:
+                    if curr_opcode == backtracking_opcodes[6]:
                         builder.call(_opcode_BACKTRACK_RET, [_cjq_state_ptr])
-                        builder.comment("Placeholder for call to _opcode_BACKTRACK_RET opcode-function")
                     else:
                         raise ValueError(f"Current backtracking opcode: {curr_opcode} does not match any existing opcodes")
                 else:
