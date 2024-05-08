@@ -123,8 +123,8 @@ cjq/frontend/frontend
 entry
 .vs/slnx.sqlite
 cjq/frontend/src/.dirstamp
-cjq/tests/prod1.json
-cjq/tests/prod2.json
+cjq/testing/prod1.json
+cjq/testing/prod2.json
 *.so
 llvm_gen
 runjq
