@@ -133,3 +133,5 @@ cjq/jq/.vscode/launch.json
 cjq/jq/.vscode/settings.json
 cjq/jq/.vscode/*
 *.s
+*.log
+cjq/testing/basic_ops/testresults.log
