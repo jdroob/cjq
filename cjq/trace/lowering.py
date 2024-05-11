@@ -8,9 +8,9 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     """
     Uses llvmlite C-binding feature to call cjq_execute from llvmlite.
     """
-    print("Made it to jq_lower")
-    print(f"ocodes_ptr passed to jq_lower: {hex(id(ocodes_ptr))}")
-    print(f"cjq_state_ptr passed to jq_lower: {hex(id(cjq_state_ptr))}")
+    # print("Made it to jq_lower")
+    # print(f"ocodes_ptr passed to jq_lower: {hex(id(ocodes_ptr))}")
+    # print(f"cjq_state_ptr passed to jq_lower: {hex(id(cjq_state_ptr))}")
     # Need this to call C functions from Python
     so_file = "/home/rubio/cjq/jq_util.so"
     
@@ -79,17 +79,17 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     # Define the argument types for the C function
     jq_util_funcs._get_num_opcodes.argtypes = []
     jq_util_funcs._get_num_opcodes.restype = c_int
-    print("Calling _get_num_opcodes")
+    # print("Calling _get_num_opcodes")
     num_opcodes = jq_util_funcs._get_num_opcodes()
-    print(f"This is the num_opcodes we got from lowering.py: {num_opcodes}")
+    # print(f"This is the num_opcodes we got from lowering.py: {num_opcodes}")
     
     # Define the argument types for the C function
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_opcode_list_len.restype = c_int
     # Get opcode_list length from cjq_state
     opcode_list_len = jq_util_funcs._get_opcode_list_len(ocodes_ptr)
-    print("Made it to back to jq_lower")
-    print(f"This is the opcode list length we got from lowering.py: {opcode_list_len}")
+    # print("Made it to back to jq_lower")
+    # print(f"This is the opcode list length we got from lowering.py: {opcode_list_len}")
     # Get all opcodes from opcode_list
     jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_int]
     jq_util_funcs._opcode_list_at.restype = c_uint8
@@ -111,8 +111,8 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
             case 29:
                 builder.call(_opcode_RET, [_cjq_state_ptr])
             case _:
-                print(curr_opcode)
-                print(curr_opcode+num_opcodes)
+                # print(curr_opcode)
+                # print(curr_opcode+num_opcodes)
                 backtracking_opcodes = [35+num_opcodes, 23+num_opcodes, 4+num_opcodes, 10+num_opcodes, 24+num_opcodes, 27+num_opcodes, 29+num_opcodes]
                 if curr_opcode in backtracking_opcodes:
                     if curr_opcode == backtracking_opcodes[6]:
@@ -129,13 +129,13 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     
 def generate_llvm_ir(ocodes_ptr, cjq_state_ptr):
     try:
-        print("Made it to generate_llvm_ir")
-        print(f"opcodes_ptr passed to generate_llvm_ir: {hex(id(ocodes_ptr))}")
-        print(f"cjq_state_ptr passed to generate_llvm_ir: {hex(id(cjq_state_ptr))}")
+        # print("Made it to generate_llvm_ir")
+        # print(f"opcodes_ptr passed to generate_llvm_ir: {hex(id(ocodes_ptr))}")
+        # print(f"cjq_state_ptr passed to generate_llvm_ir: {hex(id(cjq_state_ptr))}")
         llvm_ir = jq_lower(ocodes_ptr, cjq_state_ptr)
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
-        print(mod)
+        # print(mod)
         
         # Write LLVM IR to file
         with open("ir.ll", "w") as file:

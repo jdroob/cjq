@@ -20,10 +20,10 @@
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 void clean_up(compiled_jq_state *cjq_state, trace *opcodes) {
-    free(opcodes->opcode_list);
-    free(opcodes->opcode_list_len);
-    free(opcodes);
-    free(cjq_state);
+    free(opcodes->opcode_list); opcodes->opcode_list = NULL;
+    free(opcodes->opcode_list_len); opcodes->opcode_list_len = NULL;
+    free(opcodes); opcodes = NULL;
+    free(cjq_state); cjq_state = NULL;
 }
 
 int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject **pModuleLowering) {
@@ -105,26 +105,11 @@ int main(int argc, char *argv[]) {
     // For storing tracing information
     trace *opcodes = malloc(sizeof(trace));
 
-    // Dummy cjq_state for passing to opcode functions in LLVM
+    // Dummy cjq_state for passing to opcode functions while building LLVM
     compiled_jq_state *cjq_state = malloc(sizeof(compiled_jq_state));
-
-    // Trace execution
     int trace_error = cjq_trace(argc, argv, opcodes);
-    
-    // Generate LLVM IR
     int gen_ir_error = get_llvm_ir(cjq_state, opcodes, pModule_llvmlite, pModuleLowering);
-
-    // Clean up
     clean_up(cjq_state, opcodes);
-
-    // FOR DEBUGGING MEMORY LEAK
-    // int badwrite = ferror(stdout); *cjq_state.ret = 0;
-    // if (fclose(stdout)!=0 || badwrite) {  
-    //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
-    //     *cjq_state.ret = 2;
-    // }
-
-    // jq_exit(*cjq_state.ret);
 
     return 0;
 }

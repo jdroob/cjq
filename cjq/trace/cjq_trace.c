@@ -267,7 +267,7 @@ void trace_init(trace *opcodes, uint8_t *opcode_list, int opcode_list_len) {
 }
 
 static void debug_cb(void *data, jv input) {
-  int dumpopts = *(int *)data;
+  int dumpopts = *(int*)data;
   jv_dumpf(JV_ARRAY(jv_string("DEBUG:"), input), stderr, dumpopts & ~(JV_PRINT_PRETTY));
   fprintf(stderr, "\n");
 }
@@ -303,10 +303,6 @@ int wmain(int argc, wchar_t* wargv[]) {
 int umain(int argc, char* argv[]) {
 #else /*}*/
 int cjq_trace(int argc, char* argv[], trace *opcodes) {
-  // printf("argc: %d\n", argc);
-  for (int i = 0; i<argc; ++i) {
-    printf("argv[%d]: %s\n",i,argv[i]);
-  } printf("\n");
 #endif
   jq_state *jq = NULL;
   jq_util_input_state *input_state = NULL;
@@ -713,7 +709,6 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
   if (options & DUMP_DISASM) {
     jq_dump_disassembly(jq, 0);
     printf("\n");  
-    // ret = JQ_OK; // JOHN: Added this to guarantee this function returns
   }
 
   if ((options & SEQ))
@@ -784,8 +779,8 @@ out:
   opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);
-  jq_util_input_free(&input_state);  // JOHN: Now handled in cjq/main
-  // jq_teardown(&jq);    //TODO: Fix memory bug
+  jq_util_input_free(&input_state);
+  jq_teardown(&jq);
 
   if (options & EXIT_STATUS) {
     if (ret != JQ_OK_NO_OUTPUT)

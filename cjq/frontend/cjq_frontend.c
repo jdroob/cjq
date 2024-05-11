@@ -297,17 +297,18 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
 }
 
 void cjq_free(compiled_jq_state *cjq_state) {
-  free(cjq_state->ret);
-  free(cjq_state->jq_flags);
-  free(cjq_state->options);
-  free(cjq_state->dumpopts);
-  free(cjq_state->last_result);
-  free(cjq_state->value);
-  free(cjq_state->result);
-  free(cjq_state->pc);
-  free(cjq_state->backtracking);
-  free(cjq_state->cfunc_input);
-  free(cjq_state);
+  cjq_state->pc = NULL;
+  free(cjq_state->ret); cjq_state->ret = NULL;
+  free(cjq_state->jq_flags); cjq_state->jq_flags = NULL;
+  free(cjq_state->options); cjq_state->options = NULL;
+  free(cjq_state->dumpopts); cjq_state->dumpopts = NULL;
+  free(cjq_state->last_result); cjq_state->last_result = NULL;
+  free(cjq_state->value); cjq_state->value = NULL;
+  free(cjq_state->result); cjq_state->result = NULL;
+  free(cjq_state->raising); cjq_state->raising = NULL;
+  free(cjq_state->backtracking); cjq_state->backtracking = NULL;
+  free(cjq_state->cfunc_input); cjq_state->cfunc_input = NULL;
+  free(cjq_state); cjq_state = NULL;
 }
 
 void cjq_execute(jq_state *jq, jq_util_input_state* input_state, 
@@ -386,10 +387,6 @@ int wmain(int argc, wchar_t* wargv[]) {
 int umain(int argc, char* argv[]) {
 #else /*}*/
 int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
-  // printf("argc: %d\n", argc);
-  for (int i = 0; i<argc; ++i) {
-    printf("argv[%d]: %s\n",i,argv[i]);
-  } printf("\n");
   #endif
   jq_state *jq = NULL;
   jq_util_input_state *cjq_input_state = NULL;
@@ -789,7 +786,6 @@ int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
   if (options & DUMP_DISASM) {
     jq_dump_disassembly(jq, 0);
     printf("\n");  
-    ret = JQ_OK; // JOHN: Added this to guarantee this function returns
   }
 
   if ((options & SEQ))

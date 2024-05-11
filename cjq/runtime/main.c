@@ -28,8 +28,6 @@ int main(int argc, char *argv[]) {
   // TODO: Refactor such that we don't compile a second time (just need data such as bc->constants)
   int parse_error = cjq_parse(argc, argv, cjq_state);
   jq_program((void*)cjq_state);
-
-  // Free up resources
-  clean_up(cjq_state);     // TODO: Fixme
+  clean_up(cjq_state);
   return 0;
 }

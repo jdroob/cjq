@@ -366,10 +366,10 @@ jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, int tracing
       else 
         opcode_list[idx] = opcode;  
     }
-    if (backtracking)
-      printf("opcode: %d\n", ON_BACKTRACK(opcode));
-    else
-      printf("opcode: %d\n", opcode);
+    // if (backtracking)
+    //   printf("opcode: %d\n", ON_BACKTRACK(opcode));
+    // else
+    //   printf("opcode: %d\n", opcode);
     raising = 0;
 
     if (jq->debug_trace_enabled) {

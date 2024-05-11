@@ -19,7 +19,7 @@ uint16_t _get_opcode(void* cjq_state_ptr) {
 }
 
 int _get_opcode_list_len(void* ocodes_ptr) {
-    printf("Made it to _get_opcode_list_len\n");
+    // printf("Made it to _get_opcode_list_len\n");
     return *((trace*)ocodes_ptr)->opcode_list_len;
 }
 
@@ -29,10 +29,6 @@ uint8_t _opcode_list_at(void* ocodes_ptr, int index) {
 }
 
 int _get_num_opcodes() {
-    printf("In _get_num_opcodes\n");
+    // printf("In _get_num_opcodes\n");
     return NUM_OPCODES;
 }
-
-// Step 1: Run Python script & write to ir.ll
-// Step 2: Compile main.c with ir.ll
-// Step 3: Run the executable
