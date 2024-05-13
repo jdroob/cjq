@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define JSON file paths as variables
-json_file1="/home/rubio/cjq/cjq/testing/basic_ops/json/prod_example/prod1.json"
-json_file2="/home/rubio/cjq/cjq/testing/basic_ops/json/prod_example/prod2.json"
+json_file1="$HOME/cjq/cjq/testing/basic_ops/json/prod_example/prod1.json"
+json_file2="$HOME/cjq/cjq/testing/basic_ops/json/prod_example/prod2.json"
 
 # Function to compare outputs and write result to testresults.log
 function compare_outputs {
@@ -64,8 +64,8 @@ for jq_file in cjq/testing/basic_ops/jq/prod_example/*.jq; do
 done
 
 # Further testing
-jq_file="/home/rubio/cjq/cjq/testing/basic_ops/jq/builtin_ops/add_example.jq"
-json_file1="/home/rubio/cjq/cjq/testing/basic_ops/json/builtin_ops/add_example.json"
+jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/add_example.jq"
+json_file1="$HOME/cjq/cjq/testing/basic_ops/json/builtin_ops/add_example.json"
 # Command 1: Generate LLVM IR (suppress output)
 # echo "Generating LLVM IR for $jq_filename..." # Debug
 ./llvm_gen -f "$jq_file" "$json_file1" --debug-dump-disasm >/dev/null
