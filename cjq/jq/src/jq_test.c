@@ -264,11 +264,11 @@ static int test_pthread_jq_parse(jq_state *jq, struct jv_parser *parser)
     value = jv_parser_next(parser);
     while (jv_is_valid(value)) {
         jq_start(jq, value, 0);
-        jv result = jq_next(jq);
+        jv result = jq_next(jq, NULL, NULL, 0);
 
         while (jv_is_valid(result)) {
             jv_free(result);
-            result = jq_next(jq);
+            result = jq_next(jq, NULL, NULL, 0);
         }
         jv_free(result);
         value = jv_parser_next(parser);

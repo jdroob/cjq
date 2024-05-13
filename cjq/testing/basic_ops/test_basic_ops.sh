@@ -1,14 +1,95 @@
 #!/bin/bash
 
-# Command 1: Generate LLVM IR
-echo "Generating LLVM IR..."
-./llvm_gen -f -s -C cjq/testing/basic_ops/jq/add.jq /home/rubio/cjq/cjq/testing/basic_ops/json/prod1.json /home/rubio/cjq/cjq/testing/basic_ops/json/prod2.json --debug-dump-disasm
+# Define JSON file paths as variables
+json_file1="/home/rubio/cjq/cjq/testing/basic_ops/json/prod_example/prod1.json"
+json_file2="/home/rubio/cjq/cjq/testing/basic_ops/json/prod_example/prod2.json"
 
-# Command 2: Compile runjq
-echo "Compiling runjq..."
-clang cjq/runtime/main.c cjq/frontend/*.c cjq/jq/src/*.c cjq/llvmlib/*.c cjq/pylib/*.c ir.ll -g -lm -o runjq -lpython3.12
+# Function to compare outputs and write result to testresults.log
+function compare_outputs {
+    if [ "$1" = "$2" ]; then
+        echo "PASSED : $3" >> cjq/testing/basic_ops/testresults.log
+        ((passed_tests++))
+    else
+        echo "FAILED : $3" >> cjq/testing/basic_ops/testresults.log
+        echo "Differences in output for $3:" >> cjq/testing/basic_ops/testresults.log
+        diff <(echo "$1") <(echo "$2") >> cjq/testing/basic_ops/testresults.log
+        ((failed_tests++))
+    fi
+    ((total_tests++))
+}
 
-# Command 3: Run runjq and write output to testresults.log
-echo "Running runjq..."
-./runjq -f -s -C cjq/testing/basic_ops/jq/add.jq /home/rubio/cjq/cjq/testing/basic_ops/json/prod1.json /home/rubio/cjq/cjq/testing/basic_ops/json/prod2.json --debug-dump-disasm | tee -a cjq/testing/basic_ops/testresults.log
-echo "Done"
+# Command 0: Clear testing log
+echo "" > cjq/testing/basic_ops/testresults.log
+
+# Print message indicating testing below opcode functions
+echo "TESTING BELOW OPCODE FUNCTIONS:"
+echo -e "\nTOP"
+echo "SUBEXP_BEGIN"
+echo "SUBEXP_END"
+echo "PUSHK_UNDER"
+echo "INDEX"
+echo "CALL_BUILTIN"
+echo "RET"
+echo -e "\nRunning tests...\n"
+
+# Initialize test counts
+passed_tests=0
+failed_tests=0
+total_tests=0
+total_coverage=0
+
+# Loop through each .jq file in the directory
+for jq_file in cjq/testing/basic_ops/jq/prod_example/*.jq; do
+    jq_filename=$(basename "$jq_file")  # Get the filename without the path
+    # echo "Running tests for $jq_filename..."
+    
+    # Command 1: Generate LLVM IR (suppress output)
+    # echo "Generating LLVM IR for $jq_filename..." # Debug
+    ./llvm_gen -f -s "$jq_file" "$json_file1" "$json_file2" --debug-dump-disasm >/dev/null
+    
+    # Compile runjq
+    # echo "Compiling jq for $jq_filename..." # Debug
+    clang cjq/runtime/main.c cjq/frontend/*.c cjq/jq/src/*.c cjq/llvmlib/*.c cjq/pylib/*.c cjq/jq/src/decNumber/decNumber.c cjq/jq/src/decNumber/decContext.c ir.ll -g -lm -o runjq -lpython3.12 -DUSE_DECNUM=1 -Wno-deprecated-non-prototype
+    
+    # Command 2: Run runjq and capture output
+    # echo "Running cjq for $jq_filename..."  # Debug
+    cjq_output=$(./runjq -f -s "$jq_file" "$json_file1" "$json_file2" --debug-dump-disasm)
+
+    # Command 3: Run jq and capture output
+    # echo "Running jq for $jq_filename..." # Debug
+    jq_output=$(jq -f -s "$jq_file" "$json_file1" "$json_file2" --debug-dump-disasm)
+
+    # Compare outputs and write result to testing.log
+    compare_outputs "$cjq_output" "$jq_output" "$jq_filename"
+done
+
+# Further testing
+jq_file="/home/rubio/cjq/cjq/testing/basic_ops/jq/builtin_ops/add_example.jq"
+json_file1="/home/rubio/cjq/cjq/testing/basic_ops/json/builtin_ops/add_example.json"
+# Command 1: Generate LLVM IR (suppress output)
+# echo "Generating LLVM IR for $jq_filename..." # Debug
+./llvm_gen -f "$jq_file" "$json_file1" --debug-dump-disasm >/dev/null
+
+# Compile runjq
+# echo "Compiling jq for $jq_filename..." # Debug
+./compile_runjq.sh
+
+# Command 2: Run runjq and capture output
+# echo "Running cjq for $jq_filename..."  # Debug
+cjq_output=$(./runjq -f "$jq_file" "$json_file1" --debug-dump-disasm)
+
+# Command 3: Run jq and capture output
+# echo "Running jq for $jq_filename..." # Debug
+jq_output=$(jq -f "$jq_file" "$json_file1" --debug-dump-disasm)
+
+# Compare outputs and write result to testing.log
+compare_outputs "$cjq_output" "$jq_output" "$jq_filename"
+
+# Print test execution summary
+echo "======================================"
+echo "         Test Execution Summary"
+echo "======================================"
+echo "Total Tests: $total_tests"
+echo "Passed Tests: $passed_tests"
+echo "Failed Tests: $failed_tests"
+awk -v var1=$passed_tests -v var2=$total_tests 'BEGIN { printf "Test Coverage: %.2f%%\n", ( var1 / var2 * 100) }'
