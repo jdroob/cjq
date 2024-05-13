@@ -1,7 +1,7 @@
 from llvmlite import binding as llvm
 from llvmlite import ir
 from ctypes import *
-import sys
+import os
 
 
 def jq_lower(ocodes_ptr, cjq_state_ptr):
@@ -12,7 +12,10 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     # print(f"ocodes_ptr passed to jq_lower: {hex(id(ocodes_ptr))}")
     # print(f"cjq_state_ptr passed to jq_lower: {hex(id(cjq_state_ptr))}")
     # Need this to call C functions from Python
-    so_file = "/home/rubio/cjq/jq_util.so"
+    
+    # Get the home directory
+    home_dir = os.path.expanduser("~")
+    so_file = os.path.join(home_dir, "cjq/jq_util.so")
     
     jq_util_funcs = CDLL(so_file)
    

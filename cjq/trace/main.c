@@ -35,7 +35,17 @@ int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject 
     char python_code[512];
     snprintf(python_code, sizeof(python_code), "sys.path.append(\"%s\")", path_to_cjq);
     PyRun_SimpleString(python_code);
-    PyRun_SimpleString("sys.path.append('/home/rubio/anaconda3/envs/numbaEnv/lib/python3.12/site-packages/')\n");
+
+     // Get HOME environment variable
+    const char *home = getenv("HOME");
+    if (!home) {
+        fprintf(stderr, "Error: HOME environment variable is not set\n");
+        return 1;
+    }
+
+    // Append site-packages path
+    snprintf(python_code, sizeof(python_code), "sys.path.append('%s/anaconda3/envs/numbaEnv/lib/python3.12/site-packages/')", home);
+    PyRun_SimpleString(python_code);
 
     // Import llvmlite module
     *pModule_llvmlite = PyImport_ImportModule("llvmlite");
