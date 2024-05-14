@@ -489,19 +489,29 @@ void _init_stack(void *cjq_state) {
   *pcjq_state->backtracking = !pcjq_state->jq->initial_execution;
 }
 
-void _opcode_TOP(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
- }
-
-void _opcode_SUBEXP_BEGIN(void *cjq_state) {
+void _opcode_LOADK(void *cjq_state) { 
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
-  jv v = stack_pop(pcjq_state->jq);
-  stack_push(pcjq_state->jq, jv_copy(v));
+  jv v = jv_array_get(jv_copy(frame_current(pcjq_state->jq)->bc->constants), *pcjq_state->pc++);
+  assert(jv_is_valid(v));
+  jv_free(stack_pop(pcjq_state->jq));
   stack_push(pcjq_state->jq, v);
-  pcjq_state->jq->subexp_nest++;
-  return;
-}
+ }
+
+void _opcode_DUP(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_DUPN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_DUP2(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
 
 void _opcode_PUSHK_UNDER(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
@@ -512,6 +522,31 @@ void _opcode_PUSHK_UNDER(void *cjq_state) {
   stack_push(pcjq_state->jq, v);
   stack_push(pcjq_state->jq, v2);
 }
+
+void _opcode_POP(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_LOADV(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_LOADVN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_STOREV(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_STORE_GLOBAL(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
 
 void _opcode_INDEX(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
@@ -544,6 +579,107 @@ void _opcode_INDEX(void *cjq_state) {
   return;
 }
 
+void _opcode_INDEX_OPT(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_EACH(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_BACKTRACK_EACH(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_EACH_OPT(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_BACKTRACK_EACH_OPT(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_FORK(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_BACKTRACK_FORK(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_TRY_BEGIN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_BACKTRACK_TRY_BEGIN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_TRY_END(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_BACKTRACK_TRY_END(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_JUMP(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_JUMP_F(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_BACKTRACK(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   _do_backtrack((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+ 
+void _opcode_APPEND(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+ 
+void _opcode_INSERT(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+ 
+void _opcode_RANGE(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+ 
+void _opcode_BACKTRACK_RANGE(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+
+void _opcode_SUBEXP_BEGIN(void *cjq_state) {
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  jv v = stack_pop(pcjq_state->jq);
+  stack_push(pcjq_state->jq, jv_copy(v));
+  stack_push(pcjq_state->jq, v);
+  pcjq_state->jq->subexp_nest++;
+  return;
+}
+
 void _opcode_SUBEXP_END(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
@@ -555,6 +691,26 @@ void _opcode_SUBEXP_END(void *cjq_state) {
   stack_push(pcjq_state->jq, b);
   return;
 }
+ 
+void _opcode_PATH_BEGIN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+ 
+void _opcode_BACKTRACK_PATH_BEGIN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+  
+void _opcode_PATH_END(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
+  
+void _opcode_BACKTRACK_PATH_END(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
 
 void _opcode_CALL_BUILTIN(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
@@ -591,6 +747,11 @@ void _opcode_CALL_BUILTIN(void *cjq_state) {
   }
   return;
 }
+  
+void _opcode_CALL_JQ(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+   // TODO: Implement me
+ }
 
 void _opcode_RET(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
@@ -620,3 +781,63 @@ void _opcode_BACKTRACK_RET(void *cjq_state) {
    _init((compiled_jq_state*)cjq_state);
    _do_backtrack((compiled_jq_state*)cjq_state);
 }
+
+void _opcode_TAIL_CALL_JQ(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_CLOSURE_PARAM(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_CLOSURE_REF(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_CLOSURE_CREATE(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_CLOSURE_CREATE_C(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_TOP(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_CLOSURE_PARAM_REGULAR(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_DEPS(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_MODULEMETA(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_GENLABEL(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_DESTRUCTURE_ALT(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_BACKTRACK_DESTRUCTURE_ALT(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_STOREVN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+ 
+void _opcode_BACKTRACK_STOREVN(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
+
+void _opcode_ERRORK(void *cjq_state) { 
+   _init((compiled_jq_state*)cjq_state);
+ }
