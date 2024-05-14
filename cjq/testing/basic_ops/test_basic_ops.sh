@@ -30,6 +30,7 @@ echo "PUSHK_UNDER"
 echo "INDEX"
 echo "CALL_BUILTIN"
 echo "LOADK"
+echo "DUP"
 echo "RET"
 echo -e "\nRunning tests...\n"
 
@@ -66,13 +67,14 @@ done
 
 # Further testing
 
-# Define array of example numbers
-examples=("example1" "example2" "example3" "example4")
+# Define test cases
+test_cases=("add_example1" "add_example2" "add_example3" "add_example4" 
+            "sub_example1" "sub_example2" "muldiv_example1" "muldiv_example2"
+            "muldiv_example3" "muldiv_example4")
 
-# Loop through each example
-for example in "${examples[@]}"; do
-    jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/add_${example}.jq"
-    json_file="$HOME/cjq/cjq/testing/basic_ops/json/builtin_ops/add_${example}.json"
+for test_case in "${test_cases[@]}"; do
+    jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
+    json_file="$HOME/cjq/cjq/testing/basic_ops/json/builtin_ops/${test_case}.json"
 
     # Command 1: Generate LLVM IR (suppress output)
     # echo "Generating LLVM IR for $jq_file..." # Debug
@@ -91,9 +93,8 @@ for example in "${examples[@]}"; do
     jq_output=$(jq -f "$jq_file" "$json_file" --debug-dump-disasm)
 
     # Compare outputs and write result to testing.log
-    compare_outputs "$cjq_output" "$jq_output" "add_$example.jq"
+    compare_outputs "$cjq_output" "$jq_output" "$test_case.jq"
 done
-
 
 
 # Print test execution summary

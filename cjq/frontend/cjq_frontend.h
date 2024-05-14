@@ -16,6 +16,7 @@ typedef struct {
     jv *cfunc_input;
     jq_state* jq;
     uint16_t* pc;
+    uint16_t* opcode;
     int* backtracking;
 } compiled_jq_state;
 

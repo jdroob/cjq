@@ -268,7 +268,8 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
   int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
   int* praising = malloc(sizeof(int)); *praising = 0;
-  uint16_t* ppc = malloc(sizeof(uint16_t));
+  // uint16_t* ppc = malloc(sizeof(uint16_t));
+  uint16_t* popcode = malloc(sizeof(uint16_t));
   jv *pcfunc_input = malloc(sizeof(jv)*MAX_CFUNCTION_ARGS);
 
   cjq_state->ret = pret; pret = NULL;
@@ -276,7 +277,9 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   cjq_state->options = poptions; poptions = NULL;
   cjq_state->dumpopts = pdumpopts; pdumpopts = NULL;
   cjq_state->last_result = plast_result; plast_result = NULL;
-  cjq_state->pc = ppc; ppc = NULL;
+  // cjq_state->pc = ppc; ppc = NULL;
+  cjq_state->pc = NULL;
+  cjq_state->opcode = popcode; popcode = NULL;
   cjq_state->jq = jq; jq = NULL;
   cjq_state->result = NULL;
   cjq_state->backtracking = pbacktracking; pbacktracking = NULL;
@@ -298,6 +301,7 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
 
 void cjq_free(compiled_jq_state *cjq_state) {
   cjq_state->pc = NULL;
+  free(cjq_state->opcode); cjq_state->opcode = NULL;
   free(cjq_state->ret); cjq_state->ret = NULL;
   free(cjq_state->jq_flags); cjq_state->jq_flags = NULL;
   free(cjq_state->options); cjq_state->options = NULL;
