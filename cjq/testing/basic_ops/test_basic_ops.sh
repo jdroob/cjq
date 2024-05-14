@@ -64,26 +64,36 @@ for jq_file in cjq/testing/basic_ops/jq/prod_example/*.jq; do
 done
 
 # Further testing
-jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/add_example.jq"
-json_file1="$HOME/cjq/cjq/testing/basic_ops/json/builtin_ops/add_example.json"
-# Command 1: Generate LLVM IR (suppress output)
-# echo "Generating LLVM IR for $jq_filename..." # Debug
-./llvm_gen -f "$jq_file" "$json_file1" --debug-dump-disasm >/dev/null
 
-# Compile runjq
-# echo "Compiling jq for $jq_filename..." # Debug
-./compile_runjq.sh
+# Define array of example numbers
+examples=("example1" "example2" "example3" "example4")
 
-# Command 2: Run runjq and capture output
-# echo "Running cjq for $jq_filename..."  # Debug
-cjq_output=$(./runjq -f "$jq_file" "$json_file1" --debug-dump-disasm)
+# Loop through each example
+for example in "${examples[@]}"; do
+    jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/add_${example}.jq"
+    json_file="$HOME/cjq/cjq/testing/basic_ops/json/builtin_ops/add_${example}.json"
 
-# Command 3: Run jq and capture output
-# echo "Running jq for $jq_filename..." # Debug
-jq_output=$(jq -f "$jq_file" "$json_file1" --debug-dump-disasm)
+    # Command 1: Generate LLVM IR (suppress output)
+    # echo "Generating LLVM IR for $jq_file..." # Debug
+    ./llvm_gen -f "$jq_file" "$json_file" --debug-dump-disasm >/dev/null
 
-# Compare outputs and write result to testing.log
-compare_outputs "$cjq_output" "$jq_output" "$jq_filename"
+    # Compile runjq
+    # echo "Compiling jq for $jq_file..." # Debug
+    ./compile_runjq.sh
+
+    # Command 2: Run runjq and capture output
+    # echo "Running cjq for $jq_file..."  # Debug
+    cjq_output=$(./runjq -f "$jq_file" "$json_file" --debug-dump-disasm)
+
+    # Command 3: Run jq and capture output
+    # echo "Running jq for $jq_file..." # Debug
+    jq_output=$(jq -f "$jq_file" "$json_file" --debug-dump-disasm)
+
+    # Compare outputs and write result to testing.log
+    compare_outputs "$cjq_output" "$jq_output" "add_$example.jq"
+done
+
+
 
 # Print test execution summary
 echo "======================================"
