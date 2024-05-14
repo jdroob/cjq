@@ -29,6 +29,7 @@ echo "SUBEXP_END"
 echo "PUSHK_UNDER"
 echo "INDEX"
 echo "CALL_BUILTIN"
+echo "LOADK"
 echo "RET"
 echo -e "\nRunning tests...\n"
 
