@@ -52,7 +52,7 @@ class Opcode(Enum):
 
 def jq_lower(ocodes_ptr, cjq_state_ptr):
     """
-    Uses llvmlite C-binding feature to call cjq_execute from llvmlite.
+    Uses llvmlite C-binding feature to call opcode functions from llvmlite.
     """
     
     # Get the home directory

@@ -440,16 +440,6 @@ static void jq_print(compiled_jq_state *cjq_state) {
       fflush(stdout);
 }
 
-void _cjq_execute() {
-   // DEPRECATED
-   
-    // Call cjq_execute
-   //  cjq_execute(cjq_state.jq, cjq_state.input_state, cjq_state.jq_flags,
-   //               cjq_state.dumpopts, cjq_state.options, cjq_state.ret,
-   //               cjq_state.last_result, cjq_state.opcode_list, 
-   //               cjq_state.opcode_list_len, 0);
-}
-
 static void _init(compiled_jq_state *cjq_state) {
    if (cjq_state->jq->halted) {
       if (cjq_state->jq->debug_trace_enabled)
@@ -770,7 +760,7 @@ void _opcode_RET(void *cjq_state) {
       stack_save(pcjq_state->jq, pcjq_state->pc - 1, spos);
       pcjq_state->result = malloc(sizeof(jv));
       *pcjq_state->result = value;
-      jq_print(cjq_state);    // Printing works but there's also a memory leak issue when printing
+      jq_print(cjq_state);
       return;
    }
    stack_push(pcjq_state->jq, value);
