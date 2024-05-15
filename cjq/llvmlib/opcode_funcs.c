@@ -19,12 +19,15 @@
 #include "../jq/src/locfile.h"
 #include "../jq/src/jv.h"
 #include "../jq/src/jq.h"
+#include "../jq/src/bytecode.h"
 #include "../jq/src/parser.h"
 #include "../jq/src/builtin.h"
 #include "../jq/src/util.h"
 #include "../jq/src/linker.h"
 
 #include "../frontend/cjq_frontend.h"
+
+#define ON_BACKTRACK(op) ((op)+NUM_OPCODES)
 
 struct jq_state {
   void (*nomem_handler)(void *);
@@ -445,6 +448,10 @@ static void jq_print(compiled_jq_state *cjq_state) {
 }
 
 static void _init(compiled_jq_state *cjq_state) {
+  /**
+   * Below is everything that happens between loop guard
+   * and start of switch statement in jq_next
+  */
    if (cjq_state->jq->halted) {
       if (cjq_state->jq->debug_trace_enabled)
         printf("\t<halted>\n");
@@ -454,7 +461,7 @@ static void _init(compiled_jq_state *cjq_state) {
    *cjq_state->opcode = *cjq_state->pc;
    *cjq_state->raising = 0;
    if (*cjq_state->backtracking) {
-      // opcode = ON_BACKTRACK(opcode);   // No longer necessary :)
+      *cjq_state->opcode = ON_BACKTRACK(*cjq_state->opcode);
       *cjq_state->backtracking = 0;
       *cjq_state->raising = !jv_is_valid(cjq_state->jq->error);
     }
@@ -474,14 +481,25 @@ static void _do_backtrack(compiled_jq_state *cjq_state) {
    *cjq_state->backtracking = 1;
 }
 
-void _init_stack(void* cjq_state) {
+void _init_jq_next(void* cjq_state) {
+  /**
+   * Below should be equivalent logic to what happens 
+   * between start of jq_next and start of while loop
+   * in jq_next.
+  */
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  // jv cfunc_input[MAX_CFUNCTION_ARGS];    <-- Taken care of in cjq_init
   jv_nomem_handler(pcjq_state->jq->nomem_handler, pcjq_state->jq->nomem_handler_data);
 
   pcjq_state->pc = stack_restore(pcjq_state->jq);
   assert(pcjq_state->pc);
 
+  // int raising;   <-- raising is member of cjq_state (set to zero in _init())
   *pcjq_state->backtracking = !pcjq_state->jq->initial_execution;
+  // int idx;       <-- only needed this for tracing
+
+  pcjq_state->jq->initial_execution = 0;
+  assert(jv_get_kind(pcjq_state->jq->error) == JV_KIND_NULL);
 }
 
 void _init_output_stream(void* cjq_state, uint16_t nprint_loops) {
@@ -698,7 +716,41 @@ void _opcode_TRY_BEGIN(void *cjq_state) {
 void _opcode_BACKTRACK_TRY_BEGIN(void *cjq_state) { 
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
-   // TODO: Implement me
+  if (!*pcjq_state->raising) {
+    /*
+      * `try EXP ...` -- EXP backtracked (e.g., EXP was `empty`), so we
+      * backtrack more:
+      */
+    jv_free(stack_pop(pcjq_state->jq));
+    _do_backtrack(pcjq_state);
+  } else {    // JOHN - BE CAREFUL WITH THIS!!! Why is else case implied in jq interpreter?
+    /*
+      * Else `(try EXP ... ) | EXP2` raised an error.
+      *
+      * If the error was wrapped in another error, then that means EXP2 raised
+      * the error.  We unwrap it and re-raise it as it wasn't raised by EXP.
+      *
+      * See commentary in gen_try().
+      */
+    jv e = jv_invalid_get_msg(jv_copy(pcjq_state->jq->error));
+    if (!jv_is_valid(e) && jv_invalid_has_msg(jv_copy(e))) {
+      set_error(pcjq_state->jq, e);
+      _do_backtrack(pcjq_state);
+    }
+    jv_free(e);
+
+    /*
+      * Else we caught an error containing a non-error value, so we jump to
+      * the handler.
+      *
+      * See commentary in gen_try().
+      */
+    uint16_t offset = *pcjq_state->pc++;
+    jv_free(stack_pop(pcjq_state->jq)); // free the input
+    stack_push(pcjq_state->jq, jv_invalid_get_msg(pcjq_state->jq->error));  // push the error's message
+    pcjq_state->jq->error = jv_null();
+    pcjq_state->pc += offset;
+  }
  }
 
 void _opcode_TRY_END(void *cjq_state) { 
@@ -710,7 +762,10 @@ void _opcode_TRY_END(void *cjq_state) {
 void _opcode_BACKTRACK_TRY_END(void *cjq_state) { 
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
-   // TODO: Implement me
+  // Wrap the error so the matching TRY_BEGIN doesn't catch it
+  if (*pcjq_state->raising)
+    set_error(pcjq_state->jq, jv_invalid_with_msg(jv_copy(pcjq_state->jq->error)));
+  _do_backtrack(pcjq_state);
  }
 
 void _opcode_JUMP(void *cjq_state) { 
@@ -851,8 +906,7 @@ void _opcode_RET(void *cjq_state) {
       stack_save(pcjq_state->jq, pcjq_state->pc - 1, spos);
       pcjq_state->result = malloc(sizeof(jv));
       *pcjq_state->result = value;
-      while ((*pcjq_state->nprint_loops)--)
-        jq_print(cjq_state);
+      jq_print(cjq_state);
       return;
    }
    stack_push(pcjq_state->jq, value);

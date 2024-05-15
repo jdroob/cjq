@@ -50,7 +50,7 @@ class Opcode(Enum):
     ERRORK=42
 
 
-def jq_lower(ocodes_ptr, cjq_state_ptr):
+def jq_lower(opcodes_ptr, cjq_state_ptr):
     """
     Uses llvmlite C-binding feature to call opcode functions from llvmlite.
     """
@@ -83,9 +83,9 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     _cjq_state_ptr, = main_func.args
     
     # Define opcode-functions
-    _init_stack = ir.Function(module,
+    _init_jq_next = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_init_stack')
+                            name='_init_jq_next')
     
     _init_output_stream = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type, ir.IntType(16)]),
@@ -308,9 +308,6 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
                             name='_opcode_ERRORK')
     
     
-    # Initialize jq_state stack
-    builder.call(_init_stack, [_cjq_state_ptr])
-    
     # Define argument types for C function
     jq_util_funcs._get_num_opcodes.argtypes = []
     jq_util_funcs._get_num_opcodes.restype = c_int
@@ -323,25 +320,36 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     jq_util_funcs._get_opcode_list_len.restype = c_int
     
     # Get opcode_list length from cjq_state
-    opcode_list_len = jq_util_funcs._get_opcode_list_len(ocodes_ptr)
+    opcode_list_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
     
     # Define argument types for C function
-    jq_util_funcs._get_nprint_loops.argtypes = [c_void_p]
-    jq_util_funcs._get_nprint_loops.restype = c_int
+    # jq_util_funcs._get_nprint_loops.argtypes = [c_void_p]
+    # jq_util_funcs._get_nprint_loops.restype = c_int
     
-    # Get opcode_list length from cjq_state
-    nprint_loops = jq_util_funcs._get_nprint_loops(ocodes_ptr)
-    _nprint_loops = builder.alloca(ir.IntType(16), name="_nprint_loops")
-    builder.store(ir.Constant(ir.IntType(16), nprint_loops), _nprint_loops)
+    # # Get opcode_list length from cjq_state
+    # nprint_loops = jq_util_funcs._get_nprint_loops(opcodes_ptr)
+    # _nprint_loops = builder.alloca(ir.IntType(16), name="_nprint_loops")
+    # builder.store(ir.Constant(ir.IntType(16), nprint_loops), _nprint_loops)
     
-    # Pass nprint_loops to cjq_state
-    builder.call(_init_output_stream, [_cjq_state_ptr, builder.load(_nprint_loops)])
+    # # Pass nprint_loops to cjq_state
+    # builder.call(_init_output_stream, [_cjq_state_ptr, builder.load(_nprint_loops)])
     
     # Get all opcodes from opcode_list
     jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_int]
     jq_util_funcs._opcode_list_at.restype = c_uint8
-    for i in range(opcode_list_len):
-        curr_opcode = jq_util_funcs._opcode_list_at(ocodes_ptr, i)
+    
+    # Also, get all entry points from jq_next_entry_list
+    jq_util_funcs._jq_next_entry_list_at.argtypes = [c_void_p, c_int]
+    jq_util_funcs._jq_next_entry_list_at.restype = c_uint16
+    jq_next_entry_idx = 0
+    
+    for opcode_lis_idx in range(opcode_list_len):
+        # Check if we're at a jq_next entry point
+        next_entry_point = jq_util_funcs._jq_next_entry_list_at(opcodes_ptr, jq_next_entry_idx)
+        if opcode_lis_idx == next_entry_point:
+            builder.call(_init_jq_next, [_cjq_state_ptr])
+            jq_next_entry_idx += 1
+        curr_opcode = jq_util_funcs._opcode_list_at(opcodes_ptr, opcode_lis_idx)
         match curr_opcode:
             case Opcode.LOADK.value:
                 builder.call(_opcode_LOADK, [_cjq_state_ptr])
@@ -444,9 +452,9 @@ def jq_lower(ocodes_ptr, cjq_state_ptr):
     
     return module
     
-def generate_llvm_ir(ocodes_ptr, cjq_state_ptr):
+def generate_llvm_ir(opcodes_ptr, cjq_state_ptr):
     try:
-        llvm_ir = jq_lower(ocodes_ptr, cjq_state_ptr)
+        llvm_ir = jq_lower(opcodes_ptr, cjq_state_ptr)
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
         

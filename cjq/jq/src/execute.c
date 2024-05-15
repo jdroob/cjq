@@ -338,7 +338,11 @@ static void set_error(jq_state *jq, jv value) {
 
 #define ON_BACKTRACK(op) ((op)+NUM_OPCODES)
 
-jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, int tracing) {
+jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, 
+           uint16_t* jq_next_entry_list, int* jq_next_entry_list_len) {
+  // Tracing
+  jq_next_entry_list[(*jq_next_entry_list_len)++] = *opcode_list_len;
+  
   jv cfunc_input[MAX_CFUNCTION_ARGS];
 
   jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
@@ -359,13 +363,11 @@ jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, int tracing
       return jv_invalid();
     }
     uint16_t opcode = *pc;
-    if (tracing || backtracking) {    // JOHN: Do something similar in process to avoid printing twice?
       idx = *opcode_list_len; ++(*opcode_list_len);
       if (backtracking)
         opcode_list[idx] = ON_BACKTRACK(opcode);  
       else 
         opcode_list[idx] = opcode;  
-    }
     // if (backtracking)
     //   printf("opcode: %d\n", ON_BACKTRACK(opcode));
     // else

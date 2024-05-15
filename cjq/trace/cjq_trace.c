@@ -182,12 +182,12 @@ enum {
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
-                   uint8_t* opcode_list, int* opcode_list_len, int tracing, uint16_t* pnprint_loops) {
+                   uint8_t* opcode_list, int* opcode_list_len, uint16_t* jq_next_entry_list, 
+                   int* jq_next_entry_list_len) {
   int ret = JQ_OK_NO_OUTPUT; // No valid results && -e -> exit(4)
   jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack
   jv result;
-  while (jv_is_valid(result = jq_next(jq, opcode_list, opcode_list_len, tracing))) {
-    ++(*pnprint_loops);
+  while (jv_is_valid(result = jq_next(jq, opcode_list, opcode_list_len, jq_next_entry_list, jq_next_entry_list_len))) {
     if ((options & RAW_OUTPUT) && jv_get_kind(result) == JV_KIND_STRING) {
       if (options & ASCII_OUTPUT) {
         jv_dumpf(jv_copy(result), stdout, JV_PRINT_ASCII);
@@ -261,12 +261,15 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
   return ret;
 }
 
-void trace_init(trace* opcodes, uint8_t* opcode_list, int opcode_list_len, uint16_t nprint_loops) {
+void trace_init(trace* opcodes, uint8_t* opcode_list, int opcode_list_len, 
+                uint16_t* jq_next_entry_list, int jq_next_entry_list_len) {
   opcodes->opcode_list = opcode_list;
   int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
-  opcodes->opcode_list_len = popcode_list_len;
-  uint16_t* pnprint_loops = malloc(sizeof(uint16_t)); *pnprint_loops = nprint_loops;
-  opcodes->nprint_loops = pnprint_loops;
+  opcodes->opcode_list_len = popcode_list_len; popcode_list_len = NULL;
+  
+  opcodes->jq_next_entry_list = jq_next_entry_list;
+  int* pjq_next_entry_list_len = malloc(sizeof(int)); *pjq_next_entry_list_len = jq_next_entry_list_len;
+  opcodes->jq_next_entry_list_len = pjq_next_entry_list_len; pjq_next_entry_list_len = NULL;
 }
 
 static void debug_cb(void *data, jv input) {
@@ -322,8 +325,13 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
   for (int i = 0; i < 1000; ++i) {
     opcode_list[i] = -1;
   }
+  // TODO: JOHN: Make this dynamic
+  uint16_t* jq_next_entry_list = malloc(sizeof(uint16_t)*1000);
+  for (int i = 0; i < 1000; ++i) {
+    jq_next_entry_list[i] = -1;
+  }
   int opcode_list_len = 0;
-  uint16_t nprint_loops = 0;
+  int jq_next_entry_list_len = 0;
 
 #ifdef HAVE_SETLOCALE
   (void) setlocale(LC_ALL, "");
@@ -740,13 +748,13 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
 
   // JOHN: tracing run
   if (options & PROVIDE_NULL) {
-    ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, &opcode_list_len, 1, &nprint_loops);
+    ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len);
   } else {
     jv value;
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
-        ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, &opcode_list_len, 1, &nprint_loops);
+        ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len);
         if (ret <= 0 && ret != JQ_OK_NO_OUTPUT)
           last_result = (ret != JQ_OK_NULL_KIND);
         if (jq_halted(jq))
@@ -779,7 +787,7 @@ out:
 //     ret = JQ_ERROR_SYSTEM;
 //   }
 
-  trace_init(opcodes, opcode_list, opcode_list_len, nprint_loops);
+  trace_init(opcodes, opcode_list, opcode_list_len, jq_next_entry_list, jq_next_entry_list_len);
   opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);

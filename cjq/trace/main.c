@@ -22,7 +22,8 @@
 void clean_up(compiled_jq_state *cjq_state, trace *opcodes) {
     free(opcodes->opcode_list); opcodes->opcode_list = NULL;
     free(opcodes->opcode_list_len); opcodes->opcode_list_len = NULL;
-    free(opcodes->nprint_loops); opcodes->nprint_loops = NULL;
+    free(opcodes->jq_next_entry_list); opcodes->jq_next_entry_list = NULL;
+    free(opcodes->jq_next_entry_list_len); opcodes->jq_next_entry_list_len = NULL;
     free(opcodes); opcodes = NULL;
     free(cjq_state); cjq_state = NULL;
 }
@@ -69,7 +70,7 @@ int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject 
     return 0;
 }
 
-int get_llvm_ir(compiled_jq_state *cjq_state, trace *opcodes, PyObject *pModule_llvmlite, PyObject *pModuleLowering) {
+int get_llvm_ir(compiled_jq_state* cjq_state, trace* opcodes, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
     // Get jq_lower function from lowering module
     PyObject *pFuncGenerateLLVMIR = PyObject_GetAttrString(pModuleLowering, "generate_llvm_ir");
     if (!pFuncGenerateLLVMIR || !PyCallable_Check(pFuncGenerateLLVMIR)) {

@@ -18,19 +18,23 @@ uint16_t _get_opcode(void* cjq_state_ptr) {
     // return opcode;
 }
 
-int _get_opcode_list_len(void* ocodes_ptr) {
+int _get_opcode_list_len(void* opcodes_ptr) {
     // printf("Made it to _get_opcode_list_len\n");
-    return *((trace*)ocodes_ptr)->opcode_list_len;
+    return *((trace*)opcodes_ptr)->opcode_list_len;
 }
 
-int _get_nprint_loops(void* ocodes_ptr) {
-    // printf("Made it to _get_opcode_list_len\n");
-    return *((trace*)ocodes_ptr)->nprint_loops;
-}
-
-uint8_t _opcode_list_at(void* ocodes_ptr, int index) {
+uint8_t _opcode_list_at(void* opcodes_ptr, int index) {
     // printf("Made it to _opcode_list_at\n");
-    return ((trace*)ocodes_ptr)->opcode_list[index];
+    trace* popcodes_ptr = (trace*)opcodes_ptr;
+    return ((trace*)opcodes_ptr)->opcode_list[index];
+}
+
+uint16_t _jq_next_entry_list_at(void* opcodes_ptr, int index) {
+    // printf("Made it to _jq_next_entry_list_at\n");
+    trace* popcodes_ptr = (trace*)opcodes_ptr;
+    uint16_t val = popcodes_ptr->jq_next_entry_list[index];
+    return val;
+    // return ((trace*)opcodes_ptr)->jq_next_entry_list[index];
 }
 
 int _get_num_opcodes() {

@@ -193,7 +193,7 @@ static void run_jq_tests(jv lib_dirs, int verbose, FILE *testdata, int skip, int
         invalid++;
         continue;
       }
-      jv actual = jq_next(jq, NULL, NULL, 0);
+      jv actual = jq_next(jq, NULL, NULL, NULL, NULL);
       if (!jv_is_valid(actual)) {
         jv_free(expected);
         jv_free(actual);
@@ -217,7 +217,7 @@ static void run_jq_tests(jv lib_dirs, int verbose, FILE *testdata, int skip, int
       jv_free(actual);
     }
     if (pass) {
-      jv extra = jq_next(jq, NULL, NULL, 0);
+      jv extra = jq_next(jq, NULL, NULL, NULL, NULL);
       if (jv_is_valid(extra)) {
         printf("*** Superfluous result: ");
         jv_dump(extra, 0);
@@ -264,11 +264,11 @@ static int test_pthread_jq_parse(jq_state *jq, struct jv_parser *parser)
     value = jv_parser_next(parser);
     while (jv_is_valid(value)) {
         jq_start(jq, value, 0);
-        jv result = jq_next(jq, NULL, NULL, 0);
+        jv result = jq_next(jq, NULL, NULL, NULL, NULL);
 
         while (jv_is_valid(result)) {
             jv_free(result);
-            result = jq_next(jq, NULL, NULL, 0);
+            result = jq_next(jq, NULL, NULL, NULL, NULL);
         }
         jv_free(result);
         value = jv_parser_next(parser);
