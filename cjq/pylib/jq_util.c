@@ -31,10 +31,7 @@ uint8_t _opcode_list_at(void* opcodes_ptr, int index) {
 
 uint16_t _jq_next_entry_list_at(void* opcodes_ptr, int index) {
     // printf("Made it to _jq_next_entry_list_at\n");
-    trace* popcodes_ptr = (trace*)opcodes_ptr;
-    uint16_t val = popcodes_ptr->jq_next_entry_list[index];
-    return val;
-    // return ((trace*)opcodes_ptr)->jq_next_entry_list[index];
+    return ((trace*)opcodes_ptr)->jq_next_entry_list[index];
 }
 
 int _get_num_opcodes() {
