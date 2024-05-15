@@ -502,11 +502,6 @@ void _init_jq_next(void* cjq_state) {
   assert(jv_get_kind(pcjq_state->jq->error) == JV_KIND_NULL);
 }
 
-void _init_output_stream(void* cjq_state, uint16_t nprint_loops) {
-  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
-  *pcjq_state->nprint_loops = nprint_loops;
-}
-
 void _opcode_LOADK(void* cjq_state) { 
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
