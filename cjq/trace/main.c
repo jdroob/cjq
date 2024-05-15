@@ -22,6 +22,7 @@
 void clean_up(compiled_jq_state *cjq_state, trace *opcodes) {
     free(opcodes->opcode_list); opcodes->opcode_list = NULL;
     free(opcodes->opcode_list_len); opcodes->opcode_list_len = NULL;
+    free(opcodes->nprint_loops); opcodes->nprint_loops = NULL;
     free(opcodes); opcodes = NULL;
     free(cjq_state); cjq_state = NULL;
 }

@@ -182,11 +182,12 @@ enum {
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
-                   uint8_t* opcode_list, int* opcode_list_len, int tracing) {
+                   uint8_t* opcode_list, int* opcode_list_len, int tracing, uint16_t* pnprint_loops) {
   int ret = JQ_OK_NO_OUTPUT; // No valid results && -e -> exit(4)
   jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack
   jv result;
   while (jv_is_valid(result = jq_next(jq, opcode_list, opcode_list_len, tracing))) {
+    ++(*pnprint_loops);
     if ((options & RAW_OUTPUT) && jv_get_kind(result) == JV_KIND_STRING) {
       if (options & ASCII_OUTPUT) {
         jv_dumpf(jv_copy(result), stdout, JV_PRINT_ASCII);
@@ -260,10 +261,12 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
   return ret;
 }
 
-void trace_init(trace *opcodes, uint8_t *opcode_list, int opcode_list_len) {
-  int *popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
+void trace_init(trace* opcodes, uint8_t* opcode_list, int opcode_list_len, uint16_t nprint_loops) {
   opcodes->opcode_list = opcode_list;
+  int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
   opcodes->opcode_list_len = popcode_list_len;
+  uint16_t* pnprint_loops = malloc(sizeof(uint16_t)); *pnprint_loops = nprint_loops;
+  opcodes->nprint_loops = pnprint_loops;
 }
 
 static void debug_cb(void *data, jv input) {
@@ -320,6 +323,7 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
     opcode_list[i] = -1;
   }
   int opcode_list_len = 0;
+  uint16_t nprint_loops = 0;
 
 #ifdef HAVE_SETLOCALE
   (void) setlocale(LC_ALL, "");
@@ -736,13 +740,13 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
 
   // JOHN: tracing run
   if (options & PROVIDE_NULL) {
-    ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, &opcode_list_len, 1);
+    ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, &opcode_list_len, 1, &nprint_loops);
   } else {
     jv value;
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
-        ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, &opcode_list_len, 1);
+        ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, &opcode_list_len, 1, &nprint_loops);
         if (ret <= 0 && ret != JQ_OK_NO_OUTPUT)
           last_result = (ret != JQ_OK_NULL_KIND);
         if (jq_halted(jq))
@@ -775,7 +779,7 @@ out:
 //     ret = JQ_ERROR_SYSTEM;
 //   }
 
-  trace_init(opcodes, opcode_list, opcode_list_len);
+  trace_init(opcodes, opcode_list, opcode_list_len, nprint_loops);
   opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);

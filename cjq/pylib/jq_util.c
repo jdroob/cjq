@@ -23,6 +23,11 @@ int _get_opcode_list_len(void* ocodes_ptr) {
     return *((trace*)ocodes_ptr)->opcode_list_len;
 }
 
+int _get_nprint_loops(void* ocodes_ptr) {
+    // printf("Made it to _get_opcode_list_len\n");
+    return *((trace*)ocodes_ptr)->nprint_loops;
+}
+
 uint8_t _opcode_list_at(void* ocodes_ptr, int index) {
     // printf("Made it to _opcode_list_at\n");
     return ((trace*)ocodes_ptr)->opcode_list[index];
