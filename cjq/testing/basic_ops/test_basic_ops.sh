@@ -72,7 +72,9 @@ done
 test_cases=("add_example1" "add_example2" "add_example3" "add_example4" 
             "sub_example1" "sub_example2" "muldiv_example1" "muldiv_example2"
             "muldiv_example3" "muldiv_example4" "mod_example1" "abs_example1"
-            "length_example1" "utf8bytelength")
+            "length_example1" "utf8bytelength_example1" "keys_example1" 
+            "keys_example2" "keys_unsorted_example1" "has_example1"
+            "has_example2" "in_example1" "in_example2")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
