@@ -22,16 +22,17 @@ function compare_outputs {
 echo "" > cjq/testing/basic_ops/testresults.log
 
 # Print message indicating testing below opcode functions
-echo "TESTING BELOW OPCODE FUNCTIONS:"
-echo -e "\nTOP"
-echo "SUBEXP_BEGIN"
-echo "SUBEXP_END"
-echo "PUSHK_UNDER"
-echo "INDEX"
-echo "CALL_BUILTIN"
-echo "LOADK"
-echo "DUP"
-echo "RET"
+echo "Testing builtin operators and functions:"
+# echo "TESTING BELOW OPCODE FUNCTIONS:"
+# echo -e "\nTOP"
+# echo "SUBEXP_BEGIN"
+# echo "SUBEXP_END"
+# echo "PUSHK_UNDER"
+# echo "INDEX"
+# echo "CALL_BUILTIN"
+# echo "LOADK"
+# echo "DUP"
+# echo "RET"
 echo -e "\nRunning tests...\n"
 
 # Initialize test counts
@@ -70,7 +71,7 @@ done
 # Define test cases
 test_cases=("add_example1" "add_example2" "add_example3" "add_example4" 
             "sub_example1" "sub_example2" "muldiv_example1" "muldiv_example2"
-            "muldiv_example3" "muldiv_example4" "mod_example1")
+            "muldiv_example3" "muldiv_example4" "mod_example1" "abs_example1")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"

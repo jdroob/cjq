@@ -520,13 +520,15 @@ void _opcode_DUP(void *cjq_state) {
  }
 
 void _opcode_DUPN(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_DUP2(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_PUSHK_UNDER(void *cjq_state) {
@@ -540,28 +542,68 @@ void _opcode_PUSHK_UNDER(void *cjq_state) {
 }
 
 void _opcode_POP(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  jv_free(stack_pop(pcjq_state->jq));
  }
 
 void _opcode_LOADV(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  uint16_t level = *pcjq_state->pc++;
+  uint16_t v = *pcjq_state->pc++;
+  jv* var = frame_local_var(pcjq_state->jq, v, level);
+  if (pcjq_state->jq->debug_trace_enabled) {
+    printf("V%d = ", v);
+    jv_dump(jv_copy(*var), JV_PRINT_REFCOUNT);
+    printf("\n");
+  }
+  jv_free(stack_pop(pcjq_state->jq));
+  stack_push(pcjq_state->jq, jv_copy(*var));
  }
 
 void _opcode_LOADVN(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  uint16_t level = *pcjq_state->pc++;
+  uint16_t v = *pcjq_state->pc++;
+  jv* var = frame_local_var(pcjq_state->jq, v, level);
+  if (pcjq_state->jq->debug_trace_enabled) {
+    printf("V%d = ", v);
+    jv_dump(jv_copy(*var), JV_PRINT_REFCOUNT);
+    printf("\n");
+  }
+  jv_free(stack_popn(pcjq_state->jq));
+
+  // This `stack_push()` invalidates the `var` reference, so
+  stack_push(pcjq_state->jq, *var);
+  // we have to re-resolve `var` before we can set it to null
+  var = frame_local_var(pcjq_state->jq, v, level);
+  *var = jv_null();
  }
 
 void _opcode_STOREV(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  if (!*pcjq_state->fallthrough)
+    _init(pcjq_state);
+  uint16_t level = *pcjq_state->pc++;
+  uint16_t v = *pcjq_state->pc++;
+  jv* var = frame_local_var(pcjq_state->jq, v, level);
+  jv val = stack_pop(pcjq_state->jq);
+  if (pcjq_state->jq->debug_trace_enabled) {
+    printf("V%d = ", v);
+    jv_dump(jv_copy(val), 0);
+    printf(" (%d)\n", jv_get_refcnt(val));
+  }
+  jv_free(*var);
+  *var = val;
+  *pcjq_state->fallthrough = 0;
  }
 
 void _opcode_STORE_GLOBAL(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_INDEX(void *cjq_state) {
@@ -613,20 +655,20 @@ void _opcode_EACH_OPT(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
   jv container = stack_pop(pcjq_state->jq);
-    // detect invalid path expression like path(reverse | .[])
-    if (!path_intact(pcjq_state->jq, jv_copy(container))) {
-      char errbuf[30];
-      jv msg = jv_string_fmt(
-          "Invalid path expression near attempt to iterate through %s",
-          jv_dump_string_trunc(container, errbuf, sizeof(errbuf)));
-      set_error(pcjq_state->jq, jv_invalid_with_msg(msg));
-      _do_backtrack(pcjq_state);
-    }
-    stack_push(pcjq_state->jq, container);
-    stack_push(pcjq_state->jq, jv_number(-1));
-    // JQ_FALLTHROUGH;
-    *pcjq_state->fallthrough = 1;
-    _opcode_BACKTRACK_EACH(cjq_state);
+  // detect invalid path expression like path(reverse | .[])
+  if (!path_intact(pcjq_state->jq, jv_copy(container))) {
+    char errbuf[30];
+    jv msg = jv_string_fmt(
+        "Invalid path expression near attempt to iterate through %s",
+        jv_dump_string_trunc(container, errbuf, sizeof(errbuf)));
+    set_error(pcjq_state->jq, jv_invalid_with_msg(msg));
+    _do_backtrack(pcjq_state);
+  }
+  stack_push(pcjq_state->jq, container);
+  stack_push(pcjq_state->jq, jv_number(-1));
+  // JQ_FALLTHROUGH;
+  *pcjq_state->fallthrough = 1;
+  _opcode_BACKTRACK_EACH(cjq_state);
  }
 
 void _opcode_BACKTRACK_EACH_OPT(void *cjq_state) { 
@@ -692,13 +734,16 @@ void _opcode_BACKTRACK_EACH_OPT(void *cjq_state) {
 void _opcode_FORK(void *cjq_state) { 
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
-   // TODO: Implement me
+  stack_save(pcjq_state->jq, pcjq_state->pc - 1, stack_get_pos(pcjq_state->jq));
+  pcjq_state->pc++; // skip offset this time
  }
 
 void _opcode_BACKTRACK_FORK(void *cjq_state) { 
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
-  // TODO: Implement me
+  if (*pcjq_state->raising) _do_backtrack(pcjq_state);
+  uint16_t offset = *pcjq_state->pc++;
+  pcjq_state->pc += offset;
  }
 
 void _opcode_TRY_BEGIN(void *cjq_state) { 
@@ -771,34 +816,49 @@ void _opcode_JUMP(void *cjq_state) {
  }
 
 void _opcode_JUMP_F(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  uint16_t offset = *pcjq_state->pc++;
+  jv t = stack_pop(pcjq_state->jq);
+  jv_kind kind = jv_get_kind(t);
+  if (kind == JV_KIND_FALSE || kind == JV_KIND_NULL) {
+    pcjq_state->pc += offset;
+  }
+  stack_push(pcjq_state->jq, t); // FIXME do this better
  }
 
 void _opcode_BACKTRACK(void *cjq_state) { 
    _init((compiled_jq_state*)cjq_state);
    _do_backtrack((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
  }
  
 void _opcode_APPEND(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  jv v = stack_pop(pcjq_state->jq);
+  uint16_t level = *pcjq_state->pc++;
+  uint16_t vidx = *pcjq_state->pc++;
+  jv* var = frame_local_var(pcjq_state->jq, vidx, level);
+  assert(jv_get_kind(*var) == JV_KIND_ARRAY);
+  *var = jv_array_append(*var, v);
  }
  
 void _opcode_INSERT(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
  
 void _opcode_RANGE(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
  
 void _opcode_BACKTRACK_RANGE(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_SUBEXP_BEGIN(void *cjq_state) {
@@ -824,23 +884,27 @@ void _opcode_SUBEXP_END(void *cjq_state) {
 }
  
 void _opcode_PATH_BEGIN(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
  
 void _opcode_BACKTRACK_PATH_BEGIN(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
   
 void _opcode_PATH_END(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
   
 void _opcode_BACKTRACK_PATH_END(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_CALL_BUILTIN(void *cjq_state) {
@@ -880,32 +944,72 @@ void _opcode_CALL_BUILTIN(void *cjq_state) {
 }
   
 void _opcode_CALL_JQ(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
-   // TODO: Implement me
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  /*
+      * Bytecode layout here:
+      *
+      *  CALL_JQ
+      *  <nclosures>                       (i.e., number of call arguments)
+      *  <callee closure>                  (what we're calling)
+      *  <nclosures' worth of closures>    (frame reference + code pointer)
+      *
+      *  <next instruction (to return to)>
+      *
+      * Each closure consists of two uint16_t values: a "level"
+      * identifying the frame to be closed over, and an index.
+      *
+      * The level is a relative number of call frames reachable from
+      * the currently one; 0 -> current frame, 1 -> previous frame, and
+      * so on.
+      *
+      * The index is either an index of the closed frame's subfunctions
+      * or of the closed frame's parameter closures.  If the latter,
+      * that closure will be passed, else the closed frame's pointer
+      * and the subfunction's code will form the closure to be passed.
+      *
+      * See make_closure() for more information.
+  */
+  jv input = stack_pop(pcjq_state->jq);
+  uint16_t nclosures = *pcjq_state->pc++;
+  uint16_t* retaddr = pcjq_state->pc + 2 + nclosures*2;
+  stack_ptr retdata = pcjq_state->jq->stk_top;
+  struct frame* new_frame;
+  struct closure cl = make_closure(pcjq_state->jq, pcjq_state->pc);
+  if (*pcjq_state->opcode == TAIL_CALL_JQ) {
+    retaddr = frame_current(pcjq_state->jq)->retaddr;
+    retdata = frame_current(pcjq_state->jq)->retdata;
+    frame_pop(pcjq_state->jq);
+  }
+  new_frame = frame_push(pcjq_state->jq, cl, pcjq_state->pc + 2, nclosures);
+  new_frame->retdata = retdata;
+  new_frame->retaddr = retaddr;
+  pcjq_state->pc = new_frame->bc->code;
+  stack_push(pcjq_state->jq, input);
  }
 
 void _opcode_RET(void *cjq_state) {
   compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
-   _init(pcjq_state);
-   jv value = stack_pop(pcjq_state->jq);
-   assert(pcjq_state->jq->stk_top == frame_current(pcjq_state->jq)->retdata);
-   uint16_t* retaddr = frame_current(pcjq_state->jq)->retaddr;
-   if (retaddr) {
-      // function return
-      pcjq_state->pc = retaddr;
-      frame_pop(pcjq_state->jq);
-   } else {
-      // top-level return, yielding value
-      struct stack_pos spos = stack_get_pos(pcjq_state->jq);
-      stack_push(pcjq_state->jq, jv_null());
-      stack_save(pcjq_state->jq, pcjq_state->pc - 1, spos);
-      pcjq_state->result = malloc(sizeof(jv));
-      *pcjq_state->result = value;
-      jq_print(cjq_state);
-      return;
-   }
-   stack_push(pcjq_state->jq, value);
-   return;
+  _init(pcjq_state);
+  jv value = stack_pop(pcjq_state->jq);
+  assert(pcjq_state->jq->stk_top == frame_current(pcjq_state->jq)->retdata);
+  uint16_t* retaddr = frame_current(pcjq_state->jq)->retaddr;
+  if (retaddr) {
+    // function return
+    pcjq_state->pc = retaddr;
+    frame_pop(pcjq_state->jq);
+  } else {
+    // top-level return, yielding value
+    struct stack_pos spos = stack_get_pos(pcjq_state->jq);
+    stack_push(pcjq_state->jq, jv_null());
+    stack_save(pcjq_state->jq, pcjq_state->pc - 1, spos);
+    pcjq_state->result = malloc(sizeof(jv));
+    *pcjq_state->result = value;
+    jq_print(cjq_state);
+    return;
+  }
+  stack_push(pcjq_state->jq, value);
+  return;
 }
 
 void _opcode_BACKTRACK_RET(void *cjq_state) {
@@ -914,61 +1018,110 @@ void _opcode_BACKTRACK_RET(void *cjq_state) {
 }
 
 void _opcode_TAIL_CALL_JQ(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+   _opcode_CALL_JQ(cjq_state);
  }
 
 void _opcode_CLOSURE_PARAM(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_CLOSURE_REF(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_CLOSURE_CREATE(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_CLOSURE_CREATE_C(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_TOP(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
  }
 
 void _opcode_CLOSURE_PARAM_REGULAR(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_DEPS(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_MODULEMETA(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_GENLABEL(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }
 
 void _opcode_DESTRUCTURE_ALT(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  _opcode_DESTRUCTURE_ALT(cjq_state);
  }
 
 void _opcode_BACKTRACK_DESTRUCTURE_ALT(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  if (jv_is_valid(pcjq_state->jq->error)) {
+    // `try EXP ...` backtracked here (no value, `empty`), so we backtrack more
+    jv_free(stack_pop(pcjq_state->jq));
+    _do_backtrack(pcjq_state);
+  }
+  // `try EXP ...` exception caught in EXP
+  // DESTRUCTURE_ALT doesn't want the error message on the stack,
+  // as we would just want to throw it away anyway.
+  if (*pcjq_state->opcode != ON_BACKTRACK(DESTRUCTURE_ALT)) {
+    jv_free(stack_pop(pcjq_state->jq)); // free the input
+    stack_push(pcjq_state->jq, jv_invalid_get_msg(pcjq_state->jq->error));  // push the error's message
+  } else {
+    jv_free(pcjq_state->jq->error);
+  }
+  pcjq_state->jq->error = jv_null();
+  uint16_t offset = *pcjq_state->pc++;
+  pcjq_state->pc += offset;
  }
 
 void _opcode_STOREVN(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  stack_save(pcjq_state->jq, pcjq_state->pc - 1, stack_get_pos(pcjq_state->jq));
+  // JQ_FALLTHROUGH;
+  *pcjq_state->fallthrough = 1;
+  _opcode_STOREV(cjq_state);
  }
  
 void _opcode_BACKTRACK_STOREVN(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  uint16_t level = *pcjq_state->pc++;
+  uint16_t v = *pcjq_state->pc++;
+  jv* var = frame_local_var(pcjq_state->jq, v, level);
+  jv_free(*var);
+  *var = jv_null();
+  _do_backtrack(pcjq_state);
  }
 
 void _opcode_ERRORK(void *cjq_state) { 
-   _init((compiled_jq_state*)cjq_state);
+  compiled_jq_state *pcjq_state = (compiled_jq_state*)cjq_state;
+  _init(pcjq_state);
+  // TODO: Implement me
  }

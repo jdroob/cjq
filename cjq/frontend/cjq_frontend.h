@@ -19,7 +19,6 @@ typedef struct {
     uint16_t* opcode;
     int* backtracking;
     uint8_t* fallthrough;
-    uint16_t* nprint_loops;
 } compiled_jq_state;
 
 void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, int dumpopts, int last_result, 
