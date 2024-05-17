@@ -764,7 +764,6 @@ void _opcode_BACKTRACK_EACH_OPT(void* cjq_state) {
       jv_free(value);
     jv_free(container);
     _do_backtrack(cjq_state);
-    return;
   } else if (is_last) {
     // we don't need to make a backtrack point
     jv_free(container);
