@@ -17,8 +17,6 @@
 #include <../../usr/include/python3.12/Python.h>      
 #include <../../usr/include/python3.12/pyconfig.h>   
 
-#define jq_exit(r)              exit( r > 0 ? r : 0 )
-
 void clean_up(compiled_jq_state *cjq_state, trace *opcodes) {
     free(opcodes->opcode_list); opcodes->opcode_list = NULL;
     free(opcodes->opcode_list_len); opcodes->opcode_list_len = NULL;
@@ -71,11 +69,11 @@ int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject 
 }
 
 int get_llvm_ir(compiled_jq_state* cjq_state, trace* opcodes, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
-    // Get jq_lower function from lowering module
+    // Get generate_llvm_ir function from lowering module
     PyObject *pFuncGenerateLLVMIR = PyObject_GetAttrString(pModuleLowering, "generate_llvm_ir");
     if (!pFuncGenerateLLVMIR || !PyCallable_Check(pFuncGenerateLLVMIR)) {
         if (PyErr_Occurred()) PyErr_Print();
-        fprintf(stderr, "Cannot find function 'jq_lower'\n");
+        fprintf(stderr, "Cannot find function 'generate_llvm_ir'\n");
         return 1;
     }
 
@@ -86,7 +84,7 @@ int get_llvm_ir(compiled_jq_state* cjq_state, trace* opcodes, PyObject* pModule_
     // Call generate_llvm_ir
     PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, cjq_state_ptr, NULL);
 
-    // Cleanup
+    // Clean up
     Py_DECREF(pResult);
     Py_DECREF(pFuncGenerateLLVMIR);
     Py_DECREF(pModuleLowering);

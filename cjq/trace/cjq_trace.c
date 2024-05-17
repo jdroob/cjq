@@ -321,13 +321,13 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
   int options = 0;
 
   // TODO: JOHN: Make this dynamic
-  uint8_t* opcode_list = malloc(sizeof(uint8_t)*1000);
-  for (int i = 0; i < 1000; ++i) {
+  uint8_t* opcode_list = malloc(sizeof(uint8_t)*1000000);
+  for (int i = 0; i < 1000000; ++i) {
     opcode_list[i] = -1;
   }
   // TODO: JOHN: Make this dynamic
-  uint16_t* jq_next_entry_list = malloc(sizeof(uint16_t)*1000);
-  for (int i = 0; i < 1000; ++i) {
+  uint16_t* jq_next_entry_list = malloc(sizeof(uint16_t)*10000);
+  for (int i = 0; i < 10000; ++i) {
     jq_next_entry_list[i] = -1;
   }
   int opcode_list_len = 0;

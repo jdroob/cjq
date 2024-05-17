@@ -36,14 +36,7 @@ class Opcode(Enum):
     CALL_JQ=28
     RET=29
     TAIL_CALL_JQ=30
-    CLOSURE_PARAM=31
-    CLOSURE_REF=32
-    CLOSURE_CREATE=33
-    CLOSURE_CREATE_C=34
     TOP=35
-    CLOSURE_PARAM_REGULAR=36
-    DEPS=37
-    MODULEMETA=38
     GENLABEL=39
     DESTRUCTURE_ALT=40
     STOREVN=41
@@ -250,38 +243,10 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
     _opcode_TAIL_CALL_JQ = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TAIL_CALL_JQ')
-    
-    _opcode_CLOSURE_PARAM = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_CLOSURE_PARAM')
-    
-    _opcode_CLOSURE_REF = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_CLOSURE_REF')
-    
-    _opcode_CLOSURE_CREATE = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_CLOSURE_CREATE')
-    
-    _opcode_CLOSURE_CREATE_C = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_CLOSURE_CREATE_C')
   
     _opcode_TOP = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TOP')
-    
-    _opcode_CLOSURE_PARAM_REGULAR = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_CLOSURE_PARAM_REGULAR')
-    
-    _opcode_DEPS = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_DEPS')
-    
-    _opcode_MODULEMETA = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
-                            name='_opcode_MODULEMETA')
     
     _opcode_GENLABEL = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
@@ -413,22 +378,8 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
                 builder.call(_opcode_RET, [_cjq_state_ptr])
             case Opcode.TAIL_CALL_JQ.value:
                 builder.call(_opcode_TAIL_CALL_JQ, [_cjq_state_ptr])
-            case Opcode.CLOSURE_PARAM.value:
-                builder.call(_opcode_CLOSURE_PARAM, [_cjq_state_ptr])
-            case Opcode.CLOSURE_REF.value:
-                builder.call(_opcode_CLOSURE_REF, [_cjq_state_ptr])
-            case Opcode.CLOSURE_CREATE.value:
-                builder.call(_opcode_CLOSURE_CREATE, [_cjq_state_ptr])
-            case Opcode.CLOSURE_CREATE_C.value:
-                builder.call(_opcode_CLOSURE_CREATE_C, [_cjq_state_ptr])
             case Opcode.TOP.value:
                 builder.call(_opcode_TOP, [_cjq_state_ptr])
-            case Opcode.CLOSURE_PARAM_REGULAR.value:
-                builder.call(_opcode_CLOSURE_PARAM_REGULAR, [_cjq_state_ptr])
-            case Opcode.DEPS.value:
-                builder.call(_opcode_DEPS, [_cjq_state_ptr])
-            case Opcode.MODULEMETA.value:
-                builder.call(_opcode_MODULEMETA, [_cjq_state_ptr])
             case Opcode.GENLABEL.value:
                 builder.call(_opcode_GENLABEL, [_cjq_state_ptr])
             case Opcode.DESTRUCTURE_ALT.value:

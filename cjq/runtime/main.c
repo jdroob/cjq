@@ -13,8 +13,6 @@
 #include "../jq/src/version.h"
 #include "../frontend/cjq_frontend.h"
 
-#define jq_exit(r)              exit( r > 0 ? r : 0 )
-
 extern void jq_program();
 
 void clean_up(compiled_jq_state* cjq_state) {
