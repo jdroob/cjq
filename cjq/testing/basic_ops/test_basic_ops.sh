@@ -76,7 +76,10 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "keys_example2" "keys_unsorted_example1" "has_example1"
             "has_example2" "in_example1" "in_example2" "map_example1"
             "map_example2" "map_values_example1" "map_values_example2"
-            "pick_example1" "pick_example2" "pick_example3" ""pick_example4)
+            "pick_example1" "pick_example2" "pick_example3" "pick_example4"
+            "del_example1" "del_example2" "getpath_example1" "getpath_example2"
+            "setpath_example1" "setpath_example2" "setpath_example3"
+            "delpaths_example1")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
