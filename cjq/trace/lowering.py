@@ -80,10 +80,6 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_init_jq_next')
     
-    _init_output_stream = ir.Function(module,
-                            ir.FunctionType(ir.VoidType(), [void_ptr_type, ir.IntType(16)]),
-                            name='_init_output_stream')
-    
     _opcode_LOADK = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_LOADK')
@@ -276,28 +272,14 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
     # Define argument types for C function
     jq_util_funcs._get_num_opcodes.argtypes = []
     jq_util_funcs._get_num_opcodes.restype = c_int
-    
     # Get value of NUM_OPCODES
     num_opcodes = jq_util_funcs._get_num_opcodes()
     
     # Define argument types for C function
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_opcode_list_len.restype = c_int
-    
     # Get opcode_list length from cjq_state
     opcode_list_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
-    
-    # Define argument types for C function
-    # jq_util_funcs._get_nprint_loops.argtypes = [c_void_p]
-    # jq_util_funcs._get_nprint_loops.restype = c_int
-    
-    # # Get opcode_list length from cjq_state
-    # nprint_loops = jq_util_funcs._get_nprint_loops(opcodes_ptr)
-    # _nprint_loops = builder.alloca(ir.IntType(16), name="_nprint_loops")
-    # builder.store(ir.Constant(ir.IntType(16), nprint_loops), _nprint_loops)
-    
-    # # Pass nprint_loops to cjq_state
-    # builder.call(_init_output_stream, [_cjq_state_ptr, builder.load(_nprint_loops)])
     
     # Get all opcodes from opcode_list
     jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_int]

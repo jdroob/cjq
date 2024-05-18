@@ -79,7 +79,12 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "pick_example1" "pick_example2" "pick_example3" "pick_example4"
             "del_example1" "del_example2" "getpath_example1" "getpath_example2"
             "setpath_example1" "setpath_example2" "setpath_example3"
-            "delpaths_example1")
+            "delpaths_example1" "toentries_example1" "fromentries_example1"
+            "withentries_example1" "select_example1" "select_example2"
+            "select_numbers" "select_strings" "select_arrays" "select_objects"
+            "select_iterables" "select_booleans" "select_normals" "select_finites"
+            "select_nulls" "select_values" "select_scalars" "empty_example1"
+            "empty_example2" "error_example1" "error_example2")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
