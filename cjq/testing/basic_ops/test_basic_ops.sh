@@ -84,7 +84,7 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "select_numbers" "select_strings" "select_arrays" "select_objects"
             "select_iterables" "select_booleans" "select_normals" "select_finites"
             "select_nulls" "select_values" "select_scalars" "empty_example1"
-            "empty_example2" "error_example1" "error_example2")
+            "empty_example2" "error_example1" "error_example2" "halterror_example1")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"

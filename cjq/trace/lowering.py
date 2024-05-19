@@ -80,6 +80,10 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_init_jq_next')
     
+    _jq_halt = ir.Function(module,
+                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
+                            name='_jq_halt')
+    
     _opcode_LOADK = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_LOADK')
@@ -290,12 +294,25 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
     jq_util_funcs._jq_next_entry_list_at.restype = c_uint16
     jq_next_entry_idx = 0
     
+    # Define argument types for C function
+    jq_util_funcs._get_jq_next_entry_list_len.argtypes = [c_void_p]
+    jq_util_funcs._get_jq_next_entry_list_len.restype = c_int
+    # Get opcode_list length from cjq_state
+    jq_next_entry_list_len = jq_util_funcs._get_jq_next_entry_list_len(opcodes_ptr)
+    
+    # Define argument types for C function
+    jq_util_funcs._get_jq_halt_loc.argtypes = [c_void_p]
+    jq_util_funcs._get_jq_halt_loc.restype = c_int
+    # Get opcode_list length from cjq_state
+    jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
+    
     for opcode_lis_idx in range(opcode_list_len):
-        # Check if we're at a jq_next entry point
-        next_entry_point = jq_util_funcs._jq_next_entry_list_at(opcodes_ptr, jq_next_entry_idx)
-        if opcode_lis_idx == next_entry_point:
-            builder.call(_init_jq_next, [_cjq_state_ptr])
-            jq_next_entry_idx += 1
+        if jq_next_entry_idx < jq_next_entry_list_len:
+            # Check if we're at a jq_next entry point
+            next_entry_point = jq_util_funcs._jq_next_entry_list_at(opcodes_ptr, jq_next_entry_idx)
+            if opcode_lis_idx == next_entry_point:
+                builder.call(_init_jq_next, [_cjq_state_ptr])
+                jq_next_entry_idx += 1
         curr_opcode = jq_util_funcs._opcode_list_at(opcodes_ptr, opcode_lis_idx)
         match curr_opcode:
             case Opcode.LOADK.value:
@@ -379,7 +396,10 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
                     builder.call(backtracking_opcode_funcs[opcode_idx], [_cjq_state_ptr])
                 else:
                     raise ValueError(f"Current opcode: {curr_opcode} does not match any existing opcodes")
-      
+    
+    # Check if JQ program halted
+    if opcode_lis_idx == jq_halt_loc:
+        builder.call(_jq_halt, [_cjq_state_ptr])
     # Return from main
     builder.ret_void()
     

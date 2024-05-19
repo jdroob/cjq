@@ -408,7 +408,6 @@ static void jq_error(compiled_jq_state *cjq_state) {
     jv_free(input_pos);
     jv_free(msg);
   }
-  jv_free(*cjq_state->result);
 }
 
 static void jq_print(compiled_jq_state *cjq_state) {
@@ -416,7 +415,6 @@ static void jq_print(compiled_jq_state *cjq_state) {
       if (*cjq_state->options & ASCII_OUTPUT) {
         jv_dumpf(jv_copy(*cjq_state->result), stdout, JV_PRINT_ASCII);
       } else if ((*cjq_state->options & RAW_OUTPUT0) && strlen(jv_string_value(*cjq_state->result)) != (unsigned long)jv_string_length_bytes(jv_copy(*cjq_state->result))) {
-        jv_free(*cjq_state->result);
         *cjq_state->result = jv_invalid_with_msg(jv_string(
               "Cannot dump a string containing NUL with --raw-output0 option"));
         jq_error(cjq_state);
@@ -425,7 +423,6 @@ static void jq_print(compiled_jq_state *cjq_state) {
             stdout, *cjq_state->dumpopts & JV_PRINT_ISATTY);
       }
       *cjq_state->ret = JQ_OK;
-      jv_free(*cjq_state->result);
     } else {
       if (jv_get_kind(*cjq_state->result) == JV_KIND_FALSE || jv_get_kind(*cjq_state->result) == JV_KIND_NULL)
         *cjq_state->ret = JQ_OK_NULL_KIND;
@@ -508,6 +505,49 @@ static void _do_backtrack(compiled_jq_state *cjq_state) {
       *cjq_state->result = jv_invalid();
    }
    *cjq_state->backtracking = 1;
+}
+
+void _jq_halt(void* cjq_state) {
+  compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
+  if (jq_halted(pcjq_state->jq)) {
+    // jq program invoked `halt` or `halt_error`
+    jv exit_code = jq_get_exit_code(pcjq_state->jq);
+    if (!jv_is_valid(exit_code))
+      *pcjq_state->ret = JQ_OK;
+    else if (jv_get_kind(exit_code) == JV_KIND_NUMBER)
+      *pcjq_state->ret = jv_number_value(exit_code);
+    else
+      *pcjq_state->ret = JQ_ERROR_UNKNOWN;
+    jv_free(exit_code);
+    jv error_message = jq_get_error_message(pcjq_state->jq);
+    if (jv_get_kind(error_message) == JV_KIND_STRING) {
+      // No prefix should be added to the output of `halt_error`.
+      priv_fwrite(jv_string_value(error_message), jv_string_length_bytes(jv_copy(error_message)),
+          stderr, *pcjq_state->dumpopts & JV_PRINT_ISATTY);
+    } else if (jv_get_kind(error_message) == JV_KIND_NULL) {
+      // Halt with no output
+    } else if (jv_is_valid(error_message)) {
+      error_message = jv_dump_string(error_message, 0);
+      fprintf(stderr, "%s\n", jv_string_value(error_message));
+    } // else no message on stderr; use --debug-trace to see a message
+    fflush(stderr);
+    jv_free(error_message);
+  } else if (jv_invalid_has_msg(jv_copy(*pcjq_state->result))) {
+    // Uncaught jq exception
+    jv msg = jv_invalid_get_msg(jv_copy(*pcjq_state->result));
+    jv input_pos = jq_util_input_get_position(pcjq_state->jq);
+    if (jv_get_kind(msg) == JV_KIND_STRING) {
+      fprintf(stderr, "jq: error (at %s): %s\n",
+              jv_string_value(input_pos), jv_string_value(msg));
+    } else {
+      msg = jv_dump_string(msg, 0);
+      fprintf(stderr, "jq: error (at %s) (not a string): %s\n",
+              jv_string_value(input_pos), jv_string_value(msg));
+    }
+    *pcjq_state->ret = JQ_ERROR_UNKNOWN;
+    jv_free(input_pos);
+    jv_free(msg);
+  }
 }
 
 void _init_jq_next(void* cjq_state) {
