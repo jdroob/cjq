@@ -84,7 +84,19 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "select_numbers" "select_strings" "select_arrays" "select_objects"
             "select_iterables" "select_booleans" "select_normals" "select_finites"
             "select_nulls" "select_values" "select_scalars" "empty_example1"
-            "empty_example2" "error_example1" "error_example2" "halterror_example1")
+            "empty_example2" "error_example1" "error_example2" "halterror_example1"
+            "halt_example1" "loc_example1" "paths_example1" "paths_example2"
+            "_add_example1" "_add_example2" "_add_example3" "all_example1"
+            "all_example2" "all_example3" "any_example1" "any_example2" 
+            "any_example3" "flatten_example1" "flatten_example2" "flatten_example3"
+            "flatten_example4" "range_example1" "range_example2" "range_example3"
+            "range_example4" "floor_example1" "sqrt_example1" "tonumber_example1"
+            "tostring_example1" "type_example1" "infinite_example1" "infinite_example2"
+            "sort_example1" "sort_example2" "sort_example3" "groupby_example1"
+            "groupby_example2" "unique_example1" "unique_example2" "unique_example3"
+            "reverse_example1" "contains_example1" "contains_example2" "contains_example3"
+            "contains_example4" "contains_example5" "indices_example1" "indices_example2"
+            "indices_example3")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
@@ -92,7 +104,7 @@ for test_case in "${test_cases[@]}"; do
 
     # Command 1: Generate LLVM IR (suppress output)
     # echo "Generating LLVM IR for $jq_file..." # Debug
-    ./llvm_gen -f "$jq_file" "$json_file" --debug-dump-disasm >/dev/null
+    ./llvm_gen -f "$jq_file" "$json_file" --debug-dump-disasm > /dev/null
 
     # Compile runjq
     # echo "Compiling jq for $jq_file..." # Debug
