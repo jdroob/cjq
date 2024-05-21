@@ -1184,6 +1184,58 @@ static jv f_string_indexes(jq_state *jq, jv a, jv b) {
   return jv_string_indexes(a, b);
 }
 
+enum trim_op {
+  TRIM_LEFT  = 1 << 0,
+  TRIM_RIGHT = 1 << 1
+};
+
+static jv string_trim(jv a, int op) {
+  if (jv_get_kind(a) != JV_KIND_STRING) {
+    return ret_error(a, jv_string("trim input must be a string"));
+  }
+
+  int len = jv_string_length_bytes(jv_copy(a));
+  const char *start = jv_string_value(a);
+  const char *trim_start = start;
+  const char *end = trim_start + len;
+  const char *trim_end = end;
+  int c;
+
+  if (op & TRIM_LEFT) {
+    for (;;) {
+      const char *ns = jvp_utf8_next(trim_start, end, &c);
+      if (!ns || !jvp_codepoint_is_whitespace(c))
+        break;
+      trim_start = ns;
+    }
+  }
+
+  // make sure not empty string or start trim has trimmed everything
+  if ((op & TRIM_RIGHT) && trim_end > trim_start) {
+    for (;;) {
+      const char *ns = jvp_utf8_backtrack(trim_end-1, trim_start, NULL);
+      jvp_utf8_next(ns, trim_end, &c);
+      if (!jvp_codepoint_is_whitespace(c))
+        break;
+      trim_end = ns;
+      if (ns == trim_start)
+        break;
+    }
+  }
+
+  // no new string needed if there is nothing to trim
+  if (trim_start == start && trim_end == end)
+    return a;
+
+  jv ts = jv_string_sized(trim_start, trim_end - trim_start);
+  jv_free(a);
+  return ts;
+}
+
+static jv f_string_trim(jq_state *jq, jv a)  { return string_trim(a, TRIM_LEFT | TRIM_RIGHT); }
+static jv f_string_ltrim(jq_state *jq, jv a) { return string_trim(a, TRIM_LEFT); }
+static jv f_string_rtrim(jq_state *jq, jv a) { return string_trim(a, TRIM_RIGHT); }
+
 static jv f_string_implode(jq_state *jq, jv a) {
   if (jv_get_kind(a) != JV_KIND_ARRAY) {
     return ret_error(a, jv_string("implode input must be an array"));
@@ -1670,6 +1722,15 @@ static jv f_current_line(jq_state *jq, jv a) {
   return jq_util_input_get_current_line(jq);
 }
 
+static jv f_have_decnum(jq_state *jq, jv a) {
+  jv_free(a);
+#ifdef USE_DECNUM
+  return jv_true();
+#else
+  return jv_false();
+#endif
+}
+
 #define LIBM_DD(name) \
   {f_ ## name, #name, 1},
 #define LIBM_DD_NO(name) LIBM_DD(name)
@@ -1701,6 +1762,9 @@ BINOPS
   {f_string_split, "split", 2},
   {f_string_explode, "explode", 1},
   {f_string_implode, "implode", 1},
+  {f_string_trim, "trim", 1},
+  {f_string_ltrim, "ltrim", 1},
+  {f_string_rtrim, "rtrim", 1},
   {f_string_indexes, "_strindices", 2},
   {f_setpath, "setpath", 3}, // FIXME typechecking
   {f_getpath, "getpath", 2},
@@ -1744,6 +1808,8 @@ BINOPS
   {f_now, "now", 1},
   {f_current_filename, "input_filename", 1},
   {f_current_line, "input_line_number", 1},
+  {f_have_decnum, "have_decnum", 1},
+  {f_have_decnum, "have_literal_numbers", 1},
 };
 #undef LIBM_DDDD_NO
 #undef LIBM_DDD_NO

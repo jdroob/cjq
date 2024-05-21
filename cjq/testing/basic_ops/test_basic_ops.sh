@@ -98,7 +98,13 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "contains_example4" "contains_example5" "indices_example1" "indices_example2"
             "indices_example3" "index_example1" "index_example2" "index_example3"
             "index_example4" "index_example5" "index_example6" "inside_example1"
-            "inside_example2" "inside_example3" "inside_example4" "inside_example5")
+            "inside_example2" "inside_example3" "inside_example4" "inside_example5"
+            "startswith_example1" "endswith_example1" "combinations_example1"
+            "combinations_example2" "ltrimstr_example1" "rtrimstr_example1"
+            "explode_example1" "implode_example1" "split_example1"
+            "join_example1" "join_example2" "ascii_upcase_example1" "ascii_downcase_example1"
+            "while_example1" "until_example1" "recurse_example1" "recurse_example2"
+            "recurse_example3" "walk_example1" "walk_example2" "walk_example3")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
