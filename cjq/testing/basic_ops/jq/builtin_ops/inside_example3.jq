@@ -1,0 +1,1 @@
+inside(["foobar", "foobaz", "blarp"])

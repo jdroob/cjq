@@ -1,0 +1,1 @@
+inside({"foo": 12, "bar":[1,2,{"barp":12, "blip":13}]})

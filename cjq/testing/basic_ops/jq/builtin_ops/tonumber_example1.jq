@@ -1,1 +1,1 @@
-[] | tonumber
+.[] | tonumber
