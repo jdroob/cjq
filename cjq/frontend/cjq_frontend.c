@@ -209,17 +209,22 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   cjq_state->raising = praising; praising = NULL;
   cjq_state->cfunc_input = pcfunc_input; pcfunc_input = NULL;
 
-  jv *pvalue = malloc(sizeof(jv));
-  *pvalue = jq_util_input_next_input(input_state);
-  // Parse error
-  if (!jv_is_valid(*pvalue)) {
-    jv msg = jv_invalid_get_msg(*pvalue);
-    *cjq_state->ret = JQ_ERROR_UNKNOWN;
-    fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
-    jv_free(msg);
+  jv* pvalue = malloc(sizeof(jv));
+  if (input_state != NULL) {
+    *pvalue = jq_util_input_next_input(input_state);
+    // Parse error
+    if (!jv_is_valid(*pvalue)) {
+      jv msg = jv_invalid_get_msg(*pvalue);
+      *cjq_state->ret = JQ_ERROR_UNKNOWN;
+      fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+      jv_free(msg);
+    }
+    jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
+  } else {
+    jv* pvalue = malloc(sizeof(jv)); *pvalue = jv_null();
+    cjq_state->value = pvalue; pvalue = NULL;
+    jq_start(cjq_state->jq, jv_null(), *cjq_state->jq_flags);
   }
-  cjq_state->value = pvalue; pvalue = NULL;
-  jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
 }
 
 void cjq_free(compiled_jq_state *cjq_state) {
@@ -708,7 +713,10 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
+  if (options & PROVIDE_NULL)
+    cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, NULL, jq);
+  else
+    cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
 
   jv_free(ARGS);
   jv_free(program_arguments);

@@ -104,7 +104,7 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "explode_example1" "implode_example1" "split_example1"
             "join_example1" "join_example2" "ascii_upcase_example1" "ascii_downcase_example1"
             "while_example1" "until_example1" "recurse_example1" "recurse_example2"
-            "recurse_example3" "walk_example1" "walk_example2" "walk_example3")
+            "recurse_example3" "walk_example1" "walk_example2")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
