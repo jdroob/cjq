@@ -219,11 +219,12 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
       fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
       jv_free(msg);
     }
+    cjq_state->value = pvalue; pvalue = NULL;
     jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
   } else {
     jv* pvalue = malloc(sizeof(jv)); *pvalue = jv_null();
     cjq_state->value = pvalue; pvalue = NULL;
-    jq_start(cjq_state->jq, jv_null(), *cjq_state->jq_flags);
+    jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
   }
 }
 

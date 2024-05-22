@@ -104,7 +104,7 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "explode_example1" "implode_example1" "split_example1"
             "join_example1" "join_example2" "ascii_upcase_example1" "ascii_downcase_example1"
             "while_example1" "until_example1" "recurse_example1" "recurse_example2"
-            "recurse_example3" "walk_example1" "walk_example2")
+            "recurse_example3" "walk_example1" "walk_example2" "trim_example1")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
@@ -129,6 +129,29 @@ for test_case in "${test_cases[@]}"; do
     # Compare outputs and write result to testing.log
     compare_outputs "$cjq_output" "$jq_output" "$test_case.jq"
 done
+
+# Test have_literal_numbers
+jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/have_literal_numbers_example1.jq"
+json_file="$HOME/cjq/cjq/testing/basic_ops/json/builtin_ops/have_literal_numbers_example1.json"
+
+# Command 1: Generate LLVM IR (suppress output)
+# echo "Generating LLVM IR for $jq_file..." # Debug
+./llvm_gen -f "$jq_file" "$json_file" --debug-dump-disasm > /dev/null
+
+# Compile runjq
+# echo "Compiling jq for $jq_file..." # Debug
+./compile_runjq.sh
+
+# Command 2: Run runjq and capture output
+# echo "Running cjq for $jq_file..."  # Debug
+cjq_output=$(./runjq -f "$jq_file" "$json_file" --debug-dump-disasm)
+
+# Command 3: Run jq and capture output
+# echo "Running jq for $jq_file..." # Debug
+jq_output=$(jq -f "$jq_file" "$json_file" --debug-dump-disasm)
+
+# Compare outputs and write result to testing.log
+compare_outputs "$cjq_output" "$jq_output" "$test_case.jq"
 
 
 # Print test execution summary

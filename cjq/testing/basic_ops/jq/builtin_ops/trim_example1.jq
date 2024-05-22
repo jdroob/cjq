@@ -1,1 +1,1 @@
-trim
+trim, ltrim, rtrim
