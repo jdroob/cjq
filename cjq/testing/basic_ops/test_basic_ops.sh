@@ -104,7 +104,22 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "explode_example1" "implode_example1" "split_example1"
             "join_example1" "join_example2" "ascii_upcase_example1" "ascii_downcase_example1"
             "while_example1" "until_example1" "recurse_example1" "recurse_example2"
-            "recurse_example3" "walk_example1" "walk_example2" "trim_example1")
+            "recurse_example3" "walk_example1" "walk_example2" "trim_example1"
+            "transpose_example1" "bsearch_example1" "bsearch_example2"
+            "stringinterp_example1" "tojson_example1" "fromjson_example1"
+            "tojson_fromjson_example1" "sqlstyle_index_example1" "equality_example1"
+            "equality_example2" "equality_example3" "ifthenelse_example1"
+            "comparison_example1" "comparison_example2" "comparison_example3"
+            "comparison_example4" "andornot_example1" "andornot_example2" "andornot_example3"
+            "andornot_example4" "alternativeop_example1" "alternativeop_example2"
+            "alternativeop_example3" "alternativeop_example4" "alternativeop_example5"
+            "trycatch_example1" "trycatch_example2" "trycatch_example3" "regex_example1"
+            "regex_example2" "regex_example3" "regex_example4" "regex_example5"
+            "regex_example6" "regex_example7" "regex_example8" "regex_example9"
+            "regex_example10" "regex_example11" "regex_example12" "regex_example13"
+            "regex_example14" "regex_example15" "vars_example1" "vars_example2"
+            "vars_example3" "vars_example4" "destructurealtop_example1"
+            "destructurealtop_example2" "destructurealtop_example3")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
@@ -130,28 +145,48 @@ for test_case in "${test_cases[@]}"; do
     compare_outputs "$cjq_output" "$jq_output" "$test_case.jq"
 done
 
-# Test have_literal_numbers
-jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/have_literal_numbers_example1.jq"
-json_file="$HOME/cjq/cjq/testing/basic_ops/json/builtin_ops/have_literal_numbers_example1.json"
+# Test cases using different command format
+test_cases2=("have_literal_numbers" "have_decnum" "$ENV.pager" "env.pager")
 
-# Command 1: Generate LLVM IR (suppress output)
-# echo "Generating LLVM IR for $jq_file..." # Debug
-./llvm_gen -f "$jq_file" "$json_file" --debug-dump-disasm > /dev/null
+for test_case2 in "${test_cases2[@]}"; do
+    # Command 1: Generate LLVM IR (suppress output)
+    # echo "Generating LLVM IR for $jq_file..." # Debug
+    ./llvm_gen -n "$test_case2" --debug-dump-disasm > /dev/null
 
-# Compile runjq
-# echo "Compiling jq for $jq_file..." # Debug
+    # Compile runjq
+    # echo "Compiling jq for $jq_file..." # Debug
+    ./compile_runjq.sh
+
+    # Command 2: Run runjq and capture output
+    # echo "Running cjq for $jq_file..."  # Debug
+    cjq_output=$(./runjq -n "$test_case2" --debug-dump-disasm)
+
+    # Command 3: Run jq and capture output
+    # echo "Running jq for $jq_file..." # Debug
+    jq_output=$(jq -n "$test_case2" --debug-dump-disasm)
+
+    # Compare outputs and write result to testing.log
+    compare_outputs "$cjq_output" "$jq_output" "$test_case2.jq"
+done
+
+# @base64 test
+echo '{"message": "This is a secret message"}' | ./llvm_gen '.message |= @base64' > /dev/null
 ./compile_runjq.sh
-
-# Command 2: Run runjq and capture output
-# echo "Running cjq for $jq_file..."  # Debug
-cjq_output=$(./runjq -f "$jq_file" "$json_file" --debug-dump-disasm)
-
-# Command 3: Run jq and capture output
-# echo "Running jq for $jq_file..." # Debug
-jq_output=$(jq -f "$jq_file" "$json_file" --debug-dump-disasm)
-
-# Compare outputs and write result to testing.log
-compare_outputs "$cjq_output" "$jq_output" "$test_case.jq"
+cjq_output=$(echo '{"message": "This is a secret message"}' | ./runjq '.message |= @base64')
+jq_output=$(echo '{"message": "This is a secret message"}' | jq '.message |= @base64')
+compare_outputs "$cjq_output" "$jq_output" "base64.jq"
+# @base64d test
+echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./llvm_gen '.message |= @base64d' > /dev/null
+./compile_runjq.sh
+cjq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./runjq '.message |= @base64d')
+jq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | jq '.message |= @base64d')
+compare_outputs "$cjq_output" "$jq_output" "base64d.jq"
+# @html test
+echo '{"message": "x<y"}' | ./llvm_gen '.message |= @html' > /dev/null
+./compile_runjq.sh
+cjq_output=$(echo '{"message": "x<y"}' | ./runjq '.message |= @html')
+jq_output=$(echo '{"message": "x<y"}' | jq '.message |= @html')
+compare_outputs "$cjq_output" "$jq_output" "html.jq"
 
 
 # Print test execution summary

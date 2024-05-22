@@ -1,0 +1,1 @@
+try .a catch ". is not an object"

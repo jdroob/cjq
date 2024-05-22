@@ -1216,7 +1216,7 @@ void _opcode_GENLABEL(void* cjq_state) {
  }
 
 void _opcode_DESTRUCTURE_ALT(void* cjq_state) { 
-  _opcode_DESTRUCTURE_ALT(cjq_state);
+  _opcode_FORK(cjq_state);
  }
 
 void _opcode_BACKTRACK_DESTRUCTURE_ALT(void* cjq_state) { 
