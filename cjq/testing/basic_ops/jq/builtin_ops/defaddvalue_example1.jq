@@ -1,0 +1,1 @@
+def addvalue(f): . + [f]; map(addvalue(.[0]))

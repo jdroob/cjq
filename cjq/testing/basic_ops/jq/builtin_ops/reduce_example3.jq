@@ -1,0 +1,1 @@
+reduce .[] as {$x,$y} (null; .x += $x | .y += [$y])

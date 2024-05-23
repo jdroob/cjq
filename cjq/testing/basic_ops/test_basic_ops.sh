@@ -119,7 +119,11 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "regex_example10" "regex_example11" "regex_example12" "regex_example13"
             "regex_example14" "regex_example15" "vars_example1" "vars_example2"
             "vars_example3" "vars_example4" "destructurealtop_example1"
-            "destructurealtop_example2" "destructurealtop_example3")
+            "destructurealtop_example2" "destructurealtop_example3" "defaddvalue_example1"
+            "defaddvalue_example2" "isempty_example1" "isempty_example2" "limit_example1"
+            "firstlastnth_example1" "firstlastnth_example2" "reduce_example1"
+            "reduce_example2" "reduce_example3" "foreach_example1" "foreach_example2"
+            "foreach_example3")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
