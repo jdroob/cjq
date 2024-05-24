@@ -123,7 +123,8 @@ test_cases=("add_example1" "add_example2" "add_example3" "add_example4"
             "defaddvalue_example2" "isempty_example1" "isempty_example2" "limit_example1"
             "firstlastnth_example1" "firstlastnth_example2" "reduce_example1"
             "reduce_example2" "reduce_example3" "foreach_example1" "foreach_example2"
-            "foreach_example3" "generators_example1" "generators_example2")
+            "foreach_example3" "generators_example1" "generators_example2" "streaming_example1"
+            "streaming_example2" "streaming_example3" "updateassign_example1")
 
 for test_case in "${test_cases[@]}"; do
     jq_file="$HOME/cjq/cjq/testing/basic_ops/jq/builtin_ops/${test_case}.jq"
