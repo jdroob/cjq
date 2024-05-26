@@ -268,6 +268,7 @@ void cjq_free(compiled_jq_state* cjq_state) {
   free(cjq_state->backtracking); cjq_state->backtracking = NULL;
   free(cjq_state->cfunc_input); cjq_state->cfunc_input = NULL;
   free(cjq_state->fallthrough); cjq_state->fallthrough = NULL;
+  jq_teardown(&cjq_state->jq);
   free(cjq_state->jq); cjq_state->jq = NULL;
   free(cjq_state); cjq_state = NULL;
 }
