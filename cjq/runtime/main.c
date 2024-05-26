@@ -22,7 +22,7 @@ void clean_up(compiled_jq_state* cjq_state) {
 }
 
 int main(int argc, char *argv[]) {
-  compiled_jq_state *cjq_state = malloc(sizeof(compiled_jq_state));
+  compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
   // TODO: Refactor such that we don't compile a second time (just need data such as bc->constants)
   int parse_error = cjq_parse(argc, argv, cjq_state);
   jq_program((void*)cjq_state);

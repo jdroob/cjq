@@ -79,11 +79,11 @@ int get_llvm_ir(compiled_jq_state* cjq_state, trace* opcodes, PyObject* pModule_
     }
 
     // Convert cjq_state pointer to a Python integer object
-    PyObject *opcodes_ptr = PyLong_FromVoidPtr((void*)opcodes);
-    PyObject *cjq_state_ptr = PyLong_FromVoidPtr((void*)cjq_state);
+    PyObject* opcodes_ptr = PyLong_FromVoidPtr((void*)opcodes);
+    PyObject* cjq_state_ptr = PyLong_FromVoidPtr((void*)cjq_state);
 
     // Call generate_llvm_ir
-    PyObject *pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, cjq_state_ptr, NULL);
+    PyObject* pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, cjq_state_ptr, NULL);
 
     // Clean up
     Py_DECREF(pResult);
@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
     char path_to_cjq[256]; 
     snprintf(path_to_cjq, sizeof(path_to_cjq), "%s/cjq/cjq/trace", home);
 
-    PyObject *pModule_llvmlite = NULL;
-    PyObject *pModuleLowering = NULL;
+    PyObject* pModule_llvmlite = NULL;
+    PyObject* pModuleLowering = NULL;
 
     if (init_cpython(path_to_cjq, &pModule_llvmlite, &pModuleLowering) != 0) {
         // Error occurred during Python initialization
@@ -114,11 +114,11 @@ int main(int argc, char *argv[]) {
     }
 
     // For storing tracing information
-    trace *opcodes = malloc(sizeof(trace));
+    trace* opcodes = malloc(sizeof(trace));
 
     // Dummy cjq_state for passing to opcode functions while building LLVM
-    compiled_jq_state *cjq_state = malloc(sizeof(compiled_jq_state));
-    int trace_error = cjq_trace(argc, argv, opcodes);
+    compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
+    int trace_error = cjq_trace(argc, argv, opcodes, cjq_state);
     int gen_ir_error = get_llvm_ir(cjq_state, opcodes, pModule_llvmlite, pModuleLowering);
     clean_up(cjq_state, opcodes);
 

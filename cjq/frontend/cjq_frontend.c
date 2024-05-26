@@ -283,8 +283,8 @@ int umain(int argc, char* argv[]) {
 #else /*}*/
 int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
   #endif
-  jq_state *jq = NULL;
-  jq_util_input_state *cjq_input_state = NULL;
+  jq_state* jq = NULL;
+  jq_util_input_state* cjq_input_state = NULL;
   int ret = JQ_OK_NO_OUTPUT;
   int compiled = 0;
   int parser_flags = 0;

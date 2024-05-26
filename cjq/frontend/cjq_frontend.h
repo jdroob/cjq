@@ -1,33 +1,34 @@
 #include "../jq/src/jv.h"
 #include "../jq/src/jq.h"
+#include "../trace/cjq_trace.h"
 #ifndef CJQ_FRONTEND_H
 #define CJQ_FRONTEND_H
 
-typedef struct {
-    int* ret;
-    int* jq_flags;
-    int* dumpopts;
-    int* options;
-    int* last_result;
-    int* raising;
-    jq_util_input_state *input_state;
-    jv *value;
-    jv *result;
-    jv *cfunc_input;
-    jq_state* jq;
-    uint16_t* pc;
-    uint16_t* opcode;
-    int* backtracking;
-    uint8_t* fallthrough;
-} compiled_jq_state;
+// typedef struct {
+//     int* ret;
+//     int* jq_flags;
+//     int* dumpopts;
+//     int* options;
+//     int* last_result;
+//     int* raising;
+//     jq_util_input_state* input_state;
+//     jv* value;
+//     jv* result;
+//     jv* cfunc_input;
+//     jq_state* jq;
+//     uint16_t* pc;
+//     uint16_t* opcode;
+//     int* backtracking;
+//     uint8_t* fallthrough;
+// } compiled_jq_state;
 
-void cjq_init(compiled_jq_state* cjq_state, int ret, int jq_flags, int options,
-             int dumpopts, int last_result, jq_util_input_state* input_state, 
-             jq_state* jq);
+// void cjq_init(compiled_jq_state* cjq_state, int ret, int jq_flags, int options,
+//              int dumpopts, int last_result, jq_util_input_state* input_state, 
+//              jq_state* jq);
 
-void cjq_free(compiled_jq_state* cjq_state);
+// void cjq_free(compiled_jq_state* cjq_state);
 
-int cjq_parse(int argc, char* argv[], compiled_jq_state* cjq_state);
+// int cjq_parse(int argc, char* argv[], compiled_jq_state* cjq_state);
 
 void _opcode_LOADK(void* cjq_state);
 void _opcode_DUP(void* cjq_state);

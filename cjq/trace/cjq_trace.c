@@ -37,6 +37,7 @@ extern void jv_tsd_dtoa_ctx_init();
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
 #include "../jq/src/config_opts.inc"
+#include "../jq/src/exec_stack.h"
 #include "cjq_trace.h"
 
 int jq_testsuite(jv lib_dirs, int verbose, int argc, char* argv[]);
@@ -181,6 +182,96 @@ enum {
 #define jq_exit_with_status(r)  exit(abs(r))
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
+typedef int stack_ptr;
+
+struct jq_state {
+  void (*nomem_handler)(void *);
+  void *nomem_handler_data;
+  struct bytecode* bc;
+
+  jq_msg_cb err_cb;
+  void *err_cb_data;
+  jv error;
+
+  struct stack stk;
+  stack_ptr curr_frame;
+  stack_ptr stk_top;
+  stack_ptr fork_top;
+
+  jv path;
+  jv value_at_path;
+  int subexp_nest;
+  int debug_trace_enabled;
+  int initial_execution;
+  unsigned next_label;
+
+  int halted;
+  jv exit_code;
+  jv error_message;
+
+  jv attrs;
+  jq_input_cb input_cb;
+  void *input_cb_data;
+  jq_msg_cb debug_cb;
+  void *debug_cb_data;
+  jq_msg_cb stderr_cb;
+  void *stderr_cb_data;
+};
+
+void cjq_init(compiled_jq_state* cjq_state, int ret, int jq_flags, int options, 
+              int dumpopts, int last_result, jv* value, jq_state* jq) {
+  int* pret = malloc(sizeof(int)); *pret = ret;
+  int* pjq_flags = malloc(sizeof(int)); *pjq_flags = jq_flags;
+  int* poptions = malloc(sizeof(int)); *poptions = options;
+  int* pdumpopts = malloc(sizeof(int)); *pdumpopts = dumpopts;
+  int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
+  int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
+  int* praising = malloc(sizeof(int)); *praising = 0;
+  // uint16_t* ppc = malloc(sizeof(uint16_t));
+  uint8_t* pfallthrough = malloc(sizeof(uint8_t)); *pfallthrough = 0;
+  uint16_t* popcode = malloc(sizeof(uint16_t)); *popcode = -1;
+  jv *pcfunc_input = malloc(sizeof(jv)*MAX_CFUNCTION_ARGS);
+  jq_state* pjq = malloc(sizeof(struct jq_state)); *pjq = *jq;
+
+  cjq_state->ret = pret; pret = NULL;
+  cjq_state->jq_flags = pjq_flags; pjq_flags = NULL;
+  cjq_state->options = poptions; poptions = NULL;
+  cjq_state->dumpopts = pdumpopts; pdumpopts = NULL;
+  cjq_state->last_result = plast_result; plast_result = NULL;
+  // cjq_state->pc = ppc; ppc = NULL;
+  cjq_state->fallthrough = pfallthrough; pfallthrough = NULL;
+  cjq_state->pc = NULL;
+  cjq_state->opcode = popcode; popcode = NULL;
+
+  cjq_state->jq = pjq; pjq = NULL;
+  cjq_state->result = NULL;
+  cjq_state->backtracking = pbacktracking; pbacktracking = NULL;
+  cjq_state->raising = praising; praising = NULL;
+  cjq_state->cfunc_input = pcfunc_input; pcfunc_input = NULL;
+
+  jv* pvalue = malloc(sizeof(jv)); *pvalue = *value;
+  cjq_state->value = pvalue; pvalue = NULL;
+  jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
+}
+
+void cjq_free(compiled_jq_state* cjq_state) {
+  cjq_state->pc = NULL;
+  free(cjq_state->opcode); cjq_state->opcode = NULL;
+  free(cjq_state->ret); cjq_state->ret = NULL;
+  free(cjq_state->jq_flags); cjq_state->jq_flags = NULL;
+  free(cjq_state->options); cjq_state->options = NULL;
+  free(cjq_state->dumpopts); cjq_state->dumpopts = NULL;
+  free(cjq_state->last_result); cjq_state->last_result = NULL;
+  free(cjq_state->value); cjq_state->value = NULL;
+  free(cjq_state->result); cjq_state->result = NULL;
+  free(cjq_state->raising); cjq_state->raising = NULL;
+  free(cjq_state->backtracking); cjq_state->backtracking = NULL;
+  free(cjq_state->cfunc_input); cjq_state->cfunc_input = NULL;
+  free(cjq_state->fallthrough); cjq_state->fallthrough = NULL;
+  free(cjq_state->jq); cjq_state->jq = NULL;
+  free(cjq_state); cjq_state = NULL;
+}
+
 static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
                    uint8_t* opcode_list, int* opcode_list_len, uint16_t* jq_next_entry_list, 
                    int* jq_next_entry_list_len, int* jq_halt_loc) {
@@ -313,10 +404,10 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int cjq_trace(int argc, char* argv[], trace *opcodes) {
+int cjq_trace(int argc, char* argv[], trace* opcodes, compiled_jq_state* cjq_state) {
 #endif
-  jq_state *jq = NULL;
-  jq_util_input_state *input_state = NULL;
+  jq_state* jq = NULL;
+  jq_util_input_state* input_state = NULL;
   int ret = JQ_OK_NO_OUTPUT;
   int compiled = 0;
   int parser_flags = 0;
@@ -754,6 +845,9 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
 
   // JOHN: tracing run
   if (options & PROVIDE_NULL) {
+    jv njv = jv_null();
+    cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &njv, jq);
+    // TODO: Put serialize() call here
     ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, 
                   &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
                   &jq_halt_loc);
@@ -762,6 +856,8 @@ int cjq_trace(int argc, char* argv[], trace *opcodes) {
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
+        cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &value, jq);
+        // TODO: Put serialize() call here
         ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, 
                       &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
                       &jq_halt_loc);
