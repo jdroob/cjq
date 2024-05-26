@@ -151,6 +151,16 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
   return 0;
 }
 
+static void cjq_serialize(const char* filename, compiled_jq_state* cjq_state_list, int cjq_state_list_len) {
+  FILE *file = fopen(filename, "wb");
+    if (!file) {
+        perror("fopen");
+        exit(EXIT_FAILURE);
+    }
+    fwrite(cjq_state_list, sizeof(compiled_jq_state) * cjq_state_list_len, 1, file);
+    fclose(file);
+}
+
 enum {
   SLURP                 = 1,
   RAW_INPUT             = 2,
@@ -419,17 +429,19 @@ int cjq_trace(int argc, char* argv[], trace* opcodes, compiled_jq_state* cjq_sta
 
   // TODO: JOHN: Make this dynamic
   uint8_t* opcode_list = malloc(sizeof(uint8_t)*100000);
-  for (int i = 0; i < 100000; ++i) {
-    opcode_list[i] = -1;
-  }
+  for (int i = 0; i < 100000; ++i) { opcode_list[i] = -1; }
+  int opcode_list_len = 0;
   // TODO: JOHN: Make this dynamic
   uint16_t* jq_next_entry_list = malloc(sizeof(uint16_t)*1000);
-  for (int i = 0; i < 1000; ++i) {
-    jq_next_entry_list[i] = -1;
-  }
-  int opcode_list_len = 0;
+  for (int i = 0; i < 1000; ++i) { jq_next_entry_list[i] = -1; }
   int jq_next_entry_list_len = 0;
   int jq_halt_loc = -1;
+  // TODO: JOHN: Make this dynamic
+  compiled_jq_state* cjq_state_list = malloc(sizeof(cjq_state)*1000);
+  int cjq_state_list_len = 0;
+  uint16_t* jq_next_input_list = malloc(sizeof(uint16_t)*1000); // TODO: Add to trace struct
+  for (int i = 0; i < 1000; ++i) { jq_next_input_list[i] = -1; }   // TODO: Add to trace struct
+  int jq_next_input_list_len = 0; // TODO: Add to trace struct
 
 #ifdef HAVE_SETLOCALE
   (void) setlocale(LC_ALL, "");
@@ -848,7 +860,9 @@ int cjq_trace(int argc, char* argv[], trace* opcodes, compiled_jq_state* cjq_sta
   if (options & PROVIDE_NULL) {
     jv njv = jv_null();
     cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &njv, jq);
-    // TODO: Put serialize() call here
+    cjq_state_list[cjq_state_list_len] = *cjq_state; // Should be a deep copy
+    ++(cjq_state_list_len);
+    // TODO: Modify for tracking jq_next_input_list data
     ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, 
                   &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
                   &jq_halt_loc);
@@ -858,7 +872,9 @@ int cjq_trace(int argc, char* argv[], trace* opcodes, compiled_jq_state* cjq_sta
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
         cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &value, jq);
-        // TODO: Put serialize() call here
+        cjq_state_list[cjq_state_list_len] = *cjq_state; // Should be a deep copy
+        ++(cjq_state_list_len);
+        // TODO: Modify for tracking jq_next_input_list data
         ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, 
                       &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
                       &jq_halt_loc);
@@ -893,13 +909,15 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-
+  // TODO: Put serialize() call here
+  cjq_serialize("test_serialize.bin", cjq_state_list, cjq_state_list_len);
   trace_init(opcodes, opcode_list, opcode_list_len, jq_next_entry_list, jq_next_entry_list_len, jq_halt_loc);
   opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);
   jq_util_input_free(&input_state);
   jq_teardown(&jq);
+  free(cjq_state_list);
 
   if (options & EXIT_STATUS) {
     if (ret != JQ_OK_NO_OUTPUT)
