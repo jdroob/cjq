@@ -27,7 +27,14 @@ typedef enum {
   JV_KIND_OBJECT
 } jv_kind;
 
-struct jv_refcnt;
+// struct jv_refcnt;
+/*
+ * Internal refcounting helpers
+ */
+
+typedef struct jv_refcnt {
+  int count;
+} jv_refcnt;
 
 /* All of the fields of this struct are private.
    Really. Do not play with them. */

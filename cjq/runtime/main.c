@@ -16,14 +16,26 @@
 extern void jq_program();
 
 void clean_up(compiled_jq_state* cjq_state) {
-    jq_util_input_free(&(cjq_state->input_state));
+    // jq_util_input_free(&(cjq_state->input_state));
     jq_teardown(&(cjq_state->jq));
     cjq_free(cjq_state);
 }
 
+void cjq_deserialize(const char* filename, compiled_jq_state* cjq_state_list) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        perror("fopen");
+        exit(EXIT_FAILURE);
+    }
+    fread(cjq_state_list, sizeof(cjq_state_list), 1, file);
+    fclose(file);
+}
+
 int main(int argc, char *argv[]) {
-  compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
+  // compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
   // TODO: Refactor such that we don't compile a second time (just need data such as bc->constants)
+  compiled_jq_state* cjq_state = NULL;
+  cjq_deserialize("test_serialize.bin", cjq_state);
   int parse_error = cjq_parse(argc, argv, cjq_state);
   jq_program((void*)cjq_state);
   clean_up(cjq_state);

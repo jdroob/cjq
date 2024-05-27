@@ -151,13 +151,102 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
   return 0;
 }
 
+static void serialize_pointer(FILE* file, void* ptr, size_t size) {
+    if (ptr == NULL) {
+        size = 0;
+    }
+    fwrite(&size, sizeof(size), 1, file);
+    if (size > 0) {
+        fwrite(ptr, size, 1, file);
+    }
+}
+
+static void serialize_jv(FILE* file, const jv* value) {
+    fwrite(&value->kind_flags, sizeof(value->kind_flags), 1, file);
+    fwrite(&value->pad_, sizeof(value->pad_), 1, file);
+    fwrite(&value->offset, sizeof(value->offset), 1, file);
+    fwrite(&value->size, sizeof(value->size), 1, file);
+
+    if (value->kind_flags == JV_KIND_NUMBER) {
+        fwrite(&value->u.number, sizeof(value->u.number), 1, file);
+    } else {
+        serialize_pointer(file, value->u.ptr, sizeof(struct jv_refcnt));
+    }
+}
+
+void serialize_jq_state(FILE* file, const jq_state* state) {
+    fwrite(NULL, sizeof(state->nomem_handler), 1, file);   // NULL
+    fwrite(NULL, sizeof(state->nomem_handler_data), 1, file);   // NULL
+    fwrite(&state->bc, sizeof(state->bc), 1, file);
+
+    fwrite(&state->err_cb, sizeof(state->err_cb), 1, file);
+    fwrite(&state->err_cb_data, sizeof(state->err_cb_data), 1, file);
+
+    serialize_jv(file, &state->error);
+
+    // Serialize stack and stack pointers (assuming stack serialization functions exist)
+    // serialize_stack(file, &state->stk);
+    fwrite(&state->curr_frame, sizeof(state->curr_frame), 1, file);
+    fwrite(&state->stk_top, sizeof(state->stk_top), 1, file);
+    fwrite(&state->fork_top, sizeof(state->fork_top), 1, file);
+
+    serialize_jv(file, &state->path);
+    serialize_jv(file, &state->value_at_path);
+
+    fwrite(&state->subexp_nest, sizeof(state->subexp_nest), 1, file);
+    fwrite(&state->debug_trace_enabled, sizeof(state->debug_trace_enabled), 1, file);
+    fwrite(&state->initial_execution, sizeof(state->initial_execution), 1, file);
+    fwrite(&state->next_label, sizeof(state->next_label), 1, file);
+
+    fwrite(&state->halted, sizeof(state->halted), 1, file);
+    serialize_jv(file, &state->exit_code);
+    serialize_jv(file, &state->error_message);
+
+    serialize_jv(file, &state->attrs);
+
+    fwrite(&state->input_cb, sizeof(state->input_cb), 1, file);
+    fwrite(&state->input_cb_data, sizeof(state->input_cb_data), 1, file);
+    fwrite(&state->debug_cb, sizeof(state->debug_cb), 1, file);
+    fwrite(&state->debug_cb_data, sizeof(state->debug_cb_data), 1, file);
+    fwrite(&state->stderr_cb, sizeof(state->stderr_cb), 1, file);
+    fwrite(&state->stderr_cb_data, sizeof(state->stderr_cb_data), 1, file);
+}
+
 static void cjq_serialize(const char* filename, compiled_jq_state* cjq_state_list, int cjq_state_list_len) {
-  FILE *file = fopen(filename, "wb");
+    FILE* file = fopen(filename, "wb");
     if (!file) {
         perror("fopen");
         exit(EXIT_FAILURE);
     }
-    fwrite(cjq_state_list, sizeof(compiled_jq_state) * cjq_state_list_len, 1, file);
+
+    // Write the number of states
+    fwrite(&cjq_state_list_len, sizeof(cjq_state_list_len), 1, file);
+
+    // Serialize each state
+    for (int i = 0; i < cjq_state_list_len; ++i) {
+        compiled_jq_state* state = &cjq_state_list[i];
+        fwrite(state, sizeof(compiled_jq_state), 1, file);
+
+        // Serialize pointers
+        serialize_pointer(file, state->ret, sizeof(int));
+        serialize_pointer(file, state->jq_flags, sizeof(int));
+        serialize_pointer(file, state->dumpopts, sizeof(int));
+        serialize_pointer(file, state->options, sizeof(int));
+        serialize_pointer(file, state->last_result, sizeof(int));
+        serialize_pointer(file, state->raising, sizeof(int));
+        serialize_pointer(file, state->pc, sizeof(uint16_t));
+        serialize_pointer(file, state->opcode, sizeof(uint16_t));
+        serialize_pointer(file, state->backtracking, sizeof(int));
+        serialize_pointer(file, state->fallthrough, sizeof(uint8_t));
+
+        // Serialize jv and jq_state members
+        serialize_jv(file, state->value);
+        serialize_jv(file, state->result);
+        serialize_jv(file, state->cfunc_input);
+        serialize_jq_state(file, state->jq);
+
+    }
+
     fclose(file);
 }
 
@@ -192,6 +281,7 @@ enum {
 #define jq_exit_with_status(r)  exit(abs(r))
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
 
+// TODO: Move below to jq_state.h
 typedef int stack_ptr;
 
 struct jq_state {
@@ -366,7 +456,8 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
 
 void trace_init(trace* opcodes, uint8_t* opcode_list, int opcode_list_len, 
                 uint16_t* jq_next_entry_list, int jq_next_entry_list_len,
-                int jq_halt_loc) {
+                int jq_halt_loc, uint16_t* jq_next_input_list, 
+                int jq_next_input_list_len) {
   opcodes->opcode_list = opcode_list;
   int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
   opcodes->opcode_list_len = popcode_list_len; popcode_list_len = NULL;
@@ -374,6 +465,10 @@ void trace_init(trace* opcodes, uint8_t* opcode_list, int opcode_list_len,
   opcodes->jq_next_entry_list = jq_next_entry_list;
   int* pjq_next_entry_list_len = malloc(sizeof(int)); *pjq_next_entry_list_len = jq_next_entry_list_len;
   opcodes->jq_next_entry_list_len = pjq_next_entry_list_len; pjq_next_entry_list_len = NULL;
+  
+  opcodes->jq_next_input_list = jq_next_input_list;
+  int* pjq_next_input_list_len = malloc(sizeof(int)); *pjq_next_input_list_len = jq_next_input_list_len;
+  opcodes->jq_next_input_list_len = pjq_next_input_list_len; pjq_next_input_list_len = NULL;
 
   int* pjq_halt_loc = malloc(sizeof(int)); *pjq_halt_loc = jq_halt_loc;
   opcodes->jq_halt_loc = pjq_halt_loc; pjq_halt_loc = NULL;
@@ -856,13 +951,14 @@ int cjq_trace(int argc, char* argv[], trace* opcodes, compiled_jq_state* cjq_sta
     jq_util_input_add_input(input_state, "-");
   }
 
-  // JOHN: tracing run
+  // Tracing run
   if (options & PROVIDE_NULL) {
     jv njv = jv_null();
     cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &njv, jq);
-    cjq_state_list[cjq_state_list_len] = *cjq_state; // Should be a deep copy
+    cjq_state_list[cjq_state_list_len] = *cjq_state;
     ++(cjq_state_list_len);
-    // TODO: Modify for tracking jq_next_input_list data
+    jq_next_input_list[jq_next_input_list_len++] = opcode_list_len;
+    ++jq_next_input_list_len;
     ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, 
                   &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
                   &jq_halt_loc);
@@ -872,9 +968,9 @@ int cjq_trace(int argc, char* argv[], trace* opcodes, compiled_jq_state* cjq_sta
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
         cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &value, jq);
-        cjq_state_list[cjq_state_list_len] = *cjq_state; // Should be a deep copy
+        cjq_state_list[cjq_state_list_len] = *cjq_state;
         ++(cjq_state_list_len);
-        // TODO: Modify for tracking jq_next_input_list data
+        jq_next_input_list[jq_next_input_list_len++] = opcode_list_len;
         ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, 
                       &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
                       &jq_halt_loc);
@@ -909,9 +1005,10 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  // TODO: Put serialize() call here
   cjq_serialize("test_serialize.bin", cjq_state_list, cjq_state_list_len);
-  trace_init(opcodes, opcode_list, opcode_list_len, jq_next_entry_list, jq_next_entry_list_len, jq_halt_loc);
+  trace_init(opcodes, opcode_list, opcode_list_len, jq_next_entry_list, 
+             jq_next_entry_list_len, jq_halt_loc, jq_next_input_list, 
+             jq_next_input_list_len);
   opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);

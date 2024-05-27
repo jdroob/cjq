@@ -46,13 +46,13 @@
 #include "jv_unicode.h"
 #include "util.h"
 
-/*
- * Internal refcounting helpers
- */
+// /*
+//  * Internal refcounting helpers
+//  */
 
-typedef struct jv_refcnt {
-  int count;
-} jv_refcnt;
+// typedef struct jv_refcnt {
+//   int count;
+// } jv_refcnt;
 
 static const jv_refcnt JV_REFCNT_INIT = {1};
 
