@@ -135,3 +135,4 @@ cjq/jq/.vscode/*
 *.s
 *.log
 cjq/testing/basic_ops/testresults.log
+test_serialize.bin
