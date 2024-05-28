@@ -69,7 +69,7 @@ void _opcode_CALL_JQ(void* cjq_state);
 void _opcode_RET(void* cjq_state);
 void _opcode_BACKTRACK_RET(void* cjq_state);
 void _opcode_TAIL_CALL_JQ(void* cjq_state);
-void _opcode_TOP(void* cjq_state);
+void __attribute__((always_inline)) inline _opcode_TOP(void* cjq_state);
 void _opcode_GENLABEL(void* cjq_state);
 void _opcode_DESTRUCTURE_ALT(void* cjq_state);
 void _opcode_BACKTRACK_DESTRUCTURE_ALT(void* cjq_state);
