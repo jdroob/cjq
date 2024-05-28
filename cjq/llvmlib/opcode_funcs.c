@@ -440,7 +440,7 @@ static void jq_print(compiled_jq_state *cjq_state) {
       fflush(stdout);
 }
 
-static __attribute__((always_inline)) inline void _init(compiled_jq_state *cjq_state) {
+static  void _init(compiled_jq_state *cjq_state) {
   /**
    * Below is everything that happens between loop guard
    * and start of switch statement in jq_next
@@ -494,7 +494,7 @@ static __attribute__((always_inline)) inline void _init(compiled_jq_state *cjq_s
     cjq_state->pc++;
 }
 
-static void _do_backtrack(compiled_jq_state *cjq_state) {
+static  void _do_backtrack(compiled_jq_state *cjq_state) {
    cjq_state->pc = stack_restore(cjq_state->jq);
    if (!cjq_state->pc) {
       if (!jv_is_valid(cjq_state->jq->error)) {
@@ -550,7 +550,7 @@ void _jq_halt(void* cjq_state) {
   }
 }
 
-void _init_jq_next(void* cjq_state) {
+void  _init_jq_next(void* cjq_state) {
   /**
    * Below should be equivalent logic to what happens 
    * between start of jq_next and start of while loop
@@ -696,7 +696,7 @@ void _opcode_STORE_GLOBAL(void* cjq_state) {
  }
 
 void _opcode_INDEX(void* cjq_state) {
-  _opcode_INDEX_OPT(cjq_state);
+ _opcode_INDEX_OPT(cjq_state);
 }
 
 void _opcode_INDEX_OPT(void* cjq_state) { 
@@ -733,11 +733,11 @@ void _opcode_INDEX_OPT(void* cjq_state) {
  }
 
 void _opcode_EACH(void* cjq_state) { 
-  _opcode_EACH_OPT(cjq_state);
+ _opcode_EACH_OPT(cjq_state);
  }
 
 void _opcode_BACKTRACK_EACH(void* cjq_state) { 
-  _opcode_BACKTRACK_EACH_OPT(cjq_state);
+ _opcode_BACKTRACK_EACH_OPT(cjq_state);
  }
 
 void _opcode_EACH_OPT(void* cjq_state) { 
@@ -758,7 +758,7 @@ void _opcode_EACH_OPT(void* cjq_state) {
   stack_push(pcjq_state->jq, jv_number(-1));
   // JQ_FALLTHROUGH;
   *pcjq_state->fallthrough = 1;
-  _opcode_BACKTRACK_EACH(cjq_state);
+ _opcode_BACKTRACK_EACH(cjq_state);
  }
 
 void _opcode_BACKTRACK_EACH_OPT(void* cjq_state) { 
@@ -1000,7 +1000,7 @@ void _opcode_RANGE(void* cjq_state) {
  }
  
 void _opcode_BACKTRACK_RANGE(void* cjq_state) { 
-  _opcode_RANGE(cjq_state);
+ _opcode_RANGE(cjq_state);
  }
 
 void _opcode_SUBEXP_BEGIN(void* cjq_state) {
@@ -1043,7 +1043,7 @@ void _opcode_PATH_BEGIN(void* cjq_state) {
  }
  
 void _opcode_BACKTRACK_PATH_BEGIN(void* cjq_state) { 
-  _opcode_BACKTRACK_PATH_END(cjq_state);
+ _opcode_BACKTRACK_PATH_END(cjq_state);
  }
   
 void _opcode_PATH_END(void* cjq_state) { 
@@ -1200,11 +1200,11 @@ void _opcode_BACKTRACK_RET(void* cjq_state) {
    return;
 }
 
-void _opcode_TAIL_CALL_JQ(void* cjq_state) { 
-   _opcode_CALL_JQ(cjq_state);
+void  _opcode_TAIL_CALL_JQ(void* cjq_state) { 
+  _opcode_CALL_JQ(cjq_state);
  }
 
-void __attribute__((always_inline)) inline _opcode_TOP(void* cjq_state) { 
+void _opcode_TOP(void* cjq_state) { 
   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
  }
@@ -1216,7 +1216,7 @@ void _opcode_GENLABEL(void* cjq_state) {
  }
 
 void _opcode_DESTRUCTURE_ALT(void* cjq_state) { 
-  _opcode_FORK(cjq_state);
+ _opcode_FORK(cjq_state);
  }
 
 void _opcode_BACKTRACK_DESTRUCTURE_ALT(void* cjq_state) { 
@@ -1248,7 +1248,7 @@ void _opcode_STOREVN(void* cjq_state) {
   stack_save(pcjq_state->jq, pcjq_state->pc - 1, stack_get_pos(pcjq_state->jq));
   // JQ_FALLTHROUGH;
   *pcjq_state->fallthrough = 1;
-  _opcode_STOREV(cjq_state);
+ _opcode_STOREV(cjq_state);
  }
  
 void _opcode_BACKTRACK_STOREVN(void* cjq_state) { 
