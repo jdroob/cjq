@@ -69,6 +69,7 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
     # Define entry point
     main_func_type = ir.FunctionType(ir.VoidType(), [void_ptr_type])
     main_func = ir.Function(module, main_func_type, "jq_program")
+    main_func.attributes.add('alwaysinline')
     main_block = main_func.append_basic_block("entry")
     builder = ir.IRBuilder(main_block)
     
