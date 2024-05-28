@@ -440,7 +440,7 @@ static void jq_print(compiled_jq_state *cjq_state) {
       fflush(stdout);
 }
 
-static void _init(compiled_jq_state *cjq_state) {
+static __attribute__((always_inline)) inline void _init(compiled_jq_state *cjq_state) {
   /**
    * Below is everything that happens between loop guard
    * and start of switch statement in jq_next
@@ -1204,7 +1204,7 @@ void _opcode_TAIL_CALL_JQ(void* cjq_state) {
    _opcode_CALL_JQ(cjq_state);
  }
 
-void _opcode_TOP(void* cjq_state) { 
+void __attribute__((always_inline)) inline _opcode_TOP(void* cjq_state) { 
   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
   _init(pcjq_state);
  }

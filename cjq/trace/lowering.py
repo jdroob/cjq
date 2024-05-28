@@ -79,199 +79,247 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
     _init_jq_next = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_init_jq_next')
+    _init_jq_next.attributes.add('alwaysinline')
     
     _jq_halt = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_jq_halt')
+    _jq_halt.attributes.add('alwaysinline')
     
     _opcode_LOADK = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_LOADK')
+    _opcode_LOADK.attributes.add('alwaysinline')
     
     _opcode_DUP = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_DUP')
+    _opcode_DUP.attributes.add('alwaysinline')
     
     _opcode_DUPN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_DUPN')
+    _opcode_DUPN.attributes.add('alwaysinline')
     
     _opcode_DUP2 = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_DUP2')
+    _opcode_DUP2.attributes.add('alwaysinline')
     
     _opcode_PUSHK_UNDER = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_PUSHK_UNDER')
+    _opcode_PUSHK_UNDER.attributes.add('alwaysinline')
     
     _opcode_POP = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_POP')
+    _opcode_POP.attributes.add('alwaysinline')
     
     _opcode_LOADV = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_LOADV')
+    _opcode_LOADV.attributes.add('alwaysinline')
     
     _opcode_LOADVN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_LOADVN')
+    _opcode_LOADVN.attributes.add('alwaysinline')
     
     _opcode_STOREV = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_STOREV')
+    _opcode_STOREV.attributes.add('alwaysinline')
     
     _opcode_STORE_GLOBAL = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_STORE_GLOBAL')
+    _opcode_STORE_GLOBAL.attributes.add('alwaysinline')
     
     _opcode_INDEX = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_INDEX')
-    
+    _opcode_INDEX.attributes.add('alwaysinline')
+
     _opcode_INDEX_OPT = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_INDEX_OPT')
+    _opcode_INDEX_OPT.attributes.add('alwaysinline')
     
     _opcode_EACH = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_EACH')
+    _opcode_EACH.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_EACH = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_EACH')
+    _opcode_BACKTRACK_EACH.attributes.add('alwaysinline')
     
     _opcode_EACH_OPT = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_EACH_OPT')
+    _opcode_EACH_OPT.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_EACH_OPT = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_EACH_OPT')
+    _opcode_BACKTRACK_EACH_OPT.attributes.add('alwaysinline')
     
     _opcode_FORK = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_FORK')
+    _opcode_FORK.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_FORK = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_FORK')
+    _opcode_BACKTRACK_FORK.attributes.add('alwaysinline')
     
     _opcode_TRY_BEGIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TRY_BEGIN')
+    _opcode_TRY_BEGIN.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_TRY_BEGIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_TRY_BEGIN')
+    _opcode_BACKTRACK_TRY_BEGIN.attributes.add('alwaysinline')
     
     _opcode_TRY_END = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TRY_END')
+    _opcode_TRY_END.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_TRY_END = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_TRY_END')
+    _opcode_BACKTRACK_TRY_END.attributes.add('alwaysinline')
     
     _opcode_JUMP = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_JUMP')
+    _opcode_JUMP.attributes.add('alwaysinline')
     
     _opcode_JUMP_F = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_JUMP_F')
+    _opcode_JUMP_F.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK')
+    _opcode_BACKTRACK.attributes.add('alwaysinline')
     
     _opcode_APPEND = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_APPEND')
+    _opcode_APPEND.attributes.add('alwaysinline')
     
     _opcode_INSERT = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_INSERT')
+    _opcode_INSERT.attributes.add('alwaysinline')
     
     _opcode_RANGE = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_RANGE')
+    _opcode_RANGE.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_RANGE = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_RANGE')
+    _opcode_BACKTRACK_RANGE.attributes.add('alwaysinline')
     
     _opcode_SUBEXP_BEGIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_SUBEXP_BEGIN')
+    _opcode_SUBEXP_BEGIN.attributes.add('alwaysinline')
     
     _opcode_SUBEXP_END = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_SUBEXP_END')
+    _opcode_SUBEXP_END.attributes.add('alwaysinline')
     
     _opcode_PATH_BEGIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_PATH_BEGIN')
+    _opcode_PATH_BEGIN.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_PATH_BEGIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_PATH_BEGIN')
+    _opcode_BACKTRACK_PATH_BEGIN.attributes.add('alwaysinline')
     
     _opcode_PATH_END = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_PATH_END')
+    _opcode_PATH_END.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_PATH_END = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_PATH_END')
+    _opcode_BACKTRACK_PATH_END.attributes.add('alwaysinline')
     
     _opcode_CALL_BUILTIN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_CALL_BUILTIN')
+    _opcode_CALL_BUILTIN.attributes.add('alwaysinline')
     
     _opcode_CALL_JQ = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_CALL_JQ')
+    _opcode_CALL_JQ.attributes.add('alwaysinline')
     
     _opcode_RET = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_RET')
+    _opcode_RET.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_RET = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_RET')
+    _opcode_BACKTRACK_RET.attributes.add('alwaysinline')
     
     _opcode_TAIL_CALL_JQ = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TAIL_CALL_JQ')
+    _opcode_TAIL_CALL_JQ.attributes.add('alwaysinline')
   
     _opcode_TOP = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_TOP')
+    _opcode_TOP.attributes.add('alwaysinline')
     
     _opcode_GENLABEL = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_GENLABEL')
+    _opcode_GENLABEL.attributes.add('alwaysinline')
     
     _opcode_DESTRUCTURE_ALT = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_DESTRUCTURE_ALT')
+    _opcode_DESTRUCTURE_ALT.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_DESTRUCTURE_ALT = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_DESTRUCTURE_ALT')
+    _opcode_BACKTRACK_DESTRUCTURE_ALT.attributes.add('alwaysinline')
     
     _opcode_STOREVN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_STOREVN')
+    _opcode_STOREVN.attributes.add('alwaysinline')
     
     _opcode_BACKTRACK_STOREVN = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_BACKTRACK_STOREVN')
+    _opcode_BACKTRACK_STOREVN.attributes.add('alwaysinline')
     
     _opcode_ERRORK = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_opcode_ERRORK')
-    
+    _opcode_ERRORK.attributes.add('alwaysinline')
     
     # Define argument types for C function
     jq_util_funcs._get_num_opcodes.argtypes = []
