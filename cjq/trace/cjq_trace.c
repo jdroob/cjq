@@ -151,6 +151,43 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
   return 0;
 }
 
+// TODO: Move below to jq_state.h
+typedef int stack_ptr;
+
+struct jq_state {
+  void (*nomem_handler)(void *);
+  void *nomem_handler_data;
+  struct bytecode* bc;
+
+  jq_msg_cb err_cb;
+  void *err_cb_data;
+  jv error;
+
+  struct stack stk;
+  stack_ptr curr_frame;
+  stack_ptr stk_top;
+  stack_ptr fork_top;
+
+  jv path;
+  jv value_at_path;
+  int subexp_nest;
+  int debug_trace_enabled;
+  int initial_execution;
+  unsigned next_label;
+
+  int halted;
+  jv exit_code;
+  jv error_message;
+
+  jv attrs;
+  jq_input_cb input_cb;
+  void *input_cb_data;
+  jq_msg_cb debug_cb;
+  void *debug_cb_data;
+  jq_msg_cb stderr_cb;
+  void *stderr_cb_data;
+};
+
 static void serialize_pointer(FILE* file, void* ptr, size_t size) {
     if (ptr == NULL) {
         size = 0;
@@ -280,43 +317,6 @@ enum {
 };
 #define jq_exit_with_status(r)  exit(abs(r))
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
-
-// TODO: Move below to jq_state.h
-typedef int stack_ptr;
-
-struct jq_state {
-  void (*nomem_handler)(void *);
-  void *nomem_handler_data;
-  struct bytecode* bc;
-
-  jq_msg_cb err_cb;
-  void *err_cb_data;
-  jv error;
-
-  struct stack stk;
-  stack_ptr curr_frame;
-  stack_ptr stk_top;
-  stack_ptr fork_top;
-
-  jv path;
-  jv value_at_path;
-  int subexp_nest;
-  int debug_trace_enabled;
-  int initial_execution;
-  unsigned next_label;
-
-  int halted;
-  jv exit_code;
-  jv error_message;
-
-  jv attrs;
-  jq_input_cb input_cb;
-  void *input_cb_data;
-  jq_msg_cb debug_cb;
-  void *debug_cb_data;
-  jq_msg_cb stderr_cb;
-  void *stderr_cb_data;
-};
 
 void cjq_init(compiled_jq_state* cjq_state, int ret, int jq_flags, int options, 
               int dumpopts, int last_result, jv* value, jq_state* jq) {
