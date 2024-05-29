@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./compile_llvmgen.sh
+./build/compile_llvmgen.sh
 ./linking/llvmlink_clib.sh
 ./linking/llvmlink_frontend.sh
 ./linking/llvmlink_jqsrc.sh

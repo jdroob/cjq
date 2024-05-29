@@ -136,7 +136,7 @@ for test_case in "${test_cases[@]}"; do
 
     # Compile runjq
     # echo "Compiling jq for $jq_file..." # Debug
-    ./compile_runjq.sh
+    ./build/compile_runjq.sh
 
     # Command 2: Run runjq and capture output
     # echo "Running cjq for $jq_file..."  # Debug
@@ -160,7 +160,7 @@ for test_case2 in "${test_cases2[@]}"; do
 
     # Compile runjq
     # echo "Compiling jq for $jq_file..." # Debug
-    ./compile_runjq.sh
+    ./build/compile_runjq.sh
 
     # Command 2: Run runjq and capture output
     # echo "Running cjq for $jq_file..."  # Debug
@@ -176,19 +176,19 @@ done
 
 # @base64 test
 echo '{"message": "This is a secret message"}' | ./llvm_gen '.message |= @base64' > /dev/null
-./compile_runjq.sh
+./build/compile_runjq.sh
 cjq_output=$(echo '{"message": "This is a secret message"}' | ./runjq '.message |= @base64')
 jq_output=$(echo '{"message": "This is a secret message"}' | jq '.message |= @base64')
 compare_outputs "$cjq_output" "$jq_output" "base64.jq"
 # @base64d test
 echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./llvm_gen '.message |= @base64d' > /dev/null
-./compile_runjq.sh
+./build/compile_runjq.sh
 cjq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./runjq '.message |= @base64d')
 jq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | jq '.message |= @base64d')
 compare_outputs "$cjq_output" "$jq_output" "base64d.jq"
 # @html test
 echo '{"message": "x<y"}' | ./llvm_gen '.message |= @html' > /dev/null
-./compile_runjq.sh
+./build/compile_runjq.sh
 cjq_output=$(echo '{"message": "x<y"}' | ./runjq '.message |= @html')
 jq_output=$(echo '{"message": "x<y"}' | jq '.message |= @html')
 compare_outputs "$cjq_output" "$jq_output" "html.jq"
