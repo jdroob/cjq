@@ -29,6 +29,9 @@ void cjq_free(compiled_jq_state* cjq_state);
 
 int cjq_parse(int argc, char* argv[], compiled_jq_state* cjq_state);
 
+void __attribute__((always_inline)) inline lg_init(compiled_jq_state* cjq_state);
+void __attribute__((always_inline)) inline _init_jq_next(void* cjq_state);
+void __attribute__((always_inline)) inline _do_backtrack(compiled_jq_state *cjq_state);
 void __attribute__((always_inline)) inline _opcode_LOADK(void* cjq_state);
 void __attribute__((always_inline)) inline _opcode_DUP(void* cjq_state);
 void __attribute__((always_inline)) inline _opcode_DUPN(void* cjq_state);
