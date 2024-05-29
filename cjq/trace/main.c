@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
     // Dummy cjq_state for passing to opcode functions while building LLVM
     compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
-    int trace_error = cjq_trace(argc, argv, opcodes, cjq_state);
+    int trace_error = cjq_trace(argc, argv, opcodes);
     int gen_ir_error = get_llvm_ir(cjq_state, opcodes, pModule_llvmlite, pModuleLowering);
     clean_up(cjq_state, opcodes);
 

@@ -4,31 +4,31 @@
 #ifndef CJQ_FRONTEND_H
 #define CJQ_FRONTEND_H
 
-// typedef struct {
-//     int* ret;
-//     int* jq_flags;
-//     int* dumpopts;
-//     int* options;
-//     int* last_result;
-//     int* raising;
-//     jq_util_input_state* input_state;
-//     jv* value;
-//     jv* result;
-//     jv* cfunc_input;
-//     jq_state* jq;
-//     uint16_t* pc;
-//     uint16_t* opcode;
-//     int* backtracking;
-//     uint8_t* fallthrough;
-// } compiled_jq_state;
+typedef struct {
+    int* ret;
+    int* jq_flags;
+    int* dumpopts;
+    int* options;
+    int* last_result;
+    int* raising;
+    jq_util_input_state* input_state;
+    jv* value;
+    jv* result;
+    jv* cfunc_input;
+    jq_state* jq;
+    uint16_t* pc;
+    uint16_t* opcode;
+    int* backtracking;
+    uint8_t* fallthrough;
+} compiled_jq_state;
 
-// void cjq_init(compiled_jq_state* cjq_state, int ret, int jq_flags, int options,
-//              int dumpopts, int last_result, jq_util_input_state* input_state, 
-//              jq_state* jq);
+void cjq_init(compiled_jq_state* cjq_state, int ret, int jq_flags, int options,
+             int dumpopts, int last_result, jq_util_input_state* input_state, 
+             jq_state* jq);
 
-// void cjq_free(compiled_jq_state* cjq_state);
+void cjq_free(compiled_jq_state* cjq_state);
 
-// int cjq_parse(int argc, char* argv[], compiled_jq_state* cjq_state);
+int cjq_parse(int argc, char* argv[], compiled_jq_state* cjq_state);
 
 void __attribute__((always_inline)) inline lg_init(compiled_jq_state* cjq_state);
 void __attribute__((always_inline)) inline _init_jq_next(void* cjq_state);
