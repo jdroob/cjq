@@ -245,6 +245,79 @@ void cjq_free(compiled_jq_state *cjq_state) {
   free(cjq_state); cjq_state = NULL;
 }
 
+static jv deserialize_jv(const char* filename) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        perror("fopen");
+        exit(EXIT_FAILURE);
+    }
+
+    jv value;
+    fread(&value.kind_flags, sizeof(value.kind_flags), 1, file);
+    fread(&value.pad_, sizeof(value.pad_), 1, file);
+    fread(&value.offset, sizeof(value.offset), 1, file);
+    fread(&value.size, sizeof(value.size), 1, file);
+
+    int kind = 0x7F & value.kind_flags;
+    if (kind == JV_KIND_NUMBER) {
+        fread(&value.u.number, sizeof(value.u.number), 1, file);
+    } else if (kind == JV_KIND_OBJECT) {
+        size_t total_size = sizeof(jvp_object) +
+                            sizeof(struct object_slot) * value.size +
+                            sizeof(int) * (value.size * 2);
+        value.u.ptr = malloc(total_size);
+        if (!value.u.ptr) {
+            perror("malloc");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        if (fread(value.u.ptr, total_size, 1, file) != 1) {
+            perror("Failed to read jv object from file");
+            free(value.u.ptr);
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+    } else if (kind == JV_KIND_ARRAY) {
+        size_t total_size = sizeof(jvp_array) + sizeof(jv) * value.size;
+        value.u.ptr = malloc(total_size);
+        if (!value.u.ptr) {
+            perror("malloc");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        if (fread(value.u.ptr, total_size, 1, file) != 1) {
+            perror("Failed to read jv array from file");
+            free(value.u.ptr);
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+    } else if (kind == JV_KIND_STRING) {
+        size_t total_size = sizeof(jvp_string) + (uint32_t)value.size + 1;
+        value.u.ptr = malloc(total_size);
+        if (!value.u.ptr) {
+            perror("malloc");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        if (fread(value.u.ptr, total_size, 1, file) != 1) {
+            perror("Failed to read jv string from file");
+            free(value.u.ptr);
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+    } else { /* JV_KIND_TRUE, JV_KIND_FALSE, JV_KIND_NULL, JV_KIND_INVALID */
+        size_t total_size = sizeof(double);
+        if (fread(&value.u.number, total_size, 1, file) != 1) {
+            perror("Failed to read jv value from file");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    fclose(file);
+    return value;
+}
+
 static void debug_cb(void *data, jv input) {
   int dumpopts = *(int *)data;
   jv_dumpf(JV_ARRAY(jv_string("DEBUG:"), input), stderr, dumpopts & ~(JV_PRINT_PRETTY));
@@ -714,6 +787,15 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
+  jv obj = deserialize_jv("test_serialize.bin");
+  // jv arr = deserialize_jv("test_serialize.bin");
+  // jv str = deserialize_jv("test_serialize.bin");
+  // jv jvn = deserialize_jv("test_serialize.bin");
+  // jv jvt = deserialize_jv("test_serialize.bin");
+  // jv jvf = deserialize_jv("test_serialize.bin");
+  // jv jvnull = deserialize_jv("test_serialize.bin");
+  // jv jvinv = deserialize_jv("test_serialize.bin");
+
   if (options & PROVIDE_NULL)
     cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, NULL, jq);
   else

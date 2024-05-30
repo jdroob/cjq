@@ -188,28 +188,54 @@ struct jq_state {
   void *stderr_cb_data;
 };
 
-// static void serialize_pointer(FILE* file, void* ptr, size_t size) {
-//     if (ptr == NULL) {
-//         size = 0;
-//     }
-//     fwrite(&size, sizeof(size), 1, file);
-//     if (size > 0) {
-//         fwrite(ptr, size, 1, file);
-//     }
-// }
+static void serialize_jv(const char* filename, const jv* value) {
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        perror("fopen");
+        exit(EXIT_FAILURE);
+    }
 
-// static void serialize_jv(FILE* file, const jv* value) {
-//     fwrite(&value->kind_flags, sizeof(value->kind_flags), 1, file);
-//     fwrite(&value->pad_, sizeof(value->pad_), 1, file);
-//     fwrite(&value->offset, sizeof(value->offset), 1, file);
-//     fwrite(&value->size, sizeof(value->size), 1, file);
+    if (!value) {
+      perror("invalid jv value");
+      exit(EXIT_FAILURE);
+    }
 
-//     if (value->kind_flags == JV_KIND_NUMBER) {
-//         fwrite(&value->u.number, sizeof(value->u.number), 1, file);
-//     } else {
-//         serialize_pointer(file, value->u.ptr, sizeof(struct jv_refcnt));
-//     }
-// }
+    int kind = 0x7F & value->kind_flags;
+    fwrite(&value->kind_flags, sizeof(value->kind_flags), 1, file);
+    fwrite(&value->pad_, sizeof(value->pad_), 1, file);
+    fwrite(&value->offset, sizeof(value->offset), 1, file);
+    fwrite(&value->size, sizeof(value->size), 1, file);
+
+    if (kind == JV_KIND_NUMBER) {
+        fwrite(&value->u.number, sizeof(value->u.number), 1, file);
+    } else if (kind == JV_KIND_OBJECT) {
+        size_t total_size = sizeof(jvp_object) +
+                            sizeof(struct object_slot) * value->size +
+                            sizeof(int) * (value->size * 2);
+
+        if (fwrite(value->u.ptr, total_size, 1, file) != 1) {
+            perror("Failed to write jv object to file");
+        }
+      } else if (kind == JV_KIND_ARRAY) {
+        size_t total_size = sizeof(jvp_array) + sizeof(jv) * value->size;
+
+        if (fwrite(value->u.ptr, total_size, 1, file) != 1) {
+            perror("Failed to write jv array to file");
+        }
+      } else if (kind == JV_KIND_STRING) {
+        size_t total_size = sizeof(jvp_string) + (uint32_t)value->size + 1;
+
+        if (fwrite(value->u.ptr, total_size, 1, file) != 1) {
+            perror("Failed to write jv string to file");
+        } 
+      } else /* JV_KIND_TRUE, JV_KIND_FALSE, JV_KIND_NULL, JV_KIND_INVALID */ {
+        size_t total_size = sizeof(double);
+        if (fwrite(&value->u, total_size, 1, file) != 1) {
+            perror("Failed to write jv string to file");
+        }
+      }
+    fclose(file);
+  }
 
 // void serialize_jq_state(FILE* file, const jq_state* state) {
 //     fwrite(NULL, sizeof(state->nomem_handler), 1, file);   // NULL
@@ -1006,6 +1032,22 @@ out:
 //     ret = JQ_ERROR_SYSTEM;
 //   }
   // cjq_serialize("test_serialize.bin", cjq_state_list, cjq_state_list_len);
+  jv obj = jv_object_set(jv_object(), jv_string("key"), jv_number(69));
+  serialize_jv("test_serialize.bin", &obj);
+  // jv arr = jv_array();
+  // serialize_jv("test_serialize.bin", &arr);
+  // jv str = jv_string("yo");
+  // serialize_jv("test_serialize.bin", &str);
+  // jv jvn = jv_number(69);
+  // serialize_jv("test_serialize.bin", &jvn);
+  // jv jvt = jv_true();
+  // serialize_jv("test_serialize.bin", &jvt);
+  // jv jvf = jv_false();
+  // serialize_jv("test_serialize.bin", &jvf);
+  // jv jvnull = jv_null();
+  // serialize_jv("test_serialize.bin", &jvnull);
+  // jv jvinv = jv_invalid();
+  // serialize_jv("test_serialize.bin", &jvinv);
   trace_init(opcodes, opcode_list, opcode_list_len, jq_next_entry_list, 
              jq_next_entry_list_len, jq_halt_loc, jq_next_input_list, 
              jq_next_input_list_len);

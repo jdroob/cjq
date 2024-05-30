@@ -49,6 +49,36 @@ typedef struct {
   } u;
 } jv;
 
+struct object_slot {
+  int next; /* next slot with same hash, for collisions */
+  uint32_t hash;
+  jv string;
+  jv value;
+};
+
+typedef struct {
+  jv_refcnt refcnt;
+  int next_free;
+  struct object_slot elements[];
+} jvp_object;
+
+//FIXME signed vs unsigned
+typedef struct {
+  jv_refcnt refcnt;
+  int length, alloc_length;
+  jv elements[];
+} jvp_array;
+
+typedef struct {
+  jv_refcnt refcnt;
+  uint32_t hash;
+  // high 31 bits are length, low bit is a flag
+  // indicating whether hash has been computed.
+  uint32_t length_hashed;
+  uint32_t alloc_length;
+  char data[];
+} jvp_string;
+
 /*
  * All jv_* functions consume (decref) input and produce (incref) output
  * Except jv_copy

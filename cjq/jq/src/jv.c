@@ -785,12 +785,12 @@ static int imax(int a, int b) {
   else return b;
 }
 
-//FIXME signed vs unsigned
-typedef struct {
-  jv_refcnt refcnt;
-  int length, alloc_length;
-  jv elements[];
-} jvp_array;
+// //FIXME signed vs unsigned
+// typedef struct {
+//   jv_refcnt refcnt;
+//   int length, alloc_length;
+//   jv elements[];
+// } jvp_array;
 
 static jvp_array* jvp_array_ptr(jv a) {
   assert(JVP_HAS_KIND(a, JV_KIND_ARRAY));
@@ -1049,15 +1049,15 @@ jv jv_array_indexes(jv a, jv b) {
 
 #define JVP_FLAGS_STRING  JVP_MAKE_FLAGS(JV_KIND_STRING, JVP_PAYLOAD_ALLOCATED)
 
-typedef struct {
-  jv_refcnt refcnt;
-  uint32_t hash;
-  // high 31 bits are length, low bit is a flag
-  // indicating whether hash has been computed.
-  uint32_t length_hashed;
-  uint32_t alloc_length;
-  char data[];
-} jvp_string;
+// typedef struct {
+//   jv_refcnt refcnt;
+//   uint32_t hash;
+//   // high 31 bits are length, low bit is a flag
+//   // indicating whether hash has been computed.
+//   uint32_t length_hashed;
+//   uint32_t alloc_length;
+//   char data[];
+// } jvp_string;
 
 static jvp_string* jvp_string_ptr(jv a) {
   assert(JVP_HAS_KIND(a, JV_KIND_STRING));
@@ -1485,18 +1485,18 @@ jv jv_string_fmt(const char* fmt, ...) {
 
 #define JVP_FLAGS_OBJECT  JVP_MAKE_FLAGS(JV_KIND_OBJECT, JVP_PAYLOAD_ALLOCATED)
 
-struct object_slot {
-  int next; /* next slot with same hash, for collisions */
-  uint32_t hash;
-  jv string;
-  jv value;
-};
+// struct object_slot {
+//   int next; /* next slot with same hash, for collisions */
+//   uint32_t hash;
+//   jv string;
+//   jv value;
+// };
 
-typedef struct {
-  jv_refcnt refcnt;
-  int next_free;
-  struct object_slot elements[];
-} jvp_object;
+// typedef struct {
+//   jv_refcnt refcnt;
+//   int next_free;
+//   struct object_slot elements[];
+// } jvp_object;
 
 
 /* warning: nontrivial justification of alignment */
