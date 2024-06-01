@@ -365,7 +365,10 @@ static jv* _deserialize_jv(FILE* file) {
         deserialize_jv_array(file, arr->alloc_length, arr);
         value->u.ptr = (struct jv_refcnt*)arr;
     } else if (kind == JV_KIND_STRING) {
-        size_t total_size = sizeof(jvp_string) + (uint32_t)value->size + 1;
+        int alloc_len;
+        fread(&alloc_len, sizeof(int), 1, file);
+        printf("alloc_len: %d\n", alloc_len);
+        size_t total_size = sizeof(jvp_string) + alloc_len + 1;
         value->u.ptr = malloc(total_size);
         if (!value->u.ptr) {
             perror("malloc");

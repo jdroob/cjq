@@ -292,6 +292,8 @@ static void _serialize_jv(FILE* file, const jv* value) {
         serialize_jv_array(file, arr, arr->alloc_length);
       } else if (kind == JV_KIND_STRING) {
         jvp_string* str = (jvp_string*)value->u.ptr;
+        printf("Writing str->alloc_length so deserialize_jv can know how much mem to alloc\n");
+        fwrite(&str->alloc_length, sizeof(int), 1, file);
         printf("str->refcnt.count:\n");
         fwrite(&str->refcnt.count, sizeof(int), 1, file);
         log_write_stdout_hex(&str->refcnt.count, sizeof(int), 1);
@@ -1121,19 +1123,19 @@ out:
 //     ret = JQ_ERROR_SYSTEM;
 //   }
   // cjq_serialize("test_serialize.bin", cjq_state_list, cjq_state_list_len);
-  jv obj = jv_object_set(jv_object(), jv_string("key"), jv_string("69"));
-  // serialize_jv("test_serialize.bin", &obj);
-  // jv_dump(obj, JV_PRINT_PRETTY); printf("\n\n");
-  jv arr = jv_array();
-  arr = jv_array_append(arr, jv_number(42));
-  arr = jv_array_append(arr, jv_number(19));
-  arr = jv_array_append(arr, obj);
-  jv arr2 = jv_array();
-  arr2 = jv_array_append(arr2, arr);
-  jv arr3 = jv_array();
-  arr3 = jv_array_append(arr3, arr2);
-  serialize_jv("test_serialize.bin", &arr3);
-  jv_dump(arr3, JV_PRINT_PRETTY); printf("\n\n");
+  jv obj = jv_object_set(jv_object(), jv_string("key"), jv_object_set(jv_object(), jv_string("nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_nested_key"), jv_number(69)))));
+  serialize_jv("test_serialize.bin", &obj);
+  jv_dump(obj, JV_PRINT_PRETTY); printf("\n\n");
+  // jv arr = jv_array();
+  // arr = jv_array_append(arr, jv_number(42));
+  // arr = jv_array_append(arr, jv_number(19));
+  // arr = jv_array_append(arr, obj);
+  // jv arr2 = jv_array();
+  // arr2 = jv_array_append(arr2, arr);
+  // jv arr3 = jv_array();
+  // arr3 = jv_array_append(arr3, arr2);
+  // serialize_jv("test_serialize.bin", &arr3);
+  // jv_dump(arr3, JV_PRINT_PRETTY); printf("\n\n");
   // jv str = jv_string("yo");
   // serialize_jv("test_serialize.bin", &str);
   // jv_dump(str, JV_PRINT_PRETTY); printf("\n\n");
