@@ -245,54 +245,125 @@ void cjq_free(compiled_jq_state *cjq_state) {
   free(cjq_state); cjq_state = NULL;
 }
 
+// DEBUGGING
+static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
+    const unsigned char *byte_ptr = (const unsigned char *)ptr;
+    for (size_t i = 0; i < size * nmemb; i++) {
+        printf("%02x ", byte_ptr[i]);
+        if ((i + 1) % 16 == 0) {
+            printf("\n");  // Newline for every 16 bytes
+        }
+    }
+    printf("\n");
+    fflush(stdout);  // Ensure the data is written out immediately
+}
+
 static jv* _deserialize_jv(FILE *file);
 
-jvp_object* deserialize_object(FILE *file, int size) {
+static jvp_object* deserialize_jv_object(FILE *file, int size) {
     jvp_object* obj = malloc(sizeof(jvp_object) + sizeof(struct object_slot) * size + sizeof(int) * size * 2);
-    fread(&obj->refcnt, sizeof(jv_refcnt), 1, file);
-    fread(&obj->next_free, sizeof(int), 1, file);
+    if (!obj) {
+        perror("Failed to allocate memory for jvp_object");
+        exit(EXIT_FAILURE);
+    }
+
     for (int i = 0; i < size; ++i) {
         struct object_slot* slot = &obj->elements[i];
+        printf("slot->next:\n");
         fread(&slot->next, sizeof(int), 1, file);
+        log_write_stdout_hex(&slot->next, sizeof(int), 1);
+        printf("slot->hash:\n");
         fread(&slot->hash, sizeof(uint32_t), 1, file);
+        log_write_stdout_hex(&slot->hash, sizeof(uint32_t), 1);
+        printf("slot->string = _deserialize_jv(file);\n");
         slot->string = *_deserialize_jv(file); // Deserialize the key (string)
+        printf("slot->value = _deserialize_jv(file);\n");
         slot->value = *_deserialize_jv(file);  // Deserialize the value
     }
     return obj;
 }
 
+static void deserialize_jv_array(FILE *file, int size, jvp_array* arr) {
+    for (int i = 0; i < size; ++i) {
+        printf("_deserialize_jv(file);\n");
+        arr->elements[i] = *_deserialize_jv(file); // Deserialize the ith element
+    }
+}
+
 static jv* _deserialize_jv(FILE* file) {
     jv* value = malloc(sizeof(jv));
-    // fread(value, sizeof(jv), 1, file);
+    if (!value) {
+        perror("Failed to allocate memory for jv");
+        exit(EXIT_FAILURE);
+    }
+    printf("value->kind_flags:\n");
     fread(&value->kind_flags, sizeof(unsigned char), 1, file);
+    log_write_stdout_hex(&value->kind_flags, sizeof(value->kind_flags), 1);
+    printf("value->pad_:\n");
     fread(&value->pad_, sizeof(unsigned char), 1, file);
+    log_write_stdout_hex(&value->pad_, sizeof(value->pad_), 1);
+    printf("value->offset:\n");
     fread(&value->offset, sizeof(unsigned short), 1, file);
+    log_write_stdout_hex(&value->offset, sizeof(value->offset), 1);
+    printf("value->size:\n");
     fread(&value->size, sizeof(int), 1, file);
-    fread(&value->u, sizeof(double), 1, file);
+    log_write_stdout_hex(&value->size, sizeof(value->size), 1);
+
     unsigned short kind = value->kind_flags & 0x7F;
+
     if (kind == JV_KIND_NUMBER) {
         fread(&value->u.number, sizeof(value->u.number), 1, file);
     } else if (kind == JV_KIND_OBJECT) {
+        size_t total_size = sizeof(jvp_object) +
+                            sizeof(struct object_slot) * value->size +
+                            sizeof(int) * (value->size * 2);
+        value->u.ptr = malloc(total_size);
+        if (!value->u.ptr) {
+            perror("Failed to allocate memory for jvp_object");
+            exit(EXIT_FAILURE);
+        }
+
+        jvp_object* obj = (jvp_object*)value->u.ptr;
+        printf("obj->refcnt.count:\n");
+        fread(&obj->refcnt.count, sizeof(int), 1, file);
+        log_write_stdout_hex(&obj->refcnt.count, sizeof(int), 1);
+        printf("calling deserialize_jv_object...\n");
+        obj = deserialize_jv_object(file, value->size);
+        fread(&obj->next_free, sizeof(int), 1, file);
+        printf("obj->next_free:\n");
+        log_write_stdout_hex(&obj->next_free, sizeof(int), 1);
+        int* hashbuckets = (int*)(&obj->elements[value->size]);
+        for (int i=0; i<value->size*2; ++i) {
+          fread(&hashbuckets[i], sizeof(int), 1, file);
+          printf("hashbuckets[%d]:\n", i);
+          log_write_stdout_hex(&hashbuckets[i], sizeof(int), 1);
+        }
+        value->u.ptr = (struct jv_refcnt*)obj;
+    } else if (kind == JV_KIND_ARRAY) {
+        int alloc_len;
+        fread(&alloc_len, sizeof(int), 1, file);
+        printf("alloc_len: %d\n", alloc_len);
+        size_t total_size = sizeof(jvp_array) + sizeof(jv) * alloc_len;
+        value->u.ptr = malloc(total_size);
         if (!value->u.ptr) {
             perror("malloc");
             fclose(file);
             exit(EXIT_FAILURE);
         }
-        value->u.ptr = (struct jv_refcnt*)deserialize_object(file, value->size);
-    // } else if (kind == JV_KIND_ARRAY) {
-    //     size_t total_size = sizeof(jvp_array) + sizeof(jv) * value.size;
-    //     value.u.ptr = malloc(total_size);
-    //     if (!value.u.ptr) {
-    //         perror("malloc");
-    //         fclose(file);
-    //         exit(EXIT_FAILURE);
-    //     }
-    //     if (fread(value.u.ptr, total_size, 1, file) != 1) {
-    //         perror("Failed to read jv array from file");
-    //         free(value.u.ptr);
-    //         fclose(file);
-    //         exit(EXIT_FAILURE);
-    //     }
+
+        jvp_array* arr = (jvp_array*)value->u.ptr;
+        printf("arr->refcnt.count:\n");
+        fread(&arr->refcnt.count, sizeof(int), 1, file);
+        log_write_stdout_hex(&arr->refcnt.count, sizeof(int), 1);
+        printf("arr->length:\n");
+        fread(&arr->length, sizeof(int), 1, file);
+        log_write_stdout_hex(&arr->length, sizeof(int), 1);
+        printf("arr->alloc_length:\n");
+        fread(&arr->alloc_length, sizeof(int), 1, file);
+        log_write_stdout_hex(&arr->alloc_length, sizeof(int), 1);
+        printf("calling deserialize_jv_array...\n");
+        deserialize_jv_array(file, arr->alloc_length, arr);
+        value->u.ptr = (struct jv_refcnt*)arr;
     } else if (kind == JV_KIND_STRING) {
         size_t total_size = sizeof(jvp_string) + (uint32_t)value->size + 1;
         value->u.ptr = malloc(total_size);
@@ -301,20 +372,33 @@ static jv* _deserialize_jv(FILE* file) {
             fclose(file);
             exit(EXIT_FAILURE);
         }
-        if (fread(value->u.ptr, total_size, 1, file) != 1) {
-            perror("Failed to read jv string from file");
-            free(value->u.ptr);
+
+        jvp_string* str = (jvp_string*)value->u.ptr;
+        printf("str->refcnt.count:\n");
+        fread(&str->refcnt.count, sizeof(int), 1, file);
+        log_write_stdout_hex(&str->refcnt.count, sizeof(int), 1);
+        printf("str->hash:\n");
+        fread(&str->hash, sizeof(uint32_t), 1, file);
+        log_write_stdout_hex(&str->hash, sizeof(uint32_t), 1);
+        printf("str->alloc_length:\n");
+        fread(&str->alloc_length, sizeof(uint32_t), 1, file);
+        log_write_stdout_hex(&str->alloc_length, sizeof(uint32_t), 1);
+        printf("str->length_hashed:\n");
+        fread(&str->length_hashed, sizeof(uint32_t), 1, file);
+        log_write_stdout_hex(&str->length_hashed, sizeof(uint32_t), 1);
+        size_t len = str->alloc_length;  // Get high 31 bits (length) only
+        fread(&str->data, len, 1, file);
+        printf("str->data: %s, len: %zu \n", str->data, len);
+        log_write_stdout_hex(&str->data, sizeof(len), 1);
+        value->u.ptr = (struct jv_refcnt*)str;
+    } else { /* JV_KIND_TRUE, JV_KIND_FALSE, JV_KIND_NULL, JV_KIND_INVALID */
+        size_t total_size = sizeof(double);
+        if (fread(&value->u, total_size, 1, file) != 1) {
+            perror("Failed to read jv value from file");
             fclose(file);
             exit(EXIT_FAILURE);
         }
-    } // else { /* JV_KIND_TRUE, JV_KIND_FALSE, JV_KIND_NULL, JV_KIND_INVALID */
-    //     size_t total_size = sizeof(double);
-    //     if (fread(&value.u.number, total_size, 1, file) != 1) {
-    //         perror("Failed to read jv value from file");
-    //         fclose(file);
-    //         exit(EXIT_FAILURE);
-    //     }
-    // }
+    }
 
     return value;
 }
@@ -325,11 +409,8 @@ static jv* deserialize_jv(const char *filename) {
         perror("Failed to open file for reading");
         return NULL;
     }
-
     jv* v = _deserialize_jv(file);
-
     fclose(file);
-
     return v;
 }
 
@@ -802,15 +883,25 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  jv* obj = deserialize_jv("test_serialize.bin");
-  jv_dump(*obj, JV_PRINT_PRETTY); printf("\n\n");
-  // jv arr = deserialize_jv("test_serialize.bin");
-  // jv str = deserialize_jv("test_serialize.bin");
-  // jv jvn = deserialize_jv("test_serialize.bin");
-  // jv jvt = deserialize_jv("test_serialize.bin");
-  // jv jvf = deserialize_jv("test_serialize.bin");
-  // jv jvnull = deserialize_jv("test_serialize.bin");
-  // jv jvinv = deserialize_jv("test_serialize.bin");
+  // jv* obj = deserialize_jv("test_serialize.bin");
+  // jv_dump(*obj, JV_PRINT_PRETTY); printf("\n\n");
+  jv* arr = deserialize_jv("test_serialize.bin");
+  jv_dump(*arr, JV_PRINT_PRETTY); printf("\n\n");
+  // printf("before\n");
+  // jv_free(arr);
+  // printf("after\n");
+  // jv* str = deserialize_jv("test_serialize.bin");
+  // jv_dump(*str, JV_PRINT_PRETTY); printf("\n\n");
+  // jv* jvnum = deserialize_jv("test_serialize.bin");
+  // jv_dump(*jvnum, JV_PRINT_PRETTY); printf("\n\n");
+  // jv* jvt = deserialize_jv("test_serialize.bin");
+  // jv_dump(*jvt, JV_PRINT_PRETTY); printf("\n\n");
+  // jv* jvf = deserialize_jv("test_serialize.bin");
+  // jv_dump(*jvf, JV_PRINT_PRETTY); printf("\n\n");
+  // jv* jvnull = deserialize_jv("test_serialize.bin");
+  // jv_dump(*jvnull, JV_PRINT_PRETTY); printf("\n\n");
+  // jv* jvinv = deserialize_jv("test_serialize.bin");
+  // jv_dump(*jvinv, JV_PRINT_PRETTY); printf("\n\n");
 
   if (options & PROVIDE_NULL)
     cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, NULL, jq);
