@@ -43,7 +43,7 @@ class Opcode(Enum):
     ERRORK=42
 
 
-def jq_lower(opcodes_ptr, cjq_state_ptr):
+def jq_lower(opcodes_ptr):
     """
     Uses llvmlite C-binding feature to call opcode functions from llvmlite.
     """
@@ -454,9 +454,9 @@ def jq_lower(opcodes_ptr, cjq_state_ptr):
     
     return module
     
-def generate_llvm_ir(opcodes_ptr, cjq_state_ptr):
+def generate_llvm_ir(opcodes_ptr):
     try:
-        llvm_ir = jq_lower(opcodes_ptr, cjq_state_ptr)
+        llvm_ir = jq_lower(opcodes_ptr)
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
         

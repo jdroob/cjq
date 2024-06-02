@@ -1388,7 +1388,6 @@ int block_compile(block b, struct bytecode** out, struct locfile* lf, jv args) {
   } else {
     *out = bc;
   }
-  nerrors = 0;    // John: DELETE THIS
   return nerrors;
 }
 
