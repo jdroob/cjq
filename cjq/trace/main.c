@@ -71,16 +71,14 @@ int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject 
 int get_llvm_ir(trace* opcodes, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
     // Get generate_llvm_ir function from lowering module
     PyObject *pFuncGenerateLLVMIR = PyObject_GetAttrString(pModuleLowering, "generate_llvm_ir");
+
     if (!pFuncGenerateLLVMIR || !PyCallable_Check(pFuncGenerateLLVMIR)) {
         if (PyErr_Occurred()) PyErr_Print();
         fprintf(stderr, "Cannot find function 'generate_llvm_ir'\n");
         return 1;
     }
-
-    // Convert cjq_state pointer to a Python integer object
+    
     PyObject* opcodes_ptr = PyLong_FromVoidPtr((void*)opcodes);
-
-    // Call generate_llvm_ir
     PyObject* pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, NULL);
 
     // Clean up
@@ -110,7 +108,7 @@ int main(int argc, char *argv[]) {
         // Error occurred during Python initialization
         return 1;
     }
-    
+
     trace* opcodes = malloc(sizeof(trace));
     int trace_error = cjq_trace(argc, argv, opcodes);
     int gen_ir_error = get_llvm_ir(opcodes, pModule_llvmlite, pModuleLowering);

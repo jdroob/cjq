@@ -277,7 +277,7 @@ static void _serialize_jv(FILE* file, const jv* value) {
         // size_t total_size = sizeof(jvp_array) + sizeof(jv) * value->size;
         jvp_array* arr = (jvp_array*)value->u.ptr;
         printf("Writing arr->alloc_length so deserialize_jv can know how much mem to alloc\n");
-        fwrite(&arr->alloc_length, sizeof(int), 1, file);
+        fwrite(&arr->alloc_length, sizeof(int), 1, file);   // So deserialize() can determine how much memory to allocate
         log_write_stdout_hex(&arr->alloc_length, sizeof(int), 1);
         printf("arr->refcnt.count:\n");
         fwrite(&arr->refcnt.count, sizeof(int), 1, file);
@@ -293,7 +293,7 @@ static void _serialize_jv(FILE* file, const jv* value) {
       } else if (kind == JV_KIND_STRING) {
         jvp_string* str = (jvp_string*)value->u.ptr;
         printf("Writing str->alloc_length so deserialize_jv can know how much mem to alloc\n");
-        fwrite(&str->alloc_length, sizeof(int), 1, file);
+        fwrite(&str->alloc_length, sizeof(int), 1, file);   // So deserialize() can determine how much memory to allocate
         printf("str->refcnt.count:\n");
         fwrite(&str->refcnt.count, sizeof(int), 1, file);
         log_write_stdout_hex(&str->refcnt.count, sizeof(int), 1);
@@ -328,82 +328,6 @@ static void _serialize_jv(FILE* file, const jv* value) {
     fclose(file);
   }
 
-// void serialize_jq_state(FILE* file, const jq_state* state) {
-//     fwrite(NULL, sizeof(state->nomem_handler), 1, file);   // NULL
-//     fwrite(NULL, sizeof(state->nomem_handler_data), 1, file);   // NULL
-//     fwrite(&state->bc, sizeof(state->bc), 1, file);
-
-//     fwrite(&state->err_cb, sizeof(state->err_cb), 1, file);
-//     fwrite(&state->err_cb_data, sizeof(state->err_cb_data), 1, file);
-
-//     serialize_jv(file, &state->error);
-
-//     // Serialize stack and stack pointers (assuming stack serialization functions exist)
-//     // serialize_stack(file, &state->stk);
-//     fwrite(&state->curr_frame, sizeof(state->curr_frame), 1, file);
-//     fwrite(&state->stk_top, sizeof(state->stk_top), 1, file);
-//     fwrite(&state->fork_top, sizeof(state->fork_top), 1, file);
-
-//     serialize_jv(file, &state->path);
-//     serialize_jv(file, &state->value_at_path);
-
-//     fwrite(&state->subexp_nest, sizeof(state->subexp_nest), 1, file);
-//     fwrite(&state->debug_trace_enabled, sizeof(state->debug_trace_enabled), 1, file);
-//     fwrite(&state->initial_execution, sizeof(state->initial_execution), 1, file);
-//     fwrite(&state->next_label, sizeof(state->next_label), 1, file);
-
-//     fwrite(&state->halted, sizeof(state->halted), 1, file);
-//     serialize_jv(file, &state->exit_code);
-//     serialize_jv(file, &state->error_message);
-
-//     serialize_jv(file, &state->attrs);
-
-//     fwrite(&state->input_cb, sizeof(state->input_cb), 1, file);
-//     fwrite(&state->input_cb_data, sizeof(state->input_cb_data), 1, file);
-//     fwrite(&state->debug_cb, sizeof(state->debug_cb), 1, file);
-//     fwrite(&state->debug_cb_data, sizeof(state->debug_cb_data), 1, file);
-//     fwrite(&state->stderr_cb, sizeof(state->stderr_cb), 1, file);
-//     fwrite(&state->stderr_cb_data, sizeof(state->stderr_cb_data), 1, file);
-// }
-
-// static void cjq_serialize(const char* filename, compiled_jq_state* cjq_state_list, int cjq_state_list_len) {
-//     FILE* file = fopen(filename, "wb");
-//     if (!file) {
-//         perror("fopen");
-//         exit(EXIT_FAILURE);
-//     }
-
-//     // Write the number of states
-//     fwrite(&cjq_state_list_len, sizeof(cjq_state_list_len), 1, file);
-
-//     // Serialize each state
-//     for (int i = 0; i < cjq_state_list_len; ++i) {
-//         compiled_jq_state* state = &cjq_state_list[i];
-//         fwrite(state, sizeof(compiled_jq_state), 1, file);
-
-//         // Serialize pointers
-//         serialize_pointer(file, state->ret, sizeof(int));
-//         serialize_pointer(file, state->jq_flags, sizeof(int));
-//         serialize_pointer(file, state->dumpopts, sizeof(int));
-//         serialize_pointer(file, state->options, sizeof(int));
-//         serialize_pointer(file, state->last_result, sizeof(int));
-//         serialize_pointer(file, state->raising, sizeof(int));
-//         serialize_pointer(file, state->pc, sizeof(uint16_t));
-//         serialize_pointer(file, state->opcode, sizeof(uint16_t));
-//         serialize_pointer(file, state->backtracking, sizeof(int));
-//         serialize_pointer(file, state->fallthrough, sizeof(uint8_t));
-
-//         // Serialize jv and jq_state members
-//         serialize_jv(file, state->value);
-//         serialize_jv(file, state->result);
-//         serialize_jv(file, state->cfunc_input);
-//         serialize_jq_state(file, state->jq);
-
-//     }
-
-//     fclose(file);
-// }
-
 enum {
   SLURP                 = 1,
   RAW_INPUT             = 2,
@@ -434,61 +358,6 @@ enum {
 };
 #define jq_exit_with_status(r)  exit(abs(r))
 #define jq_exit(r)              exit( r > 0 ? r : 0 )
-
-// void cjq_init(compiled_jq_state* cjq_state, int ret, int jq_flags, int options, 
-//               int dumpopts, int last_result, jv* value, jq_state* jq) {
-//   int* pret = malloc(sizeof(int)); *pret = ret;
-//   int* pjq_flags = malloc(sizeof(int)); *pjq_flags = jq_flags;
-//   int* poptions = malloc(sizeof(int)); *poptions = options;
-//   int* pdumpopts = malloc(sizeof(int)); *pdumpopts = dumpopts;
-//   int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
-//   int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
-//   int* praising = malloc(sizeof(int)); *praising = 0;
-//   // uint16_t* ppc = malloc(sizeof(uint16_t));
-//   uint8_t* pfallthrough = malloc(sizeof(uint8_t)); *pfallthrough = 0;
-//   uint16_t* popcode = malloc(sizeof(uint16_t)); *popcode = -1;
-//   jv *pcfunc_input = malloc(sizeof(jv)*MAX_CFUNCTION_ARGS);
-//   jq_state* pjq = malloc(sizeof(struct jq_state)); *pjq = *jq;
-
-//   cjq_state->ret = pret; pret = NULL;
-//   cjq_state->jq_flags = pjq_flags; pjq_flags = NULL;
-//   cjq_state->options = poptions; poptions = NULL;
-//   cjq_state->dumpopts = pdumpopts; pdumpopts = NULL;
-//   cjq_state->last_result = plast_result; plast_result = NULL;
-//   // cjq_state->pc = ppc; ppc = NULL;
-//   cjq_state->fallthrough = pfallthrough; pfallthrough = NULL;
-//   cjq_state->pc = NULL;
-//   cjq_state->opcode = popcode; popcode = NULL;
-
-//   cjq_state->jq = pjq; pjq = NULL;
-//   cjq_state->result = NULL;
-//   cjq_state->backtracking = pbacktracking; pbacktracking = NULL;
-//   cjq_state->raising = praising; praising = NULL;
-//   cjq_state->cfunc_input = pcfunc_input; pcfunc_input = NULL;
-
-//   jv* pvalue = malloc(sizeof(jv)); *pvalue = *value;
-//   cjq_state->value = pvalue; pvalue = NULL;
-//   jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
-// }
-
-// void cjq_free(compiled_jq_state* cjq_state) {
-//   cjq_state->pc = NULL;
-//   free(cjq_state->opcode); cjq_state->opcode = NULL;
-//   free(cjq_state->ret); cjq_state->ret = NULL;
-//   free(cjq_state->jq_flags); cjq_state->jq_flags = NULL;
-//   free(cjq_state->options); cjq_state->options = NULL;
-//   free(cjq_state->dumpopts); cjq_state->dumpopts = NULL;
-//   free(cjq_state->last_result); cjq_state->last_result = NULL;
-//   free(cjq_state->value); cjq_state->value = NULL;
-//   free(cjq_state->result); cjq_state->result = NULL;
-//   free(cjq_state->raising); cjq_state->raising = NULL;
-//   free(cjq_state->backtracking); cjq_state->backtracking = NULL;
-//   free(cjq_state->cfunc_input); cjq_state->cfunc_input = NULL;
-//   free(cjq_state->fallthrough); cjq_state->fallthrough = NULL;
-//   jq_teardown(&cjq_state->jq);
-//   free(cjq_state->jq); cjq_state->jq = NULL;
-//   free(cjq_state); cjq_state = NULL;
-// }
 
 static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
                    uint8_t* opcode_list, int* opcode_list_len, uint16_t* jq_next_entry_list, 
@@ -1122,7 +991,6 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  // cjq_serialize("test_serialize.bin", cjq_state_list, cjq_state_list_len);
   jv obj = jv_object_set(jv_object(), jv_string("key"), jv_object_set(jv_object(), jv_string("nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_nested_key"), jv_number(69)))));
   serialize_jv("test_serialize.bin", &obj);
   jv_dump(obj, JV_PRINT_PRETTY); printf("\n\n");
