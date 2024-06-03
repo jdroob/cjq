@@ -328,6 +328,46 @@ static void _serialize_jv(FILE* file, const jv* value) {
     fclose(file);
   }
 
+  static void _serialize_sym_table(FILE* file, struct symbol_table* table) {
+    printf("table->ncfunctions:\n");
+    fwrite(&table->ncfunctions, sizeof(int), 1, file);
+    log_write_stdout_hex(&table->ncfunctions, sizeof(table->ncfunctions), 1);
+
+    // serialize jv array of cfunc names
+    _serialize_jv(file, &table->cfunc_names);
+
+    // For each cfunction, serialize name, nargs
+    for (int i=0; i<table->ncfunctions; ++i) {
+      // Get length of name
+      int len = 0;
+      char *p = (char*)table->cfunctions[i].name;
+      while(*p != '\0') { ++len; p++; }
+      printf("len(table->cfunctions[%d].name):\n", i);
+      fwrite(&len, sizeof(int), 1, file);
+      log_write_stdout_hex(&len, sizeof(int), 1);
+      // Serialize name
+      for (int j=0; j<len+1; ++j) {
+        printf("table->cfunctions[%d].name[%d]:\n", i, j);
+        fwrite(&table->cfunctions[i].name[j], sizeof(char), 1, file);
+        log_write_stdout_hex(&table->cfunctions[i].name[j], sizeof(char), 1);
+      }
+      // Serialize num args
+      printf("table->cfunctions[%d].nargs:\n", i);
+      fwrite(&table->cfunctions[i].nargs, sizeof(int), 1, file);
+      log_write_stdout_hex(&table->cfunctions[i].nargs, sizeof(int), 1);
+    }
+  }
+
+  static void serialize_sym_table(const char* filename, struct symbol_table* table) {
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        perror("Failed to open file for writing");
+        return;
+    }
+    _serialize_sym_table(file, table);
+    fclose(file);
+  }
+
 enum {
   SLURP                 = 1,
   RAW_INPUT             = 2,
@@ -991,9 +1031,11 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  jv obj = jv_object_set(jv_object(), jv_string("key"), jv_object_set(jv_object(), jv_string("nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_nested_key"), jv_number(69)))));
-  serialize_jv("test_serialize.bin", &obj);
-  jv_dump(obj, JV_PRINT_PRETTY); printf("\n\n");
+  // jv obj = jv_object_set(jv_object(), jv_string("key"), jv_object_set(jv_object(), jv_string("nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_nested_key"), jv_number(69)))));
+  // serialize_jv("test_serialize.bin", &obj);
+  // jv_dump(obj, JV_PRINT_PRETTY); printf("\n\n");
+
+  serialize_sym_table("test_serialize_st.bin", jq->bc->globals);
   // jv arr = jv_array();
   // arr = jv_array_append(arr, jv_number(42));
   // arr = jv_array_append(arr, jv_number(19));
