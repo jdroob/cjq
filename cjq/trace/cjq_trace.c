@@ -32,12 +32,11 @@ extern void jv_tsd_dtoa_ctx_init();
 
 #include "../jq/src/compile.h"
 #include "../jq/src/jv.h"
-#include "../jq/src/jq.h"
 #include "../jq/src/jv_alloc.h"
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
 #include "../jq/src/config_opts.inc"
-#include "../jq/src/exec_stack.h"
+#include "../jq/src/jq_state.h"
 #include "cjq_trace.h"
 
 int jq_testsuite(jv lib_dirs, int verbose, int argc, char* argv[]);
@@ -150,43 +149,6 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
   }
   return 0;
 }
-
-// TODO: Move below to jq_state.h
-typedef int stack_ptr;
-
-struct jq_state {
-  void (*nomem_handler)(void *);
-  void *nomem_handler_data;
-  struct bytecode* bc;
-
-  jq_msg_cb err_cb;
-  void *err_cb_data;
-  jv error;
-
-  struct stack stk;
-  stack_ptr curr_frame;
-  stack_ptr stk_top;
-  stack_ptr fork_top;
-
-  jv path;
-  jv value_at_path;
-  int subexp_nest;
-  int debug_trace_enabled;
-  int initial_execution;
-  unsigned next_label;
-
-  int halted;
-  jv exit_code;
-  jv error_message;
-
-  jv attrs;
-  jq_input_cb input_cb;
-  void *input_cb_data;
-  jq_msg_cb debug_cb;
-  void *debug_cb_data;
-  jq_msg_cb stderr_cb;
-  void *stderr_cb_data;
-};
 
 // DEBUGGING
 static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
@@ -306,10 +268,10 @@ static void _serialize_jv(FILE* file, const jv* value) {
         printf("str->length_hashed:\n");
         fwrite(&str->length_hashed, sizeof(uint32_t), 1, file);
         log_write_stdout_hex(&str->length_hashed, sizeof(uint32_t), 1);
-        size_t len = str->alloc_length;  // Get high 31 bits (length) only
-        printf("str->data: %s, len: %zu \n", str->data, len);
-        fwrite(&str->data, len, 1, file);
-        log_write_stdout_hex(&str->data, len, 1);
+        size_t len = str->alloc_length;  
+        printf("str->data: %s, len: %zu \n", str->data, len+1);
+        fwrite(&str->data, len+1, 1, file);
+        log_write_stdout_hex(&str->data, len+1, 1);
       } else /* JV_KIND_TRUE, JV_KIND_FALSE, JV_KIND_NULL, JV_KIND_INVALID */ {
         size_t total_size = sizeof(double);
         if (fwrite(&value->u, total_size, 1, file) != 1) {

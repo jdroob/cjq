@@ -11,14 +11,12 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-#include "../jq/src/exec_stack.h"
 #include "../jq/src/bytecode.h"
-
 #include "../jq/src/jv_alloc.h"
 #include "../jq/src/jq_parser.h"
 #include "../jq/src/locfile.h"
 #include "../jq/src/jv.h"
-#include "../jq/src/jq.h"
+#include "../jq/src/jq_state.h"
 #include "../jq/src/bytecode.h"
 #include "../jq/src/parser.h"
 #include "../jq/src/builtin.h"
@@ -28,40 +26,6 @@
 #include "../frontend/cjq_frontend.h"
 
 #define ON_BACKTRACK(op) ((op)+NUM_OPCODES)
-
-struct jq_state {
-  void (*nomem_handler)(void *);
-  void *nomem_handler_data;
-  struct bytecode* bc;
-
-  jq_msg_cb err_cb;
-  void *err_cb_data;
-  jv error;
-
-  struct stack stk;
-  stack_ptr curr_frame;
-  stack_ptr stk_top;
-  stack_ptr fork_top;
-
-  jv path;
-  jv value_at_path;
-  int subexp_nest;
-  int debug_trace_enabled;
-  int initial_execution;
-  unsigned next_label;
-
-  int halted;
-  jv exit_code;
-  jv error_message;
-
-  jv attrs;
-  jq_input_cb input_cb;
-  void *input_cb_data;
-  jq_msg_cb debug_cb;
-  void *debug_cb_data;
-  jq_msg_cb stderr_cb;
-  void *stderr_cb_data;
-};
 
 struct closure {
   struct bytecode* bc;  // jq bytecode
