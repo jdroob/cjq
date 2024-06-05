@@ -6,6 +6,7 @@
 #include "compile.h"
 
 int builtins_bind(jq_state *, block*);
+void get_cbindings(struct symbol_table* table);
 
 #define BINOPS \
   BINOP(plus) \

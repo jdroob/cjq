@@ -36,6 +36,7 @@ extern void jv_tsd_dtoa_ctx_init();
 #include "../jq/src/jv_alloc.h"
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
+#include "../jq/src/builtin.h"
 #include "../jq/src/config_opts.inc"
 #include "cjq_frontend.h"
 
@@ -932,6 +933,7 @@ out:
   // jv* arr = deserialize_jv("test_serialize.bin");
   // jv_dump(*arr, JV_PRINT_PRETTY); printf("\n\n");
   struct symbol_table* table = deserialize_sym_table("test_serialize_st.bin");
+  get_cbindings(table);
   // printf("before\n");
   // jv_free(arr);
   // printf("after\n");

@@ -417,6 +417,16 @@ static inst* block_take_last(block* b) {
   return i;
 }
 
+inst* get_last_inst(block* b) {
+  return block_take_last(b);
+}
+
+void print_symbols(block* b) {
+  for (inst* i = b->first; i; i = i->next) {
+        printf("i->symbol: %s\n", i->symbol);
+  }
+}
+
 // Binds a sequence of binders, which *must not* already be bound to each other,
 // to body, throwing away unreferenced defs
 block block_bind_referenced(block binder, block body, int bindflags) {

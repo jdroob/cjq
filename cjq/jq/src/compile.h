@@ -83,7 +83,9 @@ int block_compile(block, struct bytecode**, struct locfile*, jv);
 
 void block_free(block);
 
+void print_symbols(block* b);
 
+inst* get_last_inst(block* b);
 
 // Here's some horrible preprocessor gunk so that code
 // sequences can be constructed as BLOCK(block1, block2, block3)
