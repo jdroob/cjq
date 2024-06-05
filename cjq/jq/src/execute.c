@@ -288,6 +288,10 @@ static void jq_reset(jq_state *jq) {
   jq->subexp_nest = 0;
 }
 
+void _jq_reset(jq_state *jq) {
+  jq_reset(jq);
+}
+
 void jq_report_error(jq_state *jq, jv value) {
   assert(jq->err_cb);
   // callback must jv_free() its jv argument

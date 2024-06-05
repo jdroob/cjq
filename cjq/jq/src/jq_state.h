@@ -36,3 +36,5 @@ typedef struct jq_state {
   jq_msg_cb stderr_cb;
   void *stderr_cb_data;
 } jq_state;
+
+void _jq_reset(jq_state *jq);

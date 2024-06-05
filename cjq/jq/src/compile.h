@@ -83,8 +83,6 @@ int block_compile(block, struct bytecode**, struct locfile*, jv);
 
 void block_free(block);
 
-void print_symbols(block* b);
-
 void bind_cfunctions(block* b, struct symbol_table* table);
 
 inst* get_last_inst(block* b);

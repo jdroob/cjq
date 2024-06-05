@@ -421,12 +421,6 @@ inst* get_last_inst(block* b) {
   return block_take_last(b);
 }
 
-void print_symbols(block* b) {
-  for (inst* i = b->first; i; i = i->next) {
-        printf("i->symbol: %s\n", i->symbol);
-  }
-}
-
 void bind_cfunctions(block* b, struct symbol_table* table) {
   for (inst* i = b->first; i; i = i->next) {
       for (int j=0; j<table->ncfunctions; ++j) {
