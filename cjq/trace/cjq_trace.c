@@ -308,6 +308,7 @@ static void _serialize_jv(FILE* file, const jv* value) {
       fwrite(&len, sizeof(int), 1, file);
       log_write_stdout_hex(&len, sizeof(int), 1);
       // Serialize name
+      // TODO: Probably don't need a loop for this
       for (int j=0; j<len+1; ++j) {
         printf("table->cfunctions[%d].name[%d]:\n", i, j);
         fwrite(&table->cfunctions[i].name[j], sizeof(char), 1, file);

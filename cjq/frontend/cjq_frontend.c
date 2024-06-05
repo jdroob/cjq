@@ -424,28 +424,32 @@ static struct symbol_table* _deserialize_sym_table(FILE* file) {
 
   jv* cfunc_names = _deserialize_jv(file);
   table->cfunc_names = *cfunc_names;
-  free(cfunc_names); cfunc_names = NULL; // TODO: Check - This should only free memory pointed to by temp. should not free data used by table->cfunc_names
+  free(cfunc_names); cfunc_names = NULL;
 
   table->cfunctions = jv_mem_calloc(table->ncfunctions, sizeof(struct cfunction));
-    for (int i=0; i<table->ncfunctions; ++i) {
-      int len;
-      printf("len(table->cfunctions[%d].name):\n", i);
-      fread(&len, sizeof(int), 1, file);
-      log_write_stdout_hex(&len, sizeof(int), 1);
+  for (int i=0; i<table->ncfunctions; ++i) {
+    int len;
+    printf("len(table->cfunctions[%d].name):\n", i);
+    fread(&len, sizeof(int), 1, file);
+    log_write_stdout_hex(&len, sizeof(int), 1);
 
-      table->cfunctions[i].name = malloc(len+1);
+    table->cfunctions[i].name = malloc(len+1);
 
-      for (int j=0; j<len+1; ++j) {
-        printf("table->cfunctions[%d].name[%d]:\n", i, j);
-        fread((void*)&table->cfunctions[i].name[j], sizeof(char), 1, file);
-        log_write_stdout_hex(&table->cfunctions[i].name[j], sizeof(char), 1);
-      }
-
-      printf("table->cfunctions[%d].nargs:\n", i);
-      fread(&table->cfunctions[i].nargs, sizeof(int), 1, file);
-      log_write_stdout_hex(&table->cfunctions[i].nargs, sizeof(int), 1);
+    // TODO: Probably don't need a loop for this...
+    for (int j=0; j<len+1; ++j) {
+      printf("table->cfunctions[%d].name[%d]:\n", i, j);
+      fread((void*)&table->cfunctions[i].name[j], sizeof(char), 1, file);
+      log_write_stdout_hex(&table->cfunctions[i].name[j], sizeof(char), 1);
     }
-    return table;
+
+    printf("table->cfunctions[%d].nargs:\n", i);
+    fread(&table->cfunctions[i].nargs, sizeof(int), 1, file);
+    log_write_stdout_hex(&table->cfunctions[i].nargs, sizeof(int), 1);
+  }
+
+  get_cbindings(table);
+
+  return table;
 }
 
 static struct symbol_table* deserialize_sym_table(const char *filename) {
@@ -933,7 +937,8 @@ out:
   // jv* arr = deserialize_jv("test_serialize.bin");
   // jv_dump(*arr, JV_PRINT_PRETTY); printf("\n\n");
   struct symbol_table* table = deserialize_sym_table("test_serialize_st.bin");
-  get_cbindings(table);
+
+  // jq->bc->globals = table;    // TODO: Does this work? Yep! :)
   // printf("before\n");
   // jv_free(arr);
   // printf("after\n");

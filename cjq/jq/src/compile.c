@@ -427,6 +427,17 @@ void print_symbols(block* b) {
   }
 }
 
+void bind_cfunctions(block* b, struct symbol_table* table) {
+  for (inst* i = b->first; i; i = i->next) {
+      for (int j=0; j<table->ncfunctions; ++j) {
+        if (!strcmp(i->symbol, table->cfunctions[j].name)) {
+          printf("symbol table cfunc name: %s\ni->symbol: %s\n\n", table->cfunctions[j].name, i->symbol);
+          table->cfunctions[j].fptr = i->imm.cfunc->fptr;
+        }
+      }
+  }
+}
+
 // Binds a sequence of binders, which *must not* already be bound to each other,
 // to body, throwing away unreferenced defs
 block block_bind_referenced(block binder, block body, int bindflags) {

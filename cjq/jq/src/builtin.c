@@ -1895,10 +1895,5 @@ int builtins_bind(jq_state *jq, block* bb) {
 void get_cbindings(struct symbol_table* table) {
   block builtins_c = gen_noop();
   builtins_c = gen_cbinding(function_list, sizeof(function_list)/sizeof(function_list[0]), builtins_c);
-
-  inst* curr;
-  while ((curr = get_last_inst(&builtins_c))) {
-    block b = {curr, curr};
-    print_symbols(&builtins_c);
-  }
+  bind_cfunctions(&builtins_c, table);
 }
