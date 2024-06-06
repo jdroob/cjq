@@ -11,7 +11,7 @@
 #include "jq_parser.h"
 #include "locfile.h"
 #include "jv.h"
-#include "jq_state.h"
+#include "common.h"
 #include "parser.h"
 #include "builtin.h"
 #include "util.h"

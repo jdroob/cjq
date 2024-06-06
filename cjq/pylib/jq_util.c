@@ -31,6 +31,15 @@ uint16_t _jq_next_entry_list_at(void* opcodes_ptr, int index) {
     return ((trace*)opcodes_ptr)->jq_next_entry_list[index];
 }
 
+int _get_next_input_list_len(void* opcodes_ptr) {
+    return *((trace*)opcodes_ptr)->jq_next_input_list_len;
+}
+
+uint16_t _next_input_list_at(void* opcodes_ptr, int index) {
+    // printf("Made it to _jq_next_entry_list_at\n");
+    return ((trace*)opcodes_ptr)->jq_next_input_list[index];
+}
+
 int _get_num_opcodes() {
     // printf("In _get_num_opcodes\n");
     return NUM_OPCODES;

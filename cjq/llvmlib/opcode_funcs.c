@@ -16,7 +16,7 @@
 #include "../jq/src/jq_parser.h"
 #include "../jq/src/locfile.h"
 #include "../jq/src/jv.h"
-#include "../jq/src/jq_state.h"
+#include "../jq/src/common.h"
 #include "../jq/src/bytecode.h"
 #include "../jq/src/parser.h"
 #include "../jq/src/builtin.h"
@@ -303,35 +303,6 @@ static void set_error(jq_state *jq, jv value) {
   jq->error = value;
 }
 
-enum {
-  SLURP                 = 1,
-  RAW_INPUT             = 2,
-  PROVIDE_NULL          = 4,
-  RAW_OUTPUT            = 8,
-  RAW_OUTPUT0           = 16,
-  ASCII_OUTPUT          = 32,
-  COLOR_OUTPUT          = 64,
-  NO_COLOR_OUTPUT       = 128,
-  SORTED_OUTPUT         = 256,
-  FROM_FILE             = 512,
-  RAW_NO_LF             = 1024,
-  UNBUFFERED_OUTPUT     = 2048,
-  EXIT_STATUS           = 4096,
-  SEQ                   = 16384,
-  RUN_TESTS             = 32768,
-  /* debugging only */
-  DUMP_DISASM           = 65536,
-};
-
-enum {
-    JQ_OK              =  0,
-    JQ_OK_NULL_KIND    = -1, /* exit 0 if --exit-status is not set*/
-    JQ_ERROR_SYSTEM    =  2,
-    JQ_ERROR_COMPILE   =  3,
-    JQ_OK_NO_OUTPUT    = -4, /* exit 0 if --exit-status is not set*/
-    JQ_ERROR_UNKNOWN   =  5,
-};
-
 static void jq_error(compiled_jq_state *cjq_state) {
    if (jq_halted(cjq_state->jq)) {
     // jq program invoked `halt` or `halt_error`
@@ -533,6 +504,54 @@ void _init_jq_next(void* cjq_state) {
 
   pcjq_state->jq->initial_execution = 0;
   assert(jv_get_kind(pcjq_state->jq->error) == JV_KIND_NULL);
+}
+
+void _get_next_input(void* cjq_state) {
+  /**
+   * Below should be equivalent logic to what happens
+   * between if-else block where process() is called
+   * and start of while-loop in process()
+  */
+  compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
+  if (*pcjq_state->options & PROVIDE_NULL) {
+    *pcjq_state->value = jv_null();
+  } else {
+    if (jq_util_input_errors(pcjq_state->input_state) == 0 &&
+        (jv_is_valid(*pcjq_state->value = jq_util_input_next_input(pcjq_state->input_state))) || 
+         jv_invalid_has_msg(jv_copy(*pcjq_state->value))) {
+          if (!jv_is_valid(*pcjq_state->value)) {
+            // Parse error
+            jv msg = jv_invalid_get_msg(*pcjq_state->value);
+            if (!(*pcjq_state->options & SEQ)) {
+              *pcjq_state->ret = JQ_ERROR_UNKNOWN;
+              fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+              jv_free(msg);
+              exit(EXIT_FAILURE);
+            }
+            // --seq -> errors are not fatal
+            fprintf(stderr, "jq: ignoring parse error: %s\n", jv_string_value(msg));
+            jv_free(msg);
+          }
+      }
+      else {
+        exit(EXIT_FAILURE);
+      }
+  }
+  *pcjq_state->ret = JQ_OK_NO_OUTPUT;
+  jq_start(pcjq_state->jq, *pcjq_state->value, *pcjq_state->jq_flags);
+}
+
+void _update_result_state(void* cjq_state) {
+  /**
+   * Below should be equivalent logic to what happens
+   * between return from process() and the end
+   * of the if-else block where process() is called
+  */
+  compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state; 
+  if (!(*pcjq_state->options & PROVIDE_NULL)) {
+    if (*pcjq_state->ret <= 0 && *pcjq_state->ret != JQ_OK_NO_OUTPUT)
+      *pcjq_state->last_result = (*pcjq_state->ret != JQ_OK_NULL_KIND);
+  }
 }
 
 void _opcode_LOADK(void* cjq_state) { 

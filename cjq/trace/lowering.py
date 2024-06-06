@@ -77,6 +77,16 @@ def jq_lower(opcodes_ptr):
     _cjq_state_ptr, = main_func.args
     
     # Define opcode-functions
+    _get_next_input = ir.Function(module,
+                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
+                            name='_get_next_input')
+    _get_next_input.attributes.add('alwaysinline')
+    
+    _update_result_state = ir.Function(module,
+                            ir.FunctionType(ir.VoidType(), [void_ptr_type]),
+                            name='_update_result_state')
+    _update_result_state.attributes.add('alwaysinline')
+    
     _init_jq_next = ir.Function(module,
                             ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                             name='_init_jq_next')
@@ -349,6 +359,17 @@ def jq_lower(opcodes_ptr):
     # Get opcode_list length from cjq_state
     jq_next_entry_list_len = jq_util_funcs._get_jq_next_entry_list_len(opcodes_ptr)
     
+    # Also, be able to determine when to iterate to next input
+    jq_util_funcs._next_input_list_at.argtypes = [c_void_p, c_int]
+    jq_util_funcs._next_input_list_at.restype = c_uint16
+    next_input_idx = 0
+    
+    # Define argument types for C function
+    jq_util_funcs._get_next_input_list_len.argtypes = [c_void_p]
+    jq_util_funcs._get_next_input_list_len.restype = c_int
+    # Get opcode_list length from cjq_state
+    next_input_list_len = jq_util_funcs._get_next_input_list_len(opcodes_ptr)
+    
     # Define argument types for C function
     jq_util_funcs._get_jq_halt_loc.argtypes = [c_void_p]
     jq_util_funcs._get_jq_halt_loc.restype = c_int
@@ -356,6 +377,14 @@ def jq_lower(opcodes_ptr):
     jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
     
     for opcode_lis_idx in range(opcode_list_len):
+        if next_input_idx < next_input_list_len:
+            # Check if we need to iterate cjq_state->value to the next JSON input
+            next_input_point = jq_util_funcs._next_input_list_at(opcodes_ptr, next_input_idx)
+            if opcode_lis_idx == next_input_point:
+                if opcode_lis_idx != 0:
+                    builder.call(_update_result_state, [_cjq_state_ptr])
+                builder.call(_get_next_input, [_cjq_state_ptr])
+                next_input_idx += 1
         if jq_next_entry_idx < jq_next_entry_list_len:
             # Check if we're at a jq_next entry point
             next_entry_point = jq_util_funcs._jq_next_entry_list_at(opcodes_ptr, jq_next_entry_idx)
@@ -449,6 +478,8 @@ def jq_lower(opcodes_ptr):
     # Check if JQ program halted
     if opcode_lis_idx == jq_halt_loc:
         builder.call(_jq_halt, [_cjq_state_ptr])
+    # Update for final state
+    builder.call(_update_result_state, [_cjq_state_ptr])
     # Return from main
     builder.ret_void()
     

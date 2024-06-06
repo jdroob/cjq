@@ -32,7 +32,7 @@ extern void jv_tsd_dtoa_ctx_init();
 
 #include "../jq/src/compile.h"
 #include "../jq/src/jv.h"
-#include "../jq/src/jq_state.h"
+#include "../jq/src/common.h"
 #include "../jq/src/jv_alloc.h"
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
@@ -149,50 +149,20 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
   return 0;
 }
 
-enum {
-  SLURP                 = 1,
-  RAW_INPUT             = 2,
-  PROVIDE_NULL          = 4,
-  RAW_OUTPUT            = 8,
-  RAW_OUTPUT0           = 16,
-  ASCII_OUTPUT          = 32,
-  COLOR_OUTPUT          = 64,
-  NO_COLOR_OUTPUT       = 128,
-  SORTED_OUTPUT         = 256,
-  FROM_FILE             = 512,
-  RAW_NO_LF             = 1024,
-  UNBUFFERED_OUTPUT     = 2048,
-  EXIT_STATUS           = 4096,
-  SEQ                   = 16384,
-  RUN_TESTS             = 32768,
-  /* debugging only */
-  DUMP_DISASM           = 65536,
-};
-
-enum {
-    JQ_OK              =  0,
-    JQ_OK_NULL_KIND    = -1, /* exit 0 if --exit-status is not set*/
-    JQ_ERROR_SYSTEM    =  2,
-    JQ_ERROR_COMPILE   =  3,
-    JQ_OK_NO_OUTPUT    = -4, /* exit 0 if --exit-status is not set*/
-    JQ_ERROR_UNKNOWN   =  5,
-};
-#define jq_exit_with_status(r)  exit(abs(r))
-#define jq_exit(r)              exit( r > 0 ? r : 0 )
-
 void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, int dumpopts, int last_result,
  jq_util_input_state* input_state, jq_state* jq) {
-  int* pret = malloc(sizeof(int)); *pret = ret;
+  int* pret = malloc(sizeof(int)); *pret = ret; // TODO: I don't think last_result needs to be passed in here
   int* pjq_flags = malloc(sizeof(int)); *pjq_flags = jq_flags;
   int* poptions = malloc(sizeof(int)); *poptions = options;
   int* pdumpopts = malloc(sizeof(int)); *pdumpopts = dumpopts;
-  int* plast_result = malloc(sizeof(int)); *plast_result = last_result;
+  int* plast_result = malloc(sizeof(int)); *plast_result = last_result;   // TODO: I don't think last_result needs to be passed in here
   int* pbacktracking = malloc(sizeof(int)); *pbacktracking = 0;
   int* praising = malloc(sizeof(int)); *praising = 0;
   // uint16_t* ppc = malloc(sizeof(uint16_t));
   uint8_t* pfallthrough = malloc(sizeof(uint8_t)); *pfallthrough = 0;
   uint16_t* popcode = malloc(sizeof(uint16_t)); *popcode = -1;
   jv *pcfunc_input = malloc(sizeof(jv)*MAX_CFUNCTION_ARGS);
+  jv* pvalue = malloc(sizeof(jv));
 
   cjq_state->ret = pret; pret = NULL;
   cjq_state->jq_flags = pjq_flags; pjq_flags = NULL;
@@ -208,24 +178,25 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   cjq_state->backtracking = pbacktracking; pbacktracking = NULL;
   cjq_state->raising = praising; praising = NULL;
   cjq_state->cfunc_input = pcfunc_input; pcfunc_input = NULL;
+  cjq_state->input_state = input_state; input_state = NULL;
+  cjq_state->value = pvalue; pvalue = NULL;
 
-  jv* pvalue = malloc(sizeof(jv));
-  if (input_state != NULL) {
-    *pvalue = jq_util_input_next_input(input_state);
-    // Parse error
-    if (!jv_is_valid(*pvalue)) {
-      jv msg = jv_invalid_get_msg(*pvalue);
-      *cjq_state->ret = JQ_ERROR_UNKNOWN;
-      fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
-      jv_free(msg);
-    }
-    cjq_state->value = pvalue; pvalue = NULL;
-    jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
-  } else {
-    jv* pvalue = malloc(sizeof(jv)); *pvalue = jv_null();
-    cjq_state->value = pvalue; pvalue = NULL;
-    jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
-  }
+  // if (input_state != NULL) {
+  //   *pvalue = jq_util_input_next_input(input_state);
+  //   // Parse error
+  //   if (!jv_is_valid(*pvalue)) {
+  //     jv msg = jv_invalid_get_msg(*pvalue);
+  //     *cjq_state->ret = JQ_ERROR_UNKNOWN;
+  //     fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+  //     jv_free(msg);
+  //   }
+  //   cjq_state->value = pvalue; pvalue = NULL;
+  //   jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
+  // } else {
+  //   jv* pvalue = malloc(sizeof(jv)); *pvalue = jv_null();
+  //   cjq_state->value = pvalue; pvalue = NULL;
+  //   jq_start(cjq_state->jq, *cjq_state->value, *cjq_state->jq_flags);
+  // }
 }
 
 void cjq_free(compiled_jq_state *cjq_state) {
@@ -1048,15 +1019,15 @@ out:
   jv_free(ARGS);
   jv_free(program_arguments);
 
-  if (options & EXIT_STATUS) {
-    if (ret != JQ_OK_NO_OUTPUT)
-      jq_exit_with_status(ret);
-    else
-      switch (last_result) {
-        case -1: jq_exit_with_status(JQ_OK_NO_OUTPUT);
-        case  0: jq_exit_with_status(JQ_OK_NULL_KIND);
-        default: jq_exit_with_status(JQ_OK);
-      }
-  } else
-    return 0;
+  // if (options & EXIT_STATUS) {
+  //   if (ret != JQ_OK_NO_OUTPUT)
+  //     jq_exit_with_status(ret);
+  //   else
+  //     switch (last_result) {
+  //       case -1: jq_exit_with_status(JQ_OK_NO_OUTPUT);
+  //       case  0: jq_exit_with_status(JQ_OK_NULL_KIND);
+  //       default: jq_exit_with_status(JQ_OK);
+  //     }
+  // } else
+  return 0;
 }

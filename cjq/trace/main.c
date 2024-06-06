@@ -36,7 +36,7 @@ int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject 
     snprintf(python_code, sizeof(python_code), "sys.path.append(\"%s\")", path_to_cjq);
     PyRun_SimpleString(python_code);
 
-     // Get HOME environment variable
+     // Get $HOME environment variable
     const char *home = getenv("HOME");
     if (!home) {
         fprintf(stderr, "Error: HOME environment variable is not set\n");

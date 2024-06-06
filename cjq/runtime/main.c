@@ -11,33 +11,40 @@
 #include "../jq/src/jv_alloc.h"
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
+#include "../jq/src/common.h"
 #include "../frontend/cjq_frontend.h"
 
 extern void jq_program();
 
 void clean_up(compiled_jq_state* cjq_state) {
-    // jq_util_input_free(&(cjq_state->input_state));
+    jq_util_input_free(&(cjq_state->input_state));
     jq_teardown(&(cjq_state->jq));
     cjq_free(cjq_state);
 }
 
-// void cjq_deserialize(const char* filename, compiled_jq_state* cjq_state_list) {
-//     FILE *file = fopen(filename, "rb");
-//     if (!file) {
-//         perror("fopen");
-//         exit(EXIT_FAILURE);
-//     }
-//     fread(cjq_state_list, sizeof(cjq_state_list), 1, file);
-//     fclose(file);
-// }
-
 int main(int argc, char *argv[]) {
   compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
-  // TODO: Refactor such that we don't compile a second time (just need data such as bc->constants)
-  // compiled_jq_state* cjq_state = NULL;
-  // cjq_deserialize("test_serialize.bin", cjq_state);
   int parse_error = cjq_parse(argc, argv, cjq_state);
+  
   jq_program((void*)cjq_state);
+
+  // Store exit data prior to freeing cjq_state
+  int options = *cjq_state->options;
+  int ret = *cjq_state->ret;
+  if (jq_util_input_errors(cjq_state->input_state) != 0)
+    ret = JQ_ERROR_SYSTEM;
+  int last_result = *cjq_state->last_result;
   clean_up(cjq_state);
-  return 0;
+
+  if (options & EXIT_STATUS) {
+    if (ret != JQ_OK_NO_OUTPUT)
+      jq_exit_with_status(ret);
+    else
+      switch (last_result) {
+        case -1: jq_exit_with_status(JQ_OK_NO_OUTPUT);
+        case  0: jq_exit_with_status(JQ_OK_NULL_KIND);
+        default: jq_exit_with_status(JQ_OK);
+      }
+  } else
+    return 0;
 }

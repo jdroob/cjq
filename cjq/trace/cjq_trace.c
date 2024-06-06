@@ -36,7 +36,7 @@ extern void jv_tsd_dtoa_ctx_init();
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
 #include "../jq/src/config_opts.inc"
-#include "../jq/src/jq_state.h"
+#include "../jq/src/common.h"
 #include "cjq_trace.h"
 
 int jq_testsuite(jv lib_dirs, int verbose, int argc, char* argv[]);
@@ -389,38 +389,6 @@ static void serialize_bc(const char* filename, const struct bytecode* bc) {
   _serialize_bc(file, bc);
   fclose(file);
 }
-
-
-enum {
-  SLURP                 = 1,
-  RAW_INPUT             = 2,
-  PROVIDE_NULL          = 4,
-  RAW_OUTPUT            = 8,
-  RAW_OUTPUT0           = 16,
-  ASCII_OUTPUT          = 32,
-  COLOR_OUTPUT          = 64,
-  NO_COLOR_OUTPUT       = 128,
-  SORTED_OUTPUT         = 256,
-  FROM_FILE             = 512,
-  RAW_NO_LF             = 1024,
-  UNBUFFERED_OUTPUT     = 2048,
-  EXIT_STATUS           = 4096,
-  SEQ                   = 16384,
-  RUN_TESTS             = 32768,
-  /* debugging only */
-  DUMP_DISASM           = 65536,
-};
-
-enum {
-    JQ_OK              =  0,
-    JQ_OK_NULL_KIND    = -1, /* exit 0 if --exit-status is not set*/
-    JQ_ERROR_SYSTEM    =  2,
-    JQ_ERROR_COMPILE   =  3,
-    JQ_OK_NO_OUTPUT    = -4, /* exit 0 if --exit-status is not set*/
-    JQ_ERROR_UNKNOWN   =  5,
-};
-#define jq_exit_with_status(r)  exit(abs(r))
-#define jq_exit(r)              exit( r > 0 ? r : 0 )
 
 static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
                    uint8_t* opcode_list, int* opcode_list_len, uint16_t* jq_next_entry_list, 
@@ -1058,7 +1026,7 @@ out:
   // serialize_jv("test_serialize.bin", &obj);
   // jv_dump(obj, JV_PRINT_PRETTY); printf("\n\n");
 
-  serialize_bc("test_serialize.bin", jq->bc);
+  // serialize_bc("test_serialize.bin", jq->bc);  // TODO: UNCOMMENT ME
   // serialize_sym_table("test_serialize_st.bin", jq->bc->globals);
   // jv arr = jv_array();
   // arr = jv_array_append(arr, jv_number(42));
