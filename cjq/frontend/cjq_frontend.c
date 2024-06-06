@@ -972,11 +972,15 @@ int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
                                         jv_string(JQ_CONFIG)); /* named arguments */
     // compiled = jq_compile_args(jq, program, jv_copy(program_arguments));
   }
-  if (!compiled){
-    ret = JQ_ERROR_COMPILE;
-    goto out;
-  }
+  // if (!compiled){
+  //   ret = JQ_ERROR_COMPILE;
+  //   goto out;
+  // }
   
+  struct bytecode* bc = deserialize_bc("test_serialize.bin");
+  jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
+  _jq_reset(jq);
+  jq->bc = bc;    // TODO: Does this work?
   if (options & DUMP_DISASM) {
     jq_dump_disassembly(jq, 0);
     printf("\n");  
@@ -1017,10 +1021,6 @@ out:
   // jv_dump(*obj, JV_PRINT_PRETTY); printf("\n\n");
   // jv* arr = deserialize_jv("test_serialize.bin");
   // jv_dump(*arr, JV_PRINT_PRETTY); printf("\n\n");
-  struct bytecode* bc = deserialize_bc("test_serialize.bin");
-  jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
-  _jq_reset(jq);
-  jq->bc = bc;    // TODO: Does this work?
   // struct symbol_table* table = deserialize_sym_table("test_serialize_st.bin");
 
   // jq->bc->globals = table;    // TODO: Does this work? Yep! :)
