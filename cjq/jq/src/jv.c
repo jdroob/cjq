@@ -141,10 +141,10 @@ jv jv_bool(int x) {
 
 #define JVP_FLAGS_INVALID_MSG   JVP_MAKE_FLAGS(JV_KIND_INVALID, JVP_PAYLOAD_ALLOCATED)
 
-typedef struct {
-  jv_refcnt refcnt;
-  jv errmsg;
-} jvp_invalid;
+// typedef struct {
+//   jv_refcnt refcnt;
+//   jv errmsg;
+// } jvp_invalid;
 
 jv jv_invalid_with_msg(jv err) {
   jvp_invalid* i = jv_mem_alloc(sizeof(jvp_invalid));
@@ -533,12 +533,12 @@ static decContext* tsd_dec_ctx_get(pthread_key_t *key) {
   return ctx;
 }
 
-typedef struct {
-  jv_refcnt refcnt;
-  double num_double;
-  char * literal_data;
-  decNumber num_decimal; // must be the last field in the structure for memory management
-} jvp_literal_number;
+// typedef struct {
+//   jv_refcnt refcnt;
+//   double num_double;
+//   char * literal_data;
+//   decNumber num_decimal; // must be the last field in the structure for memory management
+// } jvp_literal_number;
 
 typedef struct {
   decNumber number;

@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "decNumber/decNumber.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,6 +79,18 @@ typedef struct {
   uint32_t alloc_length;
   char data[];
 } jvp_string;
+
+typedef struct {
+  jv_refcnt refcnt;
+  double num_double;
+  char * literal_data;
+  decNumber num_decimal; // must be the last field in the structure for memory management
+} jvp_literal_number;
+
+typedef struct {
+  jv_refcnt refcnt;
+  jv errmsg;
+} jvp_invalid;
 
 /*
  * All jv_* functions consume (decref) input and produce (incref) output
