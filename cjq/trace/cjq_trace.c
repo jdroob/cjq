@@ -222,12 +222,17 @@ static void _serialize_jv(FILE* file, const jv* value) {
       // Check if literal_data is NULL and write a flag
       int has_literal_data = (lit->literal_data != NULL) ? 1 : 0;
       fwrite(&has_literal_data, sizeof(int), 1, file);
+      // printf("has_literal_data:\n");
+      // log_write_stdout_hex(&has_literal_data, sizeof(int), 1);
       if (has_literal_data) {
         char* p = lit->literal_data;
         int len = 0;
         while (*p != '\0') { ++p; ++len; }
         fwrite(&len, sizeof(int), 1, file);
+        // printf("len:\n");
+        // log_write_stdout_hex(&len, sizeof(int), 1);
         fwrite(lit->literal_data, len + 1, 1, file);
+        // printf("lit->literal_data: %s\n", lit->literal_data);
     }
       // char* p = lit->literal_data;
       // int len = 0;
@@ -320,7 +325,7 @@ static void _serialize_jv(FILE* file, const jv* value) {
           int is_null = 1;
           fwrite(&is_null, sizeof(int), 1, file);
           // printf("inv is NULL\n");
-          // log_write_stdout_hex(&is_null, sizeof(int), 1);
+          log_write_stdout_hex(&is_null, sizeof(int), 1);
       } else {
           int is_null = 0;
           fwrite(&is_null, sizeof(int), 1, file);
@@ -341,69 +346,6 @@ static void _serialize_jv(FILE* file, const jv* value) {
       break;
     }
   }
-  // if (kind == JV_KIND_NUMBER) {
-  //     fwrite(&value->u.number, sizeof(value->u.number), 1, file);
-  // } else if (kind == JV_KIND_OBJECT) {
-  //   /**
-  //    * See jv.c, jvp_object_new() for justificaiton of alignment
-  //   */
-  //   jvp_object* obj = (jvp_object*)value->u.ptr;
-  //   printf("obj->refcnt.count:\n");
-  //   fwrite(&obj->refcnt.count, sizeof(int), 1, file);
-  //   log_write_stdout_hex(&obj->refcnt.count, sizeof(int), 1);
-  //   printf("calling serialize_jv_object...\n");
-  //   serialize_jv_object(file, obj, value->size);
-  //   fwrite(&obj->next_free, sizeof(int), 1, file);
-  //   printf("obj->next_free:\n");
-  //   log_write_stdout_hex(&obj->next_free, sizeof(int), 1);
-  //   int* hashbuckets = (int*)(&obj->elements[value->size]);
-  //   for (int i=0; i<value->size*2; ++i) {
-  //     fwrite(&hashbuckets[i], sizeof(int), 1, file);
-  //     printf("hashbuckets[%d]:\n", i);
-  //     log_write_stdout_hex(&hashbuckets[i], sizeof(int), 1);
-  //   }
-  //   } else if (kind == JV_KIND_ARRAY) {
-  //     jvp_array* arr = (jvp_array*)value->u.ptr;
-  //     printf("Writing arr->alloc_length so deserialize_jv can know how much mem to alloc\n");
-  //     fwrite(&arr->alloc_length, sizeof(int), 1, file);   // So deserialize() can determine how much memory to allocate
-  //     log_write_stdout_hex(&arr->alloc_length, sizeof(int), 1);
-  //     printf("arr->refcnt.count:\n");
-  //     fwrite(&arr->refcnt.count, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&arr->refcnt.count, sizeof(int), 1);
-  //     printf("arr->length:\n");
-  //     fwrite(&arr->length, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&arr->length, sizeof(int), 1);
-  //     printf("arr->alloc_length:\n");
-  //     fwrite(&arr->alloc_length, sizeof(arr->alloc_length), 1, file);
-  //     log_write_stdout_hex(&arr->alloc_length, sizeof(int), 1);
-  //     printf("calling serialize_jv_array...\n");
-  //     serialize_jv_array(file, arr, arr->alloc_length);
-  //   } else if (kind == JV_KIND_STRING) {
-  //     jvp_string* str = (jvp_string*)value->u.ptr;
-  //     printf("Writing str->alloc_length so deserialize_jv can know how much mem to alloc\n");
-  //     fwrite(&str->alloc_length, sizeof(int), 1, file);   // So deserialize() can determine how much memory to allocate
-  //     printf("str->refcnt.count:\n");
-  //     fwrite(&str->refcnt.count, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&str->refcnt.count, sizeof(int), 1);
-  //     printf("str->hash:\n");
-  //     fwrite(&str->hash, sizeof(uint32_t), 1, file);
-  //     log_write_stdout_hex(&str->hash, sizeof(uint32_t), 1);
-  //     printf("str->alloc_length:\n");
-  //     fwrite(&str->alloc_length, sizeof(uint32_t), 1, file);
-  //     log_write_stdout_hex(&str->alloc_length, sizeof(uint32_t), 1);
-  //     printf("str->length_hashed:\n");
-  //     fwrite(&str->length_hashed, sizeof(uint32_t), 1, file);
-  //     log_write_stdout_hex(&str->length_hashed, sizeof(uint32_t), 1);
-  //     size_t len = str->alloc_length;  
-  //     printf("str->data: %s, len: %zu \n", str->data, len+1);
-  //     fwrite(&str->data, len+1, 1, file);
-  //     log_write_stdout_hex(&str->data, len+1, 1);
-  //   } else /* JV_KIND_TRUE, JV_KIND_FALSE, JV_KIND_NULL, JV_KIND_INVALID */ {
-  //     size_t total_size = sizeof(double);
-  //     if (fwrite(&value->u, total_size, 1, file) != 1) {
-  //         perror("Failed to write jv string to file");
-  //     }
-  //   }
 }
 
 static void serialize_jv(const char* filename, jv* value) {
@@ -469,9 +411,18 @@ static int is_bc_serialized(const struct bytecode* bc) {
     return 0;
 }
 
+static int get_bc_idx(const struct bytecode* bc) {
+    for (int i = 0; i < num_serialized_bcs; ++i) {
+        if (serialized_bcs[i] == bc) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static void add_serialized_bc(const struct bytecode* bc) {
     if (num_serialized_bcs < MAX_SERIALIZED_BCS) {
-        serialized_bcs[num_serialized_bcs++] = bc;
+        serialized_bcs[num_serialized_bcs++] = (struct bytecode*)bc;
     }
 }
 
@@ -480,10 +431,24 @@ static void reset_serialized_bcs() {
 }
 
 static void _serialize_bc(FILE* file, const struct bytecode* bc);
-static void serialize_bc_ptr(FILE* file, const struct bytecode* ptr) {
+static void serialize_bc_parent(FILE* file, const struct bytecode* ptr) {
   if (ptr) {
-    // printf("calling _serialize_bc from serialize_bc_ptr...\n");
-    _serialize_bc(file, ptr);
+    if (is_bc_serialized(ptr)) {
+      uint32_t parent_flag = 0xFFFFFFFD;
+      // printf("parent_flag: %x\n", parent_flag);
+      fwrite(&parent_flag, sizeof(uint32_t), 1, file);
+      int idx = get_bc_idx(ptr);
+      if (idx == -1) {
+        printf("Error: could not find parent idx\n");
+        exit(EXIT_FAILURE);
+      }
+      // printf("Serializing parent index: %d\n", idx);
+      fwrite(&idx, sizeof(int), 1, file);
+    } else {
+      // TODO: Should we ever get here?
+      // printf("calling _serialize_bc from serialize_bc_parent...\n");
+      _serialize_bc(file, ptr);
+    }
   } else {
     // If ptr is NULL, write a sentinel value to indicate null pointer
     uint32_t null_value = 0xFFFFFFFF;
@@ -530,8 +495,8 @@ static void _serialize_bc(FILE* file, const struct bytecode* bc) {
   _serialize_sym_table(file, bc->globals);
 
   // Serialize the parent pointer
-  // printf("calling _serialize_bc_ptr...\n");
-  serialize_bc_ptr(file, bc->parent);
+  // printf("calling _serialize_bc_parent...\n");
+  serialize_bc_parent(file, bc->parent);
 
   // Serialize subfunctions recursively
   // printf("Serializing bc->nsubfunctions: %d\n", bc->nsubfunctions);

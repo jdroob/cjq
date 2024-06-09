@@ -231,12 +231,12 @@ static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
 
 static jv* _deserialize_jv(FILE *file);
 
-static jvp_object* deserialize_jv_object(FILE *file, int size) {
-  jvp_object* obj = malloc(sizeof(jvp_object) + sizeof(struct object_slot) * size + sizeof(int) * size * 2);
-  if (!obj) {
-      perror("Failed to allocate memory for jvp_object");
-      exit(EXIT_FAILURE);
-  }
+static void deserialize_jv_object(FILE *file, jvp_object* obj, int size) {
+  // jvp_object* obj = malloc(sizeof(jvp_object) + sizeof(struct object_slot) * size + sizeof(int) * size * 2);
+  // if (!obj) {
+  //     perror("Failed to allocate memory for jvp_object");
+  //     exit(EXIT_FAILURE);
+  // }
 
   for (int i = 0; i < size; ++i) {
       struct object_slot* slot = &obj->elements[i];
@@ -251,7 +251,7 @@ static jvp_object* deserialize_jv_object(FILE *file, int size) {
       // printf("slot->value = _deserialize_jv(file);\n");
       slot->value = *_deserialize_jv(file);  // Deserialize the value
   }
-  return obj;
+  // return obj;
 }
 
 static void deserialize_jv_array(FILE *file, int size, jvp_array* arr) {
@@ -281,7 +281,6 @@ static jv* _deserialize_jv(FILE* file) {
   fread(&value->size, sizeof(int), 1, file);
   // log_write_stdout_hex(&value->size, sizeof(value->size), 1);
 
-  // unsigned short kind = value->kind_flags & 0x7F;
   jv_kind kind = jv_get_kind(*value);
   switch (kind) {
     case JV_KIND_NUMBER: {
@@ -293,15 +292,23 @@ static jv* _deserialize_jv(FILE* file) {
       jvp_literal_number* lit = (jvp_literal_number*)value->u.ptr;
 
       fread(&lit->refcnt.count, sizeof(int), 1, file);
+      // printf("lit->refcnt.count:\n");
+      // log_write_stdout_hex(&lit->refcnt.count, sizeof(int), 1);
+
       fread(&lit->num_double, sizeof(double), 1, file);
+      // printf("lit->num_double:\n");
+      // log_write_stdout_hex(&lit->num_double, sizeof(double), 1);
 
       // Read the flag indicating if literal_data is present
       int has_literal_data;
       fread(&has_literal_data, sizeof(int), 1, file);
-
+      // printf("has_literal_data:\n");
+      // log_write_stdout_hex(&has_literal_data, sizeof(int), 1);
       if (has_literal_data) {
           int len;
           fread(&len, sizeof(int), 1, file);
+          // printf("len:\n");
+          // log_write_stdout_hex(&len, sizeof(int), 1);
           lit->literal_data = malloc(len + 1);
           if (!lit->literal_data) {
               perror("Failed to allocate memory for literal_data");
@@ -309,14 +316,23 @@ static jv* _deserialize_jv(FILE* file) {
               exit(EXIT_FAILURE);
           }
           fread(lit->literal_data, len + 1, 1, file);
+          // printf("lit->literal_data: %s\n", lit->literal_data);
       } else {
           lit->literal_data = NULL;
       }
 
       fread(&lit->num_decimal.digits, sizeof(int32_t), 1, file);
+      // printf("lit->num_decimal.digits: %d\n", lit->num_decimal.digits);
+      // log_write_stdout_hex(&lit->num_decimal.digits, sizeof(int32_t), 1);
       fread(&lit->num_decimal.exponent, sizeof(int32_t), 1, file);
+      // printf("lit->num_decimal.exponent: %d\n", lit->num_decimal.exponent);
+      // log_write_stdout_hex(&lit->num_decimal.exponent, sizeof(int32_t), 1);
       fread(&lit->num_decimal.bits, sizeof(uint8_t), 1, file);
+      // printf("lit->num_decimal.bits: %d\n", lit->num_decimal.bits);
+      // log_write_stdout_hex(&lit->num_decimal.bits, sizeof(uint8_t), 1);
       fread(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1, file);
+      // printf("lit->num_decimal.lsu[0]: %d\n", lit->num_decimal.lsu[0]);
+      // log_write_stdout_hex(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1);
       break;
     }
     case JV_KIND_OBJECT: {
@@ -334,7 +350,8 @@ static jv* _deserialize_jv(FILE* file) {
       fread(&obj->refcnt.count, sizeof(int), 1, file);
       // log_write_stdout_hex(&obj->refcnt.count, sizeof(int), 1);
       // printf("calling deserialize_jv_object...\n");
-      obj = deserialize_jv_object(file, value->size);
+      // obj = deserialize_jv_object(file, value->size);
+      deserialize_jv_object(file, obj, value->size);
       fread(&obj->next_free, sizeof(int), 1, file);
       // printf("obj->next_free:\n");
       // log_write_stdout_hex(&obj->next_free, sizeof(int), 1);
@@ -450,101 +467,6 @@ static jv* _deserialize_jv(FILE* file) {
       break;
     }
   }
-  // if (kind == JV_KIND_NUMBER) {
-  //     fread(&value->u.number, sizeof(value->u.number), 1, file);
-  // } else if (kind == JV_KIND_OBJECT) {
-  //     size_t total_size = sizeof(jvp_object) +
-  //                         sizeof(struct object_slot) * value->size +
-  //                         sizeof(int) * (value->size * 2);
-  //     value->u.ptr = malloc(total_size);
-  //     if (!value->u.ptr) {
-  //         perror("Failed to allocate memory for jvp_object");
-  //         exit(EXIT_FAILURE);
-  //     }
-
-  //     jvp_object* obj = (jvp_object*)value->u.ptr;
-  //     printf("obj->refcnt.count:\n");
-  //     fread(&obj->refcnt.count, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&obj->refcnt.count, sizeof(int), 1);
-  //     printf("calling deserialize_jv_object...\n");
-  //     obj = deserialize_jv_object(file, value->size);
-  //     fread(&obj->next_free, sizeof(int), 1, file);
-  //     printf("obj->next_free:\n");
-  //     log_write_stdout_hex(&obj->next_free, sizeof(int), 1);
-  //     int* hashbuckets = (int*)(&obj->elements[value->size]);
-  //     for (int i=0; i<value->size*2; ++i) {
-  //       fread(&hashbuckets[i], sizeof(int), 1, file);
-  //       printf("hashbuckets[%d]:\n", i);
-  //       log_write_stdout_hex(&hashbuckets[i], sizeof(int), 1);
-  //     }
-  //     value->u.ptr = (struct jv_refcnt*)obj;
-  // } else if (kind == JV_KIND_ARRAY) {
-  //     int alloc_len;
-  //     fread(&alloc_len, sizeof(int), 1, file);
-  //     printf("alloc_len: %d\n", alloc_len);
-  //     size_t total_size = sizeof(jvp_array);
-  //     value->u.ptr = malloc(total_size);
-  //     if (!value->u.ptr) {
-  //         perror("malloc");
-  //         fclose(file);
-  //         exit(EXIT_FAILURE);
-  //     }
-
-  //     jvp_array* arr = (jvp_array*)value->u.ptr;
-  //     jv* parr_elements = &arr->elements[0];
-  //     parr_elements = malloc(sizeof(jv) * alloc_len);
-
-  //     printf("arr->refcnt.count:\n");
-  //     fread(&arr->refcnt.count, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&arr->refcnt.count, sizeof(int), 1);
-  //     printf("arr->length:\n");
-  //     fread(&arr->length, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&arr->length, sizeof(int), 1);
-  //     printf("arr->alloc_length:\n");
-  //     fread(&arr->alloc_length, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&arr->alloc_length, sizeof(int), 1);
-  //     printf("calling deserialize_jv_array...\n");
-  //     deserialize_jv_array(file, arr->alloc_length, arr);
-  //     value->u.ptr = (struct jv_refcnt*)arr;
-  // } else if (kind == JV_KIND_STRING) {
-  //     int alloc_len;
-  //     fread(&alloc_len, sizeof(int), 1, file);
-  //     printf("alloc_len: %d\n", alloc_len);
-  //     size_t total_size = sizeof(jvp_string) + alloc_len + 1;
-  //     value->u.ptr = malloc(total_size);
-  //     if (!value->u.ptr) {
-  //         perror("malloc");
-  //         fclose(file);
-  //         exit(EXIT_FAILURE);
-  //     }
-
-  //     jvp_string* str = (jvp_string*)value->u.ptr;
-  //     printf("str->refcnt.count:\n");
-  //     fread(&str->refcnt.count, sizeof(int), 1, file);
-  //     log_write_stdout_hex(&str->refcnt.count, sizeof(int), 1);
-  //     printf("str->hash:\n");
-  //     fread(&str->hash, sizeof(uint32_t), 1, file);
-  //     log_write_stdout_hex(&str->hash, sizeof(uint32_t), 1);
-  //     printf("str->alloc_length:\n");
-  //     fread(&str->alloc_length, sizeof(uint32_t), 1, file);
-  //     log_write_stdout_hex(&str->alloc_length, sizeof(uint32_t), 1);
-  //     printf("str->length_hashed:\n");
-  //     fread(&str->length_hashed, sizeof(uint32_t), 1, file);
-  //     log_write_stdout_hex(&str->length_hashed, sizeof(uint32_t), 1);
-  //     size_t len = str->alloc_length;
-  //     fread(&str->data, len+1, 1, file);
-  //     printf("str->data: %s, len: %zu \n", str->data, len+1);
-  //     log_write_stdout_hex(&str->data, len+1, 1);
-  //     value->u.ptr = (struct jv_refcnt*)str;
-  // } else { /* JV_KIND_TRUE, JV_KIND_FALSE, JV_KIND_NULL, JV_KIND_INVALID */
-  //     size_t total_size = sizeof(double);
-  //     if (fread(&value->u, total_size, 1, file) != 1) {
-  //         perror("Failed to read jv value from file");
-  //         fclose(file);
-  //         exit(EXIT_FAILURE);
-  //     }
-  // }
-
   return value;
 }
 
@@ -605,19 +527,78 @@ static struct symbol_table* deserialize_sym_table(const char *filename) {
   return table;
 }
 
-static struct bytecode* _deserialize_bc(FILE* file);
-static struct bytecode* deserialize_bc_ptr(FILE* file) {
-  uint32_t null_value;
-  fread(&null_value, sizeof(uint32_t), 1, file);
-  if (null_value == 0xFFFFFFFF || null_value == 0xFFFFFFFE) {
-      // printf("Deserializing null_value: %x\n", null_value);
-      // log_write_stdout_hex(&null_value, sizeof(uint32_t), 1);
-      return NULL;
-  } else {
-      fseek(file, -sizeof(uint32_t), SEEK_CUR); // Move file pointer back
-      return _deserialize_bc(file);
-  }
+#define MAX_DESERIALIZED_BCS 1000 // Adjust this as needed
+
+static struct bytecode* deserialized_bcs[MAX_DESERIALIZED_BCS];
+static int num_deserialized_bcs = 0;
+
+static void add_deserialized_bc(struct bytecode* bc) {
+    if (num_deserialized_bcs < MAX_DESERIALIZED_BCS) {
+        deserialized_bcs[num_deserialized_bcs++] = bc;
+    }
 }
+
+static struct bytecode* get_deserialized_bc(int idx) {
+    if (idx < 0 || idx >= num_deserialized_bcs) {
+        return NULL;
+    }
+    return deserialized_bcs[idx];
+}
+
+static struct bytecode* _deserialize_bc(FILE* file);
+
+// static struct bytecode* deserialize_bc_parent(FILE* file) {
+//     uint32_t value;
+//     fread(&value, sizeof(uint32_t), 1, file);
+//     if (value == 0xFFFFFFFF) {
+//         return NULL; // NULL pointer sentinel
+//     } else if (value == 0xFFFFFFFD) {
+//         int idx;
+//         fread(&idx, sizeof(int), 1, file);
+//         if (idx < 0 || idx >= num_deserialized_bcs) {
+//             printf("Error: invalid parent index\n");
+//             exit(EXIT_FAILURE);
+//         }
+//         return deserialized_bcs[idx];
+//     } else {
+//         // TODO: Should we ever get here?
+//         fseek(file, -sizeof(uint32_t), SEEK_CUR); // Rewind
+//         return _deserialize_bc(file);
+//     }
+// }
+
+static struct bytecode* deserialize_bc_parent(FILE* file) {
+    uint32_t value;
+    fread(&value, sizeof(uint32_t), 1, file);
+    if (value == 0xFFFFFFFF) {
+        return NULL; // NULL pointer sentinel
+    } else if (value == 0xFFFFFFFD) {
+        int idx;
+        fread(&idx, sizeof(int), 1, file);
+        struct bytecode* parent_bc = get_deserialized_bc(idx);
+        if (!parent_bc) {
+            printf("Error: invalid parent index %d\n", idx);
+            exit(EXIT_FAILURE);
+        }
+        return parent_bc;
+    } else {
+        fseek(file, -sizeof(uint32_t), SEEK_CUR); // Rewind to read the bytecode struct
+        return _deserialize_bc(file);
+    }
+}
+
+// static struct bytecode* deserialize_bc_ptr(FILE* file) {
+//   uint32_t null_value;
+//   fread(&null_value, sizeof(uint32_t), 1, file);
+//   if (null_value == 0xFFFFFFFF || null_value == 0xFFFFFFFE) {
+//       printf("Deserializing null_value: %x\n", null_value);
+//       log_write_stdout_hex(&null_value, sizeof(uint32_t), 1);
+//       return NULL;
+//   } else {
+//       fseek(file, -sizeof(uint32_t), SEEK_CUR); // Move file pointer back
+//       return _deserialize_bc(file);
+//   }
+// }
 
 static struct bytecode* _deserialize_bc(FILE* file) {
   /**
@@ -625,27 +606,32 @@ static struct bytecode* _deserialize_bc(FILE* file) {
   */
 
   // Read the codelen to determine if the pointer is null or not
-  int codelen;
-  fread(&codelen, sizeof(int), 1, file);
-  if (codelen == 0xFFFFFFFF) {
-      // Null pointer sentinel value, return NULL
+  uint32_t sentinel;
+  fread(&sentinel, sizeof(uint32_t), 1, file);
+  if (sentinel == 0xFFFFFFFF) {
+      return NULL; // NULL pointer sentinel
+  } else if (sentinel == 0xFFFFFFFE) {
+      // Duplicate pointer detected, do nothing here
       return NULL;
-  } else if (codelen == 0xFFFFFFFE) {
-      // Duplicate pointer sentinel value, return NULL
-      return NULL;
+  } else {
+      // Not a sentinel, rewind
+      fseek(file, -sizeof(uint32_t), SEEK_CUR);
   }
 
-  struct bytecode* bc = jv_mem_alloc(sizeof(struct bytecode));
+  struct bytecode* bc = (struct bytecode*)malloc(sizeof(struct bytecode));
   if (!bc) {
       perror("Failed to allocate memory for bytecode struct");
       exit(EXIT_FAILURE);
   }
 
-  bc->codelen = codelen;
+  // Add bc to deserialized_bcs array
+  add_deserialized_bc(bc);
+
+  fread(&bc->codelen, sizeof(int), 1, file);
   // printf("Deserialized bc->codelen: %u\n", bc->codelen);
   // log_write_stdout_hex(&bc->codelen, sizeof(bc->codelen), 1);
   
-  bc->code = malloc(sizeof(uint16_t) * bc->codelen);
+  bc->code = (uint16_t*)malloc(sizeof(uint16_t) * bc->codelen);
   fread(bc->code, sizeof(uint16_t), bc->codelen, file);
   // printf("Deserialized bc->code\n");
   // log_write_stdout_hex(bc->code, sizeof(uint16_t) * bc->codelen, 1);
@@ -667,14 +653,23 @@ static struct bytecode* _deserialize_bc(FILE* file) {
   // printf("Deserialized bc->globals\n");
 
   // Deserialize parent pointer
-  // printf("Calling deserialize_bc_ptr...\n");
-  bc->parent = deserialize_bc_ptr(file);
+  // printf("Calling deserialize_bc_parent...\n");
+  bc->parent = deserialize_bc_parent(file);
   // printf("Deserialized parent pointer\n");
 
   // Deserialize subfunctions recursively
   fread(&bc->nsubfunctions, sizeof(int), 1, file);
-  bc->subfunctions = malloc(sizeof(struct bytecode*) * bc->nsubfunctions);
-  // printf("Deserialized bc->nsubfunctions: %d\n", bc->nsubfunctions);
+  // printf("bc->nsubfunctions\n");
+  // log_write_stdout_hex(&bc->nsubfunctions, sizeof(bc->nsubfunctions), 1);
+  if (bc->nsubfunctions > 0) {
+    bc->subfunctions = malloc(bc->nsubfunctions * sizeof(struct bytecode*));
+    if (!bc->subfunctions) {
+        printf("Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+  }
+  else
+    bc->subfunctions = NULL;
   for (int i = 0; i < bc->nsubfunctions; ++i) {
       // printf("Deserializing subfunction %d\n", i);
       bc->subfunctions[i] = _deserialize_bc(file);
