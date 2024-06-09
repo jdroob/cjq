@@ -551,6 +551,10 @@ static inline int jvp_number_is_literal(jv n) {
   return JVP_HAS_FLAGS(n, JVP_FLAGS_NUMBER_LITERAL);
 }
 
+int jv_num_is_literal(jv n) {
+  return jvp_number_is_literal(n);
+}
+
 static jvp_literal_number* jvp_literal_number_ptr(jv j) {
   assert(JVP_HAS_FLAGS(j, JVP_FLAGS_NUMBER_LITERAL));
   return (jvp_literal_number*)j.u.ptr;

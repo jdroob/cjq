@@ -284,55 +284,65 @@ static jv* _deserialize_jv(FILE* file) {
   jv_kind kind = jv_get_kind(*value);
   switch (kind) {
     case JV_KIND_NUMBER: {
-      value->u.ptr = malloc(sizeof(jvp_literal_number));
-      if (!value->u.ptr) {
-          perror("Failed to allocate memory for jvp_literal_number");
-          exit(EXIT_FAILURE);
-      }
-      jvp_literal_number* lit = (jvp_literal_number*)value->u.ptr;
-
-      fread(&lit->refcnt.count, sizeof(int), 1, file);
-      // printf("lit->refcnt.count:\n");
-      // log_write_stdout_hex(&lit->refcnt.count, sizeof(int), 1);
-
-      fread(&lit->num_double, sizeof(double), 1, file);
-      // printf("lit->num_double:\n");
-      // log_write_stdout_hex(&lit->num_double, sizeof(double), 1);
-
-      // Read the flag indicating if literal_data is present
-      int has_literal_data;
-      fread(&has_literal_data, sizeof(int), 1, file);
-      // printf("has_literal_data:\n");
-      // log_write_stdout_hex(&has_literal_data, sizeof(int), 1);
-      if (has_literal_data) {
-          int len;
-          fread(&len, sizeof(int), 1, file);
-          // printf("len:\n");
-          // log_write_stdout_hex(&len, sizeof(int), 1);
-          lit->literal_data = malloc(len + 1);
-          if (!lit->literal_data) {
-              perror("Failed to allocate memory for literal_data");
-              free(value->u.ptr);
-              exit(EXIT_FAILURE);
-          }
-          fread(lit->literal_data, len + 1, 1, file);
-          // printf("lit->literal_data: %s\n", lit->literal_data);
+      int is_lit;
+      fread(&is_lit, sizeof(int), 1, file);
+      // printf("is_lit: %d\n", is_lit);
+      if (!is_lit) {
+        // value->u.number = malloc(sizeof(double));
+        fread(&value->u.number, sizeof(double), 1, file);
+        // printf("Deserialized value->u.number: %f\n", value->u.number);
+        // log_write_stdout_hex(&value->u.number, sizeof(double), 1);
       } else {
-          lit->literal_data = NULL;
-      }
+        value->u.ptr = malloc(sizeof(jvp_literal_number));
+        if (!value->u.ptr) {
+            perror("Failed to allocate memory for jvp_literal_number");
+            exit(EXIT_FAILURE);
+        }
+        jvp_literal_number* lit = (jvp_literal_number*)value->u.ptr;
 
-      fread(&lit->num_decimal.digits, sizeof(int32_t), 1, file);
-      // printf("lit->num_decimal.digits: %d\n", lit->num_decimal.digits);
-      // log_write_stdout_hex(&lit->num_decimal.digits, sizeof(int32_t), 1);
-      fread(&lit->num_decimal.exponent, sizeof(int32_t), 1, file);
-      // printf("lit->num_decimal.exponent: %d\n", lit->num_decimal.exponent);
-      // log_write_stdout_hex(&lit->num_decimal.exponent, sizeof(int32_t), 1);
-      fread(&lit->num_decimal.bits, sizeof(uint8_t), 1, file);
-      // printf("lit->num_decimal.bits: %d\n", lit->num_decimal.bits);
-      // log_write_stdout_hex(&lit->num_decimal.bits, sizeof(uint8_t), 1);
-      fread(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1, file);
-      // printf("lit->num_decimal.lsu[0]: %d\n", lit->num_decimal.lsu[0]);
-      // log_write_stdout_hex(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1);
+        fread(&lit->refcnt.count, sizeof(int), 1, file);
+        // printf("lit->refcnt.count:\n");
+        // log_write_stdout_hex(&lit->refcnt.count, sizeof(int), 1);
+
+        fread(&lit->num_double, sizeof(double), 1, file);
+        // printf("lit->num_double:\n");
+        // log_write_stdout_hex(&lit->num_double, sizeof(double), 1);
+
+        // Read the flag indicating if literal_data is present
+        int has_literal_data;
+        fread(&has_literal_data, sizeof(int), 1, file);
+        // printf("has_literal_data:\n");
+        // log_write_stdout_hex(&has_literal_data, sizeof(int), 1);
+        if (has_literal_data) {
+            int len;
+            fread(&len, sizeof(int), 1, file);
+            // printf("len:\n");
+            // log_write_stdout_hex(&len, sizeof(int), 1);
+            lit->literal_data = malloc(len + 1);
+            if (!lit->literal_data) {
+                perror("Failed to allocate memory for literal_data");
+                free(value->u.ptr);
+                exit(EXIT_FAILURE);
+            }
+            fread(lit->literal_data, len + 1, 1, file);
+            // printf("lit->literal_data: %s\n", lit->literal_data);
+        } else {
+            lit->literal_data = NULL;
+        }
+
+        fread(&lit->num_decimal.digits, sizeof(int32_t), 1, file);
+        // printf("lit->num_decimal.digits: %d\n", lit->num_decimal.digits);
+        // log_write_stdout_hex(&lit->num_decimal.digits, sizeof(int32_t), 1);
+        fread(&lit->num_decimal.exponent, sizeof(int32_t), 1, file);
+        // printf("lit->num_decimal.exponent: %d\n", lit->num_decimal.exponent);
+        // log_write_stdout_hex(&lit->num_decimal.exponent, sizeof(int32_t), 1);
+        fread(&lit->num_decimal.bits, sizeof(uint8_t), 1, file);
+        // printf("lit->num_decimal.bits: %d\n", lit->num_decimal.bits);
+        // log_write_stdout_hex(&lit->num_decimal.bits, sizeof(uint8_t), 1);
+        fread(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1, file);
+        // printf("lit->num_decimal.lsu[0]: %d\n", lit->num_decimal.lsu[0]);
+        // log_write_stdout_hex(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1);
+      }
       break;
     }
     case JV_KIND_OBJECT: {

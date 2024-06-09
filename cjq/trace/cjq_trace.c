@@ -212,49 +212,59 @@ static void _serialize_jv(FILE* file, const jv* value) {
 
   switch (kind) {
     case JV_KIND_NUMBER: {
-      jvp_literal_number* lit = (jvp_literal_number*)value->u.ptr;
-      // printf("lit->refcnt.count:\n");
-      fwrite(&lit->refcnt.count, sizeof(int), 1, file);
-      // log_write_stdout_hex(&lit->refcnt.count, sizeof(int), 1);
-      // printf("lit->num_double:\n");
-      fwrite(&lit->num_double, sizeof(double), 1, file);
-      // log_write_stdout_hex(&lit->num_double, sizeof(double), 1);
-      // Check if literal_data is NULL and write a flag
-      int has_literal_data = (lit->literal_data != NULL) ? 1 : 0;
-      fwrite(&has_literal_data, sizeof(int), 1, file);
-      // printf("has_literal_data:\n");
-      // log_write_stdout_hex(&has_literal_data, sizeof(int), 1);
-      if (has_literal_data) {
-        char* p = lit->literal_data;
-        int len = 0;
-        while (*p != '\0') { ++p; ++len; }
-        fwrite(&len, sizeof(int), 1, file);
-        // printf("len:\n");
+      int is_lit = jv_num_is_literal(*value);
+      // printf("is_lit: %d\n", is_lit);
+      fwrite(&is_lit, sizeof(int), 1, file);
+      // log_write_stdout_hex(&is_lit, sizeof(int), 1);
+      if (!is_lit) {
+        // printf("Writing value->u.number: %f\n", value->u.number);
+        fwrite(&value->u.number, sizeof(double), 1, file);
+        // log_write_stdout_hex(&value->u.number, sizeof(double), 1);
+      } else {
+        jvp_literal_number* lit = (jvp_literal_number*)value->u.ptr;
+        // printf("lit->refcnt.count:\n");
+        fwrite(&lit->refcnt.count, sizeof(int), 1, file);
+        // log_write_stdout_hex(&lit->refcnt.count, sizeof(int), 1);
+        // printf("lit->num_double:\n");
+        fwrite(&lit->num_double, sizeof(double), 1, file);
+        // log_write_stdout_hex(&lit->num_double, sizeof(double), 1);
+        // Check if literal_data is NULL and write a flag
+        int has_literal_data = (lit->literal_data != NULL) ? 1 : 0;
+        fwrite(&has_literal_data, sizeof(int), 1, file);
+        // printf("has_literal_data:\n");
+        // log_write_stdout_hex(&has_literal_data, sizeof(int), 1);
+        if (has_literal_data) {
+          char* p = lit->literal_data;
+          int len = 0;
+          while (*p != '\0') { ++p; ++len; }
+          fwrite(&len, sizeof(int), 1, file);
+          // printf("len:\n");
+          // log_write_stdout_hex(&len, sizeof(int), 1);
+          fwrite(lit->literal_data, len + 1, 1, file);
+          // printf("lit->literal_data: %s\n", lit->literal_data);
+        }
+        // char* p = lit->literal_data;
+        // int len = 0;
+        // while (*p != '\0') { ++p; ++len; }
+        // printf("len(literal_data): %d\n", len);
+        // fwrite(&len, sizeof(int), 1, file);
         // log_write_stdout_hex(&len, sizeof(int), 1);
-        fwrite(lit->literal_data, len + 1, 1, file);
-        // printf("lit->literal_data: %s\n", lit->literal_data);
-    }
-      // char* p = lit->literal_data;
-      // int len = 0;
-      // while (*p != '\0') { ++p; ++len; }
-      // printf("len(literal_data): %d\n", len);
-      // fwrite(&len, sizeof(int), 1, file);
-      // log_write_stdout_hex(&len, sizeof(int), 1);
-      // printf("literal_data: %s\n", lit->literal_data);
-      // fwrite(lit->literal_data, len+1, 1, file);
-      // log_write_stdout_hex(lit->literal_data, len+1, 1);
-      // printf("lit->num_decimal.digits: %d\n", lit->num_decimal.digits);
-      fwrite(&lit->num_decimal.digits, sizeof(int32_t), 1, file);
-      // log_write_stdout_hex(&lit->num_decimal.digits, sizeof(int32_t), 1);
-      // printf("lit->num_decimal.exponent: %d\n", lit->num_decimal.exponent);
-      fwrite(&lit->num_decimal.exponent, sizeof(int32_t), 1, file);
-      // log_write_stdout_hex(&lit->num_decimal.exponent, sizeof(int32_t), 1);
-      // printf("lit->num_decimal.bits: %d\n", lit->num_decimal.bits);
-      fwrite(&lit->num_decimal.bits, sizeof(uint8_t), 1, file);
-      // log_write_stdout_hex(&lit->num_decimal.bits, sizeof(uint8_t), 1);
-      // printf("lit->num_decimal.lsu[0]: %d\n", lit->num_decimal.lsu[0]);
-      fwrite(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1, file);
-      // log_write_stdout_hex(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1);
+        // printf("literal_data: %s\n", lit->literal_data);
+        // fwrite(lit->literal_data, len+1, 1, file);
+        // log_write_stdout_hex(lit->literal_data, len+1, 1);
+        // printf("lit->num_decimal.digits: %d\n", lit->num_decimal.digits);
+        fwrite(&lit->num_decimal.digits, sizeof(int32_t), 1, file);
+        // log_write_stdout_hex(&lit->num_decimal.digits, sizeof(int32_t), 1);
+        // printf("lit->num_decimal.exponent: %d\n", lit->num_decimal.exponent);
+        fwrite(&lit->num_decimal.exponent, sizeof(int32_t), 1, file);
+        // log_write_stdout_hex(&lit->num_decimal.exponent, sizeof(int32_t), 1);
+        // printf("lit->num_decimal.bits: %d\n", lit->num_decimal.bits);
+        fwrite(&lit->num_decimal.bits, sizeof(uint8_t), 1, file);
+        // log_write_stdout_hex(&lit->num_decimal.bits, sizeof(uint8_t), 1);
+        // printf("lit->num_decimal.lsu[0]: %d\n", lit->num_decimal.lsu[0]);
+        fwrite(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1, file);
+        // log_write_stdout_hex(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1);
+      }
       break;
     }
     case JV_KIND_OBJECT: {

@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   // Store exit data prior to freeing cjq_state
   int options = *cjq_state->options;
   int ret = *cjq_state->ret;
-  if (jq_util_input_errors(cjq_state->input_state) != 0)
+  if (cjq_state->input_state != NULL && jq_util_input_errors(cjq_state->input_state) != 0)
     ret = JQ_ERROR_SYSTEM;
   int last_result = *cjq_state->last_result;
   clean_up(cjq_state);
