@@ -506,6 +506,14 @@ void _init_jq_next(void* cjq_state) {
   assert(jv_get_kind(pcjq_state->jq->error) == JV_KIND_NULL);
 }
 
+static void _free_prev_input_val(jv* p) {
+  if (p) {
+    jv_free(*p);
+    free(p);
+    p = NULL;
+  }
+}
+
 void _get_next_input(void* cjq_state) {
   /**
    * Below should be equivalent logic to what happens
@@ -513,29 +521,49 @@ void _get_next_input(void* cjq_state) {
    * and start of while-loop in process()
   */
   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
+  
+  // Initialize value to prevent usage of uninitialized memory
+  jv value = jv_invalid();
+
   if (*pcjq_state->options & PROVIDE_NULL) {
+    _free_prev_input_val(pcjq_state->value);
+    pcjq_state->value = malloc(sizeof(jv));
+    if (!pcjq_state->value) {
+      perror("Failed to allocate memory for jv_null");
+      exit(EXIT_FAILURE);
+    }
     *pcjq_state->value = jv_null();
   } else {
     if (jq_util_input_errors(pcjq_state->input_state) == 0 &&
-        (jv_is_valid(*pcjq_state->value = jq_util_input_next_input(pcjq_state->input_state))) || 
-         jv_invalid_has_msg(jv_copy(*pcjq_state->value))) {
-          if (!jv_is_valid(*pcjq_state->value)) {
-            // Parse error
-            jv msg = jv_invalid_get_msg(*pcjq_state->value);
-            if (!(*pcjq_state->options & SEQ)) {
-              *pcjq_state->ret = JQ_ERROR_UNKNOWN;
-              fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
-              jv_free(msg);
-              exit(EXIT_FAILURE);
-            }
-            // --seq -> errors are not fatal
-            fprintf(stderr, "jq: ignoring parse error: %s\n", jv_string_value(msg));
-            jv_free(msg);
-          }
-      }
-      else {
+        (jv_is_valid(value = jq_util_input_next_input(pcjq_state->input_state)) || 
+         jv_invalid_has_msg(jv_copy(value)))) {
+      
+      _free_prev_input_val(pcjq_state->value);
+      pcjq_state->value = malloc(sizeof(jv));
+      if (!pcjq_state->value) {
+        perror("Failed to allocate memory for jv value");
+        jv_free(value);
         exit(EXIT_FAILURE);
       }
+      *pcjq_state->value = value;
+      if (!jv_is_valid(*pcjq_state->value)) {
+        // Parse error
+        jv msg = jv_invalid_get_msg(*pcjq_state->value);
+        if (!(*pcjq_state->options & SEQ)) {
+          *pcjq_state->ret = JQ_ERROR_UNKNOWN;
+          fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+          jv_free(msg);
+          jv_free(value);
+          exit(EXIT_FAILURE);
+        }
+        // --seq -> errors are not fatal
+        fprintf(stderr, "jq: ignoring parse error: %s\n", jv_string_value(msg));
+        jv_free(msg);
+      }
+    } else {
+      jv_free(value);
+      exit(EXIT_FAILURE);
+    }
   }
   *pcjq_state->ret = JQ_OK_NO_OUTPUT;
   jq_start(pcjq_state->jq, *pcjq_state->value, *pcjq_state->jq_flags);
@@ -549,10 +577,97 @@ void _update_result_state(void* cjq_state) {
   */
   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state; 
   if (!(*pcjq_state->options & PROVIDE_NULL)) {
-    if (*pcjq_state->ret <= 0 && *pcjq_state->ret != JQ_OK_NO_OUTPUT)
-      *pcjq_state->last_result = (*pcjq_state->ret != JQ_OK_NULL_KIND);
+    if (jv_is_valid(*pcjq_state->value)) {
+      if (*pcjq_state->ret <= 0 && *pcjq_state->ret != JQ_OK_NO_OUTPUT)
+        *pcjq_state->last_result = (*pcjq_state->ret != JQ_OK_NULL_KIND);
+    } else {
+      // Parse error
+      jv msg = jv_invalid_get_msg(*pcjq_state->value);
+      if (!(*pcjq_state->options & SEQ)) {
+        *pcjq_state->ret = JQ_ERROR_UNKNOWN;
+        fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+        jv_free(msg);
+        jv_free(*pcjq_state->value);
+        return;
+      }
+      // --seq -> errors are not fatal
+      fprintf(stderr, "jq: ignoring parse error: %s\n", jv_string_value(msg));
+      jv_free(msg);
+    }
   }
 }
+
+
+// void _get_next_input(void* cjq_state) {
+//   /**
+//    * Below should be equivalent logic to what happens
+//    * between if-else block where process() is called
+//    * and start of while-loop in process()
+//   */
+//   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
+//   if (*pcjq_state->options & PROVIDE_NULL) {
+//     pcjq_state->value = malloc(sizeof(jv_null()));
+//     *pcjq_state->value = jv_null();
+//   } else {
+//     jv value;
+//     if (jq_util_input_errors(pcjq_state->input_state) == 0 &&
+//         (jv_is_valid(value = jq_util_input_next_input(pcjq_state->input_state))) || 
+//          jv_invalid_has_msg(jv_copy(value))) {
+//           pcjq_state->value = malloc(sizeof(value));
+//           *pcjq_state->value = value;
+//           if (!jv_is_valid(*pcjq_state->value)) {
+//             // Parse error
+//             jv msg = jv_invalid_get_msg(*pcjq_state->value);
+//             if (!(*pcjq_state->options & SEQ)) {
+//               *pcjq_state->ret = JQ_ERROR_UNKNOWN;
+//               fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+//               jv_free(msg);
+//               exit(EXIT_FAILURE);
+//             }
+//             // --seq -> errors are not fatal
+//             fprintf(stderr, "jq: ignoring parse error: %s\n", jv_string_value(msg));
+//             jv_free(msg);
+//           }
+//       }
+//       else {
+//         exit(EXIT_FAILURE);
+//       }
+//   }
+//   *pcjq_state->ret = JQ_OK_NO_OUTPUT;
+//   jq_start(pcjq_state->jq, *pcjq_state->value, *pcjq_state->jq_flags);
+// }
+
+// void _update_result_state(void* cjq_state) {
+//   /**
+//    * Below should be equivalent logic to what happens
+//    * between return from process() and the end
+//    * of the if-else block where process() is called
+//   */
+//   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state; 
+//   if (!(*pcjq_state->options & PROVIDE_NULL)) {
+//     if (jv_is_valid(*pcjq_state->value)) {
+//       if (*pcjq_state->ret <= 0 && *pcjq_state->ret != JQ_OK_NO_OUTPUT)
+//         *pcjq_state->last_result = (*pcjq_state->ret != JQ_OK_NULL_KIND);
+//     } else {
+//       // Parse error
+//       jv msg = jv_invalid_get_msg(*pcjq_state->value);
+//       if (!(*pcjq_state->options & SEQ)) {
+//         *pcjq_state->ret = JQ_ERROR_UNKNOWN;
+//         fprintf(stderr, "jq: parse error: %s\n", jv_string_value(msg));
+//         jv_free(msg);
+//         jv_free(*pcjq_state->value);
+//         return;
+//       }
+//       // --seq -> errors are not fatal
+//       fprintf(stderr, "jq: ignoring parse error: %s\n", jv_string_value(msg));
+//       jv_free(msg);
+//     }
+//   }
+//   if (!pcjq_state->value) {
+//     jv_free(*pcjq_state->value);
+//     pcjq_state->value = NULL;
+//   }
+// }
 
 void _opcode_LOADK(void* cjq_state) { 
   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
@@ -1071,11 +1186,12 @@ void _opcode_BACKTRACK_PATH_END(void* cjq_state) {
  }
 
 void _opcode_CALL_BUILTIN(void* cjq_state) {
+  jv cfunc_input[MAX_CFUNCTION_ARGS];
   compiled_jq_state* pcjq_state = (compiled_jq_state*)cjq_state;
   lg_init(pcjq_state);
   int nargs = *pcjq_state->pc++;
   jv top = stack_pop(pcjq_state->jq);
-  jv *in = pcjq_state->cfunc_input;
+  jv *in = cfunc_input;
   in[0] = top;
   for (int i = 1; i < nargs; i++) {
     in[i] = stack_pop(pcjq_state->jq);
@@ -1168,7 +1284,7 @@ void _opcode_RET(void* cjq_state) {
     struct stack_pos spos = stack_get_pos(pcjq_state->jq);
     stack_push(pcjq_state->jq, jv_null());
     stack_save(pcjq_state->jq, pcjq_state->pc - 1, spos);
-    pcjq_state->result = malloc(sizeof(jv));
+    // pcjq_state->result = malloc(sizeof(jv));
     *pcjq_state->result = value;
     jq_print(cjq_state);
     return;

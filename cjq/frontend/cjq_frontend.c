@@ -161,8 +161,8 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   // uint16_t* ppc = malloc(sizeof(uint16_t));
   uint8_t* pfallthrough = malloc(sizeof(uint8_t)); *pfallthrough = 0;
   uint16_t* popcode = malloc(sizeof(uint16_t)); *popcode = -1;
-  jv *pcfunc_input = malloc(sizeof(jv)*MAX_CFUNCTION_ARGS);
-  jv* pvalue = malloc(sizeof(jv));
+  // jv *pcfunc_input = malloc(sizeof(jv)*MAX_CFUNCTION_ARGS);
+  // jv* pvalue = malloc(sizeof(jv));
 
   cjq_state->ret = pret; pret = NULL;
   cjq_state->jq_flags = pjq_flags; pjq_flags = NULL;
@@ -174,12 +174,12 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   cjq_state->pc = NULL;
   cjq_state->opcode = popcode; popcode = NULL;
   cjq_state->jq = jq; jq = NULL;
-  cjq_state->result = NULL;
+  cjq_state->result = malloc(sizeof(jv));
   cjq_state->backtracking = pbacktracking; pbacktracking = NULL;
   cjq_state->raising = praising; praising = NULL;
-  cjq_state->cfunc_input = pcfunc_input; pcfunc_input = NULL;
+  // cjq_state->cfunc_input = pcfunc_input; pcfunc_input = NULL;
   cjq_state->input_state = input_state; input_state = NULL;
-  cjq_state->value = pvalue; pvalue = NULL;
+  cjq_state->value = NULL;
 
   // if (input_state != NULL) {
   //   *pvalue = jq_util_input_next_input(input_state);
@@ -207,11 +207,19 @@ void cjq_free(compiled_jq_state *cjq_state) {
   free(cjq_state->options); cjq_state->options = NULL;
   free(cjq_state->dumpopts); cjq_state->dumpopts = NULL;
   free(cjq_state->last_result); cjq_state->last_result = NULL;
-  free(cjq_state->value); cjq_state->value = NULL;
+  if (cjq_state->value) {
+    if (!cjq_state->value->u.ptr) 
+      jv_free(*cjq_state->value);
+    free(cjq_state->value);
+    cjq_state->value = NULL;
+  }
+  // free(cjq_state->value); cjq_state->value = NULL;
+  // jv_free(*cjq_state->value); cjq_state->value = NULL;
   free(cjq_state->result); cjq_state->result = NULL;
   free(cjq_state->raising); cjq_state->raising = NULL;
   free(cjq_state->backtracking); cjq_state->backtracking = NULL;
-  free(cjq_state->cfunc_input); cjq_state->cfunc_input = NULL;
+  // free(cjq_state->cfunc_input); cjq_state->cfunc_input = NULL;
+  // jv_free(*cjq_state->cfunc_input); cjq_state->cfunc_input = NULL;
   free(cjq_state->fallthrough); cjq_state->fallthrough = NULL;
   free(cjq_state); cjq_state = NULL;
 }
@@ -557,26 +565,6 @@ static struct bytecode* get_deserialized_bc(int idx) {
 
 static struct bytecode* _deserialize_bc(FILE* file);
 
-// static struct bytecode* deserialize_bc_parent(FILE* file) {
-//     uint32_t value;
-//     fread(&value, sizeof(uint32_t), 1, file);
-//     if (value == 0xFFFFFFFF) {
-//         return NULL; // NULL pointer sentinel
-//     } else if (value == 0xFFFFFFFD) {
-//         int idx;
-//         fread(&idx, sizeof(int), 1, file);
-//         if (idx < 0 || idx >= num_deserialized_bcs) {
-//             printf("Error: invalid parent index\n");
-//             exit(EXIT_FAILURE);
-//         }
-//         return deserialized_bcs[idx];
-//     } else {
-//         // TODO: Should we ever get here?
-//         fseek(file, -sizeof(uint32_t), SEEK_CUR); // Rewind
-//         return _deserialize_bc(file);
-//     }
-// }
-
 static struct bytecode* deserialize_bc_parent(FILE* file) {
     uint32_t value;
     fread(&value, sizeof(uint32_t), 1, file);
@@ -597,18 +585,6 @@ static struct bytecode* deserialize_bc_parent(FILE* file) {
     }
 }
 
-// static struct bytecode* deserialize_bc_ptr(FILE* file) {
-//   uint32_t null_value;
-//   fread(&null_value, sizeof(uint32_t), 1, file);
-//   if (null_value == 0xFFFFFFFF || null_value == 0xFFFFFFFE) {
-//       printf("Deserializing null_value: %x\n", null_value);
-//       log_write_stdout_hex(&null_value, sizeof(uint32_t), 1);
-//       return NULL;
-//   } else {
-//       fseek(file, -sizeof(uint32_t), SEEK_CUR); // Move file pointer back
-//       return _deserialize_bc(file);
-//   }
-// }
 
 static struct bytecode* _deserialize_bc(FILE* file) {
   /**
@@ -642,6 +618,11 @@ static struct bytecode* _deserialize_bc(FILE* file) {
   // log_write_stdout_hex(&bc->codelen, sizeof(bc->codelen), 1);
   
   bc->code = (uint16_t*)malloc(sizeof(uint16_t) * bc->codelen);
+  if (!bc->code) {
+      perror("Failed to allocate memory for bytecode code");
+      free(bc); // Free the bytecode struct to avoid a leak
+      exit(EXIT_FAILURE);
+  }
   fread(bc->code, sizeof(uint16_t), bc->codelen, file);
   // printf("Deserialized bc->code\n");
   // log_write_stdout_hex(bc->code, sizeof(uint16_t) * bc->codelen, 1);
@@ -673,6 +654,12 @@ static struct bytecode* _deserialize_bc(FILE* file) {
   // log_write_stdout_hex(&bc->nsubfunctions, sizeof(bc->nsubfunctions), 1);
   if (bc->nsubfunctions > 0) {
     bc->subfunctions = malloc(bc->nsubfunctions * sizeof(struct bytecode*));
+    if (!bc->subfunctions) {
+        perror("Failed to allocate memory for subfunctions");
+        free(bc->code); // Free allocated memory for code
+        free(bc); // Free the bytecode struct to avoid a leak
+        exit(EXIT_FAILURE);
+    }
     if (!bc->subfunctions) {
         printf("Memory allocation failed\n");
         exit(EXIT_FAILURE);
@@ -1118,7 +1105,7 @@ int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
       program_arguments = jv_object_set(program_arguments,
                                         jv_string("JQ_BUILD_CONFIGURATION"),
                                         jv_string(JQ_CONFIG)); /* named arguments */
-    // compiled = jq_compile_args(jq, jv_string_value(data), jv_copy(program_arguments));
+    compiled = jq_compile_args(jq, jv_string_value(data), jv_copy(program_arguments));
     free(program_origin);
     jv_free(data);
   } else {
@@ -1130,17 +1117,17 @@ int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
       program_arguments = jv_object_set(program_arguments,
                                         jv_string("JQ_BUILD_CONFIGURATION"),
                                         jv_string(JQ_CONFIG)); /* named arguments */
-    // compiled = jq_compile_args(jq, program, jv_copy(program_arguments));
+    compiled = jq_compile_args(jq, program, jv_copy(program_arguments));
   }
   // if (!compiled){
   //   ret = JQ_ERROR_COMPILE;
   //   goto out;
   // }
   
-  struct bytecode* bc = deserialize_bc("serialize.bin");
-  jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
-  _jq_reset(jq);
-  jq->bc = bc;
+  // struct bytecode* bc = deserialize_bc("serialize.bin");
+  // jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
+  // _jq_reset(jq);
+  // jq->bc = bc;
   if (options & DUMP_DISASM) {
     jq_dump_disassembly(jq, 0);
     printf("\n");  
@@ -1208,15 +1195,5 @@ out:
   jv_free(ARGS);
   jv_free(program_arguments);
 
-  // if (options & EXIT_STATUS) {
-  //   if (ret != JQ_OK_NO_OUTPUT)
-  //     jq_exit_with_status(ret);
-  //   else
-  //     switch (last_result) {
-  //       case -1: jq_exit_with_status(JQ_OK_NO_OUTPUT);
-  //       case  0: jq_exit_with_status(JQ_OK_NULL_KIND);
-  //       default: jq_exit_with_status(JQ_OK);
-  //     }
-  // } else
   return 0;
 }

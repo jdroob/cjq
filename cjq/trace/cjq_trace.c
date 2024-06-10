@@ -167,24 +167,16 @@ static void _serialize_jv(FILE* file, const jv* value);
 static void serialize_jv_object(FILE* file, jvp_object* obj, int size) {
   for (int i = 0; i < size; ++i) {
     struct object_slot* slot = &obj->elements[i];
-    // printf("slot->next:\n");
     fwrite(&slot->next, sizeof(int), 1, file);
-    // log_write_stdout_hex(&slot->next, sizeof(int), 1);
-    // printf("slot->hash:\n");
     fwrite(&slot->hash, sizeof(uint32_t), 1, file);
-    // log_write_stdout_hex(&slot->hash, sizeof(uint32_t), 1);
-    // printf("_serialize_jv(file, &slot->string);\n");
     _serialize_jv(file, &slot->string); // Serialize the key (string)
-    // printf("_serialize_jv(file, &slot->value);\n");
     _serialize_jv(file, &slot->value);  // Serialize the value
   }
 }
 
 static void serialize_jv_array(FILE* file, jvp_array* arr, unsigned size) {
-  // printf("array alloc_length: %u\n", size);
   for (int i = 0; i < size; ++i) {
       jv* p = &arr->elements[i];
-      // printf("_serialize_jv(file, p);\n");
       _serialize_jv(file, p); // Serialize the ith element
   }
 }
@@ -195,75 +187,36 @@ static void _serialize_jv(FILE* file, const jv* value) {
     exit(EXIT_FAILURE);
   }
 
-  // unsigned short kind = 0x7F & value->kind_flags;   // Flip bit 7 to zero - need this to compare to enums properly
   jv_kind kind = jv_get_kind(*value);
-  // printf("value->kind_flags:\n");
   fwrite(&value->kind_flags, sizeof(value->kind_flags), 1, file);
-  // log_write_stdout_hex(&value->kind_flags, sizeof(value->kind_flags), 1);
-  // printf("value->pad_:\n");
   fwrite(&value->pad_, sizeof(value->pad_), 1, file);
-  // log_write_stdout_hex(&value->pad_, sizeof(value->pad_), 1);
-  // printf("value->offset:\n");
   fwrite(&value->offset, sizeof(value->offset), 1, file);
-  // log_write_stdout_hex(&value->offset, sizeof(value->offset), 1);
-  // printf("value->size:\n");
   fwrite(&value->size, sizeof(value->size), 1, file);
-  // log_write_stdout_hex(&value->size, sizeof(value->size), 1);
 
   switch (kind) {
     case JV_KIND_NUMBER: {
       int is_lit = jv_num_is_literal(*value);
-      // printf("is_lit: %d\n", is_lit);
       fwrite(&is_lit, sizeof(int), 1, file);
-      // log_write_stdout_hex(&is_lit, sizeof(int), 1);
       if (!is_lit) {
-        // printf("Writing value->u.number: %f\n", value->u.number);
         fwrite(&value->u.number, sizeof(double), 1, file);
-        // log_write_stdout_hex(&value->u.number, sizeof(double), 1);
       } else {
         jvp_literal_number* lit = (jvp_literal_number*)value->u.ptr;
-        // printf("lit->refcnt.count:\n");
         fwrite(&lit->refcnt.count, sizeof(int), 1, file);
-        // log_write_stdout_hex(&lit->refcnt.count, sizeof(int), 1);
-        // printf("lit->num_double:\n");
         fwrite(&lit->num_double, sizeof(double), 1, file);
-        // log_write_stdout_hex(&lit->num_double, sizeof(double), 1);
         // Check if literal_data is NULL and write a flag
         int has_literal_data = (lit->literal_data != NULL) ? 1 : 0;
         fwrite(&has_literal_data, sizeof(int), 1, file);
-        // printf("has_literal_data:\n");
-        // log_write_stdout_hex(&has_literal_data, sizeof(int), 1);
         if (has_literal_data) {
           char* p = lit->literal_data;
           int len = 0;
           while (*p != '\0') { ++p; ++len; }
           fwrite(&len, sizeof(int), 1, file);
-          // printf("len:\n");
-          // log_write_stdout_hex(&len, sizeof(int), 1);
           fwrite(lit->literal_data, len + 1, 1, file);
-          // printf("lit->literal_data: %s\n", lit->literal_data);
         }
-        // char* p = lit->literal_data;
-        // int len = 0;
-        // while (*p != '\0') { ++p; ++len; }
-        // printf("len(literal_data): %d\n", len);
-        // fwrite(&len, sizeof(int), 1, file);
-        // log_write_stdout_hex(&len, sizeof(int), 1);
-        // printf("literal_data: %s\n", lit->literal_data);
-        // fwrite(lit->literal_data, len+1, 1, file);
-        // log_write_stdout_hex(lit->literal_data, len+1, 1);
-        // printf("lit->num_decimal.digits: %d\n", lit->num_decimal.digits);
         fwrite(&lit->num_decimal.digits, sizeof(int32_t), 1, file);
-        // log_write_stdout_hex(&lit->num_decimal.digits, sizeof(int32_t), 1);
-        // printf("lit->num_decimal.exponent: %d\n", lit->num_decimal.exponent);
         fwrite(&lit->num_decimal.exponent, sizeof(int32_t), 1, file);
-        // log_write_stdout_hex(&lit->num_decimal.exponent, sizeof(int32_t), 1);
-        // printf("lit->num_decimal.bits: %d\n", lit->num_decimal.bits);
         fwrite(&lit->num_decimal.bits, sizeof(uint8_t), 1, file);
-        // log_write_stdout_hex(&lit->num_decimal.bits, sizeof(uint8_t), 1);
-        // printf("lit->num_decimal.lsu[0]: %d\n", lit->num_decimal.lsu[0]);
         fwrite(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1, file);
-        // log_write_stdout_hex(&lit->num_decimal.lsu[0], sizeof(uint16_t), 1);
       }
       break;
     }
@@ -272,60 +225,33 @@ static void _serialize_jv(FILE* file, const jv* value) {
        * See jv.c, jvp_object_new() for justificaiton of alignment
       */
       jvp_object* obj = (jvp_object*)value->u.ptr;
-      // printf("obj->refcnt.count:\n");
       fwrite(&obj->refcnt.count, sizeof(int), 1, file);
-      // log_write_stdout_hex(&obj->refcnt.count, sizeof(int), 1);
-      // printf("calling serialize_jv_object...\n");
       serialize_jv_object(file, obj, value->size);
       fwrite(&obj->next_free, sizeof(int), 1, file);
-      // printf("obj->next_free:\n");
-      // log_write_stdout_hex(&obj->next_free, sizeof(int), 1);
       int* hashbuckets = (int*)(&obj->elements[value->size]);
       for (int i=0; i<value->size*2; ++i) {
         fwrite(&hashbuckets[i], sizeof(int), 1, file);
-        // printf("hashbuckets[%d]:\n", i);
-        // log_write_stdout_hex(&hashbuckets[i], sizeof(int), 1);
       }
       break;
     }
     case JV_KIND_ARRAY: {
       jvp_array* arr = (jvp_array*)value->u.ptr;
-      // printf("Writing arr->alloc_length so deserialize_jv can know how much mem to alloc\n");
       fwrite(&arr->alloc_length, sizeof(int), 1, file);   // So deserialize() can determine how much memory to allocate
-      // log_write_stdout_hex(&arr->alloc_length, sizeof(int), 1);
-      // printf("arr->refcnt.count:\n");
       fwrite(&arr->refcnt.count, sizeof(int), 1, file);
-      // log_write_stdout_hex(&arr->refcnt.count, sizeof(int), 1);
-      // printf("arr->length:\n");
       fwrite(&arr->length, sizeof(int), 1, file);
-      // log_write_stdout_hex(&arr->length, sizeof(int), 1);
-      // printf("arr->alloc_length:\n");
       fwrite(&arr->alloc_length, sizeof(arr->alloc_length), 1, file);
-      // log_write_stdout_hex(&arr->alloc_length, sizeof(int), 1);
-      // printf("calling serialize_jv_array...\n");
       serialize_jv_array(file, arr, arr->length);
       break;
     }
     case JV_KIND_STRING: {
       jvp_string* str = (jvp_string*)value->u.ptr;
-      // printf("Writing str->alloc_length so deserialize_jv can know how much mem to alloc\n");
       fwrite(&str->alloc_length, sizeof(int), 1, file);   // So deserialize() can determine how much memory to allocate
-      // printf("str->refcnt.count:\n");
       fwrite(&str->refcnt.count, sizeof(int), 1, file);
-      // log_write_stdout_hex(&str->refcnt.count, sizeof(int), 1);
-      // printf("str->hash:\n");
       fwrite(&str->hash, sizeof(uint32_t), 1, file);
-      // log_write_stdout_hex(&str->hash, sizeof(uint32_t), 1);
-      // printf("str->alloc_length:\n");
       fwrite(&str->alloc_length, sizeof(uint32_t), 1, file);
-      // log_write_stdout_hex(&str->alloc_length, sizeof(uint32_t), 1);
-      // printf("str->length_hashed:\n");
       fwrite(&str->length_hashed, sizeof(uint32_t), 1, file);
-      // log_write_stdout_hex(&str->length_hashed, sizeof(uint32_t), 1);
       size_t len = str->alloc_length;  
-      // printf("str->data: %s, len: %zu \n", str->data, len+1);
       fwrite(&str->data, len+1, 1, file);
-      // log_write_stdout_hex(&str->data, len+1, 1);
       break;
     }
     case JV_KIND_INVALID: {
@@ -333,16 +259,11 @@ static void _serialize_jv(FILE* file, const jv* value) {
       
       if (inv == NULL) {
           int is_null = 1;
-          fwrite(&is_null, sizeof(int), 1, file);
-          // printf("inv is NULL\n");
-          log_write_stdout_hex(&is_null, sizeof(int), 1);
+          fwrite(&is_null, sizeof(int), 1, file);;
       } else {
           int is_null = 0;
           fwrite(&is_null, sizeof(int), 1, file);
-          // printf("inv->refcnt.count:\n");
           fwrite(&inv->refcnt.count, sizeof(int), 1, file);
-          // log_write_stdout_hex(&inv->refcnt.count, sizeof(int), 1);
-          // printf("serializing inv->errmsg:\n");
           _serialize_jv(file, &inv->errmsg);
       }
 
@@ -369,9 +290,7 @@ static void serialize_jv(const char* filename, jv* value) {
 }
 
 static void _serialize_sym_table(FILE* file, struct symbol_table* table) {
-  // printf("table->ncfunctions:\n");
   fwrite(&table->ncfunctions, sizeof(int), 1, file);
-  // log_write_stdout_hex(&table->ncfunctions, sizeof(table->ncfunctions), 1);
 
   _serialize_jv(file, &table->cfunc_names);
 
@@ -379,20 +298,14 @@ static void _serialize_sym_table(FILE* file, struct symbol_table* table) {
     int len = 0;
     char *p = (char*)table->cfunctions[i].name;
     while(*p != '\0') { ++len; p++; }
-    // printf("len(table->cfunctions[%d].name):\n", i);
     fwrite(&len, sizeof(int), 1, file);
-    // log_write_stdout_hex(&len, sizeof(int), 1);
 
     // TODO: Probably don't need a loop for this
     for (int j=0; j<len+1; ++j) {
-      // printf("table->cfunctions[%d].name[%d]:\n", i, j);
       fwrite(&table->cfunctions[i].name[j], sizeof(char), 1, file);
-      // log_write_stdout_hex(&table->cfunctions[i].name[j], sizeof(char), 1);
     }
 
-    // printf("table->cfunctions[%d].nargs:\n", i);
     fwrite(&table->cfunctions[i].nargs, sizeof(int), 1, file);
-    // log_write_stdout_hex(&table->cfunctions[i].nargs, sizeof(int), 1);
   }
 }
 
@@ -445,24 +358,20 @@ static void serialize_bc_parent(FILE* file, const struct bytecode* ptr) {
   if (ptr) {
     if (is_bc_serialized(ptr)) {
       uint32_t parent_flag = 0xFFFFFFFD;
-      // printf("parent_flag: %x\n", parent_flag);
       fwrite(&parent_flag, sizeof(uint32_t), 1, file);
       int idx = get_bc_idx(ptr);
       if (idx == -1) {
         printf("Error: could not find parent idx\n");
         exit(EXIT_FAILURE);
       }
-      // printf("Serializing parent index: %d\n", idx);
       fwrite(&idx, sizeof(int), 1, file);
     } else {
       // TODO: Should we ever get here?
-      // printf("calling _serialize_bc from serialize_bc_parent...\n");
       _serialize_bc(file, ptr);
     }
   } else {
     // If ptr is NULL, write a sentinel value to indicate null pointer
     uint32_t null_value = 0xFFFFFFFF;
-    // printf("null_value: %x\n", null_value);
     fwrite(&null_value, sizeof(uint32_t), 1, file);
   }
 }
@@ -471,9 +380,7 @@ static void _serialize_bc(FILE* file, const struct bytecode* bc) {
   if (!bc) {
     // Serialize a sentinel value to indicate a null pointer
     uint32_t null_value = 0xFFFFFFFF;
-    // printf("Serializing null_value: %x\n", null_value);
     fwrite(&null_value, sizeof(uint32_t), 1, file);
-    // log_write_stdout_hex(&null_value, sizeof(uint32_t), 1);
     return;
   }
 
@@ -487,38 +394,22 @@ static void _serialize_bc(FILE* file, const struct bytecode* bc) {
   // Mark this bytecode struct as serialized
   add_serialized_bc(bc);
 
-  // printf("bc->codelen: %u\n", bc->codelen);
   fwrite(&bc->codelen, sizeof(int), 1, file);   // Serialize first so deserialize_bc knows how much memory to alloc
-  // log_write_stdout_hex(&bc->codelen, sizeof(bc->codelen), 1);
-  // printf("bc->code:\n");
   fwrite(bc->code, sizeof(uint16_t), bc->codelen, file);
-  // log_write_stdout_hex(bc->code, sizeof(uint16_t), bc->codelen);
-  // printf("bc->nlocals:\n");
   fwrite(&bc->nlocals, sizeof(int), 1, file);
-  // log_write_stdout_hex(&bc->nlocals, sizeof(int), 1);
-  // printf("bc->nclosures:\n");
   fwrite(&bc->nclosures, sizeof(int), 1, file);
-  // log_write_stdout_hex(&bc->nclosures, sizeof(int), 1);
-  // printf("calling _serialize_jv...\n");
   _serialize_jv(file, &bc->constants);
-  // printf("calling _serialize_sym_table...\n");
   _serialize_sym_table(file, bc->globals);
 
   // Serialize the parent pointer
-  // printf("calling _serialize_bc_parent...\n");
   serialize_bc_parent(file, bc->parent);
 
   // Serialize subfunctions recursively
-  // printf("Serializing bc->nsubfunctions: %d\n", bc->nsubfunctions);
   fwrite(&bc->nsubfunctions, sizeof(int), 1, file);
   for (int i = 0; i < bc->nsubfunctions; ++i) {
-      // printf("Serializing subfunction %d\n", i);
       _serialize_bc(file, bc->subfunctions[i]);
   }
-
-  // printf("calling _serialize_jv...\n");
   _serialize_jv(file, &bc->debuginfo);
-  // printf("serialized bc->debuginfo\n");
 }
 
 static void serialize_bc(const char* filename, const struct bytecode* bc) {
@@ -690,8 +581,6 @@ int cjq_trace(int argc, char* argv[], trace* opcodes) {
   int jq_next_entry_list_len = 0;
   int jq_halt_loc = -1;
   // TODO: JOHN: Make this dynamic
-  // compiled_jq_state* cjq_state_list = malloc(sizeof(compiled_jq_state)*1000);
-  // int cjq_state_list_len = 0;
   uint16_t* jq_next_input_list = malloc(sizeof(uint16_t)*1000); // TODO: Add to trace struct
   for (int i = 0; i < 1000; ++i) { jq_next_input_list[i] = -1; }   // TODO: Add to trace struct
   int jq_next_input_list_len = 0; // TODO: Add to trace struct
@@ -1076,6 +965,10 @@ int cjq_trace(int argc, char* argv[], trace* opcodes) {
                                         jv_string(JQ_CONFIG)); /* named arguments */
     compiled = jq_compile_args(jq, program, jv_copy(program_arguments));
   }
+
+  reset_serialized_bcs();
+  serialize_bc("serialize.bin", jq->bc);
+  
   if (!compiled){
     ret = JQ_ERROR_COMPILE;
     goto out;
@@ -1112,9 +1005,6 @@ int cjq_trace(int argc, char* argv[], trace* opcodes) {
   // Tracing run
   if (options & PROVIDE_NULL) {
     jv njv = jv_null();
-    // cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &njv, jq);
-    // cjq_state_list[cjq_state_list_len] = *cjq_state;
-    // ++(cjq_state_list_len);
     jq_next_input_list[jq_next_input_list_len++] = opcode_list_len;
     ++jq_next_input_list_len;
     ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, 
@@ -1125,9 +1015,6 @@ int cjq_trace(int argc, char* argv[], trace* opcodes) {
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
-        // cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, &value, jq);
-        // cjq_state_list[cjq_state_list_len] = *cjq_state;
-        // ++(cjq_state_list_len);
         jq_next_input_list[jq_next_input_list_len++] = opcode_list_len;
         ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, 
                       &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
@@ -1163,41 +1050,6 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
-  // jv obj = jv_object_set(jv_object(), jv_string("key"), jv_object_set(jv_object(), jv_string("nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_key"), jv_object_set(jv_object(), jv_string("nested_nested_nested_key"), jv_number(69)))));
-  // serialize_jv("test_serialize.bin", &obj);
-  // jv_dump(obj, JV_PRINT_PRETTY); printf("\n\n");
-
-  reset_serialized_bcs();
-  serialize_bc("serialize.bin", jq->bc);
-  // serialize_sym_table("test_serialize_st.bin", jq->bc->globals);
-  // jv arr = jv_array();
-  // arr = jv_array_append(arr, jv_number(42));
-  // arr = jv_array_append(arr, jv_number(19));
-  // arr = jv_array_append(arr, obj);
-  // jv arr2 = jv_array();
-  // arr2 = jv_array_append(arr2, arr);
-  // jv arr3 = jv_array();
-  // arr3 = jv_array_append(arr3, arr2);
-  // serialize_jv("test_serialize.bin", &arr3);
-  // jv_dump(arr3, JV_PRINT_PRETTY); printf("\n\n");
-  // jv str = jv_string("yo");
-  // serialize_jv("test_serialize.bin", &str);
-  // jv_dump(str, JV_PRINT_PRETTY); printf("\n\n");
-  // jv jvnum = jv_number(69);
-  // serialize_jv("test_serialize.bin", &jvnum);
-  // jv_dump(jvnum, JV_PRINT_PRETTY); printf("\n\n");
-  // jv jvt = jv_true();
-  // serialize_jv("test_serialize.bin", &jvt);
-  // jv_dump(jvt, JV_PRINT_PRETTY); printf("\n\n");
-  // jv jvf = jv_false();
-  // serialize_jv("test_serialize.bin", &jvf);
-  // jv_dump(jvf, JV_PRINT_PRETTY); printf("\n\n");
-  // jv jvnull = jv_null();
-  // serialize_jv("test_serialize.bin", &jvnull);
-  // jv_dump(jvnull, JV_PRINT_PRETTY); printf("\n\n");
-  // jv jvinv = jv_invalid();
-  // serialize_jv("test_serialize.bin", &jvinv);
-  // jv_dump(jvinv, JV_PRINT_PRETTY); printf("\n\n");
 
   trace_init(opcodes, opcode_list, opcode_list_len, jq_next_entry_list, 
              jq_next_entry_list_len, jq_halt_loc, jq_next_input_list, 
@@ -1207,7 +1059,6 @@ out:
   jv_free(program_arguments);
   jq_util_input_free(&input_state);
   jq_teardown(&jq);
-  // free(cjq_state_list);
 
   if (options & EXIT_STATUS) {
     if (ret != JQ_OK_NO_OUTPUT)
