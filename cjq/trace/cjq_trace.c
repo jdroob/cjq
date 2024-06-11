@@ -399,10 +399,12 @@ static void _serialize_bc(FILE* file, const struct bytecode* bc) {
   fwrite(&bc->nlocals, sizeof(int), 1, file);
   fwrite(&bc->nclosures, sizeof(int), 1, file);
   _serialize_jv(file, &bc->constants);
-  _serialize_sym_table(file, bc->globals);
-
+  
   // Serialize the parent pointer
   serialize_bc_parent(file, bc->parent);
+
+  if (!bc->parent)
+    _serialize_sym_table(file, bc->globals);
 
   // Serialize subfunctions recursively
   fwrite(&bc->nsubfunctions, sizeof(int), 1, file);
@@ -968,7 +970,7 @@ int cjq_trace(int argc, char* argv[], trace* opcodes) {
 
   reset_serialized_bcs();
   serialize_bc("serialize.bin", jq->bc);
-  
+
   if (!compiled){
     ret = JQ_ERROR_COMPILE;
     goto out;

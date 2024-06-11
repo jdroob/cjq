@@ -1896,4 +1896,5 @@ void get_cbindings(struct symbol_table* table) {
   block builtins_c = gen_noop();
   builtins_c = gen_cbinding(function_list, sizeof(function_list)/sizeof(function_list[0]), builtins_c);
   bind_cfunctions(&builtins_c, table);
+  block_free(builtins_c);
 }

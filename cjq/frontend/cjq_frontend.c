@@ -224,6 +224,13 @@ void cjq_free(compiled_jq_state *cjq_state) {
   free(cjq_state); cjq_state = NULL;
 }
 
+void free_cfunction_names(void* bc) {
+  struct bytecode* pbc = (struct bytecode*)bc;
+  for (int i=0; i<pbc->globals->ncfunctions; ++i) {
+    free((void*)pbc->globals->cfunctions[i].name);
+  }
+}
+
 // DEBUGGING
 static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
   const unsigned char *byte_ptr = (const unsigned char *)ptr;
@@ -237,9 +244,9 @@ static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
   fflush(stdout);
 }
 
-static jv* _deserialize_jv(FILE *file);
+static void _deserialize_jv(FILE* file, jv* value);
 
-static void deserialize_jv_object(FILE *file, jvp_object* obj, int size) {
+static void deserialize_jv_object(FILE* file, jvp_object* obj, int size) {
   // jvp_object* obj = malloc(sizeof(jvp_object) + sizeof(struct object_slot) * size + sizeof(int) * size * 2);
   // if (!obj) {
   //     perror("Failed to allocate memory for jvp_object");
@@ -255,9 +262,9 @@ static void deserialize_jv_object(FILE *file, jvp_object* obj, int size) {
       fread(&slot->hash, sizeof(uint32_t), 1, file);
       // log_write_stdout_hex(&slot->hash, sizeof(uint32_t), 1);
       // printf("slot->string = _deserialize_jv(file);\n");
-      slot->string = *_deserialize_jv(file); // Deserialize the key (string)
+      _deserialize_jv(file, &slot->string); // Deserialize the key (string)
       // printf("slot->value = _deserialize_jv(file);\n");
-      slot->value = *_deserialize_jv(file);  // Deserialize the value
+      _deserialize_jv(file, &slot->value);  // Deserialize the value
   }
   // return obj;
 }
@@ -265,13 +272,12 @@ static void deserialize_jv_object(FILE *file, jvp_object* obj, int size) {
 static void deserialize_jv_array(FILE *file, int size, jvp_array* arr) {
   for (int i = 0; i < size; ++i) {
       // printf("_deserialize_jv(file);\n");
-      arr->elements[i] = *_deserialize_jv(file); // Deserialize the ith element
+      _deserialize_jv(file, &arr->elements[i]); // Deserialize the ith element
   }
   // TODO: Might need to adjust file pointer?
 }
 
-static jv* _deserialize_jv(FILE* file) {
-  jv* value = malloc(sizeof(jv));
+static void _deserialize_jv(FILE* file, jv* value) {
   if (!value) {
       perror("Failed to allocate memory for jv");
       exit(EXIT_FAILURE);
@@ -464,14 +470,7 @@ static jv* _deserialize_jv(FILE* file) {
           // log_write_stdout_hex(&inv->refcnt.count, sizeof(int), 1);
 
           // printf("deserializing inv->errmsg:\n");
-          jv* errmsg = _deserialize_jv(file);
-          if (!errmsg) {
-              perror("Failed to deserialize inv->errmsg");
-              free(value->u.ptr);
-              exit(EXIT_FAILURE);
-          }
-          inv->errmsg = *errmsg;
-          free(errmsg);
+          _deserialize_jv(file, &inv->errmsg);
       }
       break;
     }
@@ -485,7 +484,6 @@ static jv* _deserialize_jv(FILE* file) {
       break;
     }
   }
-  return value;
 }
 
 static jv* deserialize_jv(const char *filename) {
@@ -494,7 +492,8 @@ static jv* deserialize_jv(const char *filename) {
       perror("Failed to open file for reading");
       return NULL;
   }
-  jv* v = _deserialize_jv(file);
+  jv* v = malloc(sizeof(jv)); 
+  _deserialize_jv(file, v);
   fclose(file);
   return v;
 }
@@ -504,10 +503,7 @@ static struct symbol_table* _deserialize_sym_table(FILE* file) {
   fread(&table->ncfunctions, sizeof(int), 1, file);
   // printf("table->ncfunctions: %d\n", table->ncfunctions);
 
-  jv* cfunc_names = _deserialize_jv(file);
-  table->cfunc_names = *cfunc_names;
-  free(cfunc_names); cfunc_names = NULL;
-
+  _deserialize_jv(file, &table->cfunc_names);
   table->cfunctions = jv_mem_calloc(table->ncfunctions, sizeof(struct cfunction));
   for (int i=0; i<table->ncfunctions; ++i) {
     int len;
@@ -549,6 +545,16 @@ static struct symbol_table* deserialize_sym_table(const char *filename) {
 
 static struct bytecode* deserialized_bcs[MAX_DESERIALIZED_BCS];
 static int num_deserialized_bcs = 0;
+
+static struct symbol_table* sym = NULL;
+
+static void _set_sym(struct symbol_table* s) {
+  sym = s;
+}
+
+static struct symbol_table* _get_sym() {
+  return sym;
+}
 
 static void add_deserialized_bc(struct bytecode* bc) {
     if (num_deserialized_bcs < MAX_DESERIALIZED_BCS) {
@@ -636,17 +642,24 @@ static struct bytecode* _deserialize_bc(FILE* file) {
   // log_write_stdout_hex(&bc->nclosures, sizeof(bc->nclosures), 1);
   
   // printf("Calling _deserialize_jv...\n");
-  bc->constants = *_deserialize_jv(file);
+  _deserialize_jv(file, &bc->constants);
   // printf("Deserialized bc->constants\n");
   
-  // printf("Calling _deserialize_sym_table...\n");
-  bc->globals = _deserialize_sym_table(file);
-  // printf("Deserialized bc->globals\n");
-
   // Deserialize parent pointer
   // printf("Calling deserialize_bc_parent...\n");
   bc->parent = deserialize_bc_parent(file);
   // printf("Deserialized parent pointer\n");
+  
+  // printf("Calling _deserialize_sym_table...\n");
+  if (!bc->parent) {
+    bc->globals = _deserialize_sym_table(file);
+    _set_sym(bc->globals);
+  }
+  else {
+    bc->globals = _get_sym();
+  }
+  // printf("Deserialized bc->globals\n");
+
 
   // Deserialize subfunctions recursively
   fread(&bc->nsubfunctions, sizeof(int), 1, file);
@@ -673,7 +686,7 @@ static struct bytecode* _deserialize_bc(FILE* file) {
   }
 
   // printf("Calling _deserialize_jv for bc->debuginfo...\n");
-  bc->debuginfo = *_deserialize_jv(file);
+  _deserialize_jv(file, &bc->debuginfo);
   // printf("Deserialized bc->debuginfo\n");
 
   return bc;
@@ -1105,7 +1118,7 @@ int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
       program_arguments = jv_object_set(program_arguments,
                                         jv_string("JQ_BUILD_CONFIGURATION"),
                                         jv_string(JQ_CONFIG)); /* named arguments */
-    compiled = jq_compile_args(jq, jv_string_value(data), jv_copy(program_arguments));
+    // compiled = jq_compile_args(jq, jv_string_value(data), jv_copy(program_arguments));
     free(program_origin);
     jv_free(data);
   } else {
@@ -1117,17 +1130,17 @@ int cjq_parse(int argc, char* argv[], compiled_jq_state *cjq_state) {
       program_arguments = jv_object_set(program_arguments,
                                         jv_string("JQ_BUILD_CONFIGURATION"),
                                         jv_string(JQ_CONFIG)); /* named arguments */
-    compiled = jq_compile_args(jq, program, jv_copy(program_arguments));
+    // compiled = jq_compile_args(jq, program, jv_copy(program_arguments));
   }
   // if (!compiled){
   //   ret = JQ_ERROR_COMPILE;
   //   goto out;
   // }
   
-  // struct bytecode* bc = deserialize_bc("serialize.bin");
-  // jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
-  // _jq_reset(jq);
-  // jq->bc = bc;
+  struct bytecode* bc = deserialize_bc("serialize.bin");
+  jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
+  _jq_reset(jq);
+  jq->bc = bc;
   if (options & DUMP_DISASM) {
     jq_dump_disassembly(jq, 0);
     printf("\n");  

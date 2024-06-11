@@ -18,6 +18,7 @@ extern void jq_program();
 
 void clean_up(compiled_jq_state* cjq_state) {
     jq_util_input_free(&(cjq_state->input_state));
+    free_cfunction_names(cjq_state->jq->bc);
     jq_teardown(&(cjq_state->jq));
     cjq_free(cjq_state);
 }
