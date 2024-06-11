@@ -23,7 +23,7 @@
 #include "../jq/src/util.h"
 #include "../jq/src/linker.h"
 
-#include "../frontend/cjq_frontend.h"
+#include "../runtime/cjq_runtime.h"
 
 #define ON_BACKTRACK(op) ((op)+NUM_OPCODES)
 

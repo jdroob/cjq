@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
-#include "../clib/lib.h"
 #include "../jq/src/compile.h"
 #include "../jq/src/jv.h"
 #include "../jq/src/jq.h"
@@ -21,6 +19,7 @@ void clean_up(trace *opcodes) {
     free(opcodes->opcode_list_len); opcodes->opcode_list_len = NULL;
     free(opcodes->jq_next_entry_list); opcodes->jq_next_entry_list = NULL;
     free(opcodes->jq_next_entry_list_len); opcodes->jq_next_entry_list_len = NULL;
+    free(opcodes->jq_next_input_list); opcodes->jq_next_input_list = NULL;
     free(opcodes->jq_next_input_list_len); opcodes->jq_next_input_list_len = NULL;
     free(opcodes->jq_halt_loc); opcodes->jq_halt_loc = NULL;
     free(opcodes); opcodes = NULL;

@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../frontend/cjq_frontend.h"
+
+#include "../runtime/cjq_runtime.h"
 #include "../trace/cjq_trace.h"
 #include "../jq/src/bytecode.h"
 

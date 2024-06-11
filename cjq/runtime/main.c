@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
-
-#include "../clib/lib.h"
 
 #include "../jq/src/compile.h"
 #include "../jq/src/jv.h"
@@ -12,7 +9,7 @@
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
 #include "../jq/src/common.h"
-#include "../frontend/cjq_frontend.h"
+#include "cjq_runtime.h"
 
 extern void jq_program();
 
@@ -25,7 +22,7 @@ void clean_up(compiled_jq_state* cjq_state) {
 
 int main(int argc, char *argv[]) {
   compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
-  int parse_error = cjq_parse(argc, argv, cjq_state);
+  int parse_error = cjq_run(argc, argv, cjq_state);
   
   jq_program((void*)cjq_state);
 

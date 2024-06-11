@@ -1,8 +1,8 @@
 #include "../jq/src/jv.h"
 #include "../jq/src/jq.h"
 #include "../trace/cjq_trace.h"
-#ifndef CJQ_FRONTEND_H
-#define CJQ_FRONTEND_H
+#ifndef CJQ_RUNTIME_H
+#define CJQ_RUNTIME_H
 
 typedef struct {
     int* ret;
@@ -30,7 +30,7 @@ void free_cfunction_names(void* bc);
 
 void cjq_free(compiled_jq_state* cjq_state);
 
-int cjq_parse(int argc, char* argv[], compiled_jq_state* cjq_state);
+int cjq_run(int argc, char* argv[], compiled_jq_state* cjq_state);
 
 void __attribute__((always_inline)) inline lg_init(compiled_jq_state* cjq_state);
 void __attribute__((always_inline)) inline _init_jq_next(void* cjq_state);
@@ -83,4 +83,4 @@ void __attribute__((always_inline)) inline _opcode_STOREVN(void* cjq_state);
 void __attribute__((always_inline)) inline _opcode_BACKTRACK_STOREVN(void* cjq_state);
 void __attribute__((always_inline)) inline _opcode_ERRORK(void* cjq_state);
 
-#endif  /* CJQ_FRONTEND_H */
+#endif  /* CJQ_RUNTIME_H */
