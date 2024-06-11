@@ -52,7 +52,7 @@ for jq_file in cjq/testing/basic_ops/jq/prod_example/*.jq; do
     
     # Compile runjq
     # echo "Compiling jq for $jq_filename..." # Debug
-    clang cjq/runtime/*.c cjq/jq/src/*.c cjq/llvmlib/*.c cjq/pylib/*.c cjq/jq/src/decNumber/decNumber.c cjq/jq/src/decNumber/decContext.c ir.ll -g -lm -o runjq -lpython3.12 -DUSE_DECNUM=1 -Wno-deprecated-non-prototype
+    clang cjq/runtime/*.c cjq/trace/cjq_trace.c cjq/jq/src/*.c cjq/llvmlib/*.c cjq/pylib/*.c cjq/jq/src/decNumber/decNumber.c cjq/jq/src/decNumber/decContext.c ir.ll -g -lm -o runjq -lpython3.12 -DUSE_DECNUM=1 -Wno-deprecated-non-prototype
     
     # Command 2: Run runjq and capture output
     # echo "Running cjq for $jq_filename..."  # Debug

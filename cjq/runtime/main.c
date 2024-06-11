@@ -22,7 +22,7 @@ void clean_up(compiled_jq_state* cjq_state) {
 
 int main(int argc, char *argv[]) {
   compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
-  int parse_error = cjq_run(argc, argv, cjq_state);
+  int runtime_error = cjq_run(argc, argv, cjq_state);
   
   jq_program((void*)cjq_state);
 

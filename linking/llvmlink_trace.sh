@@ -4,7 +4,7 @@
 for file in cjq/trace/*.c; do
     filename=$(basename -- "$file")
     filename="${filename%.*}"  # Extract filename without extension
-    clang -pg -S -funwind-tables -O3 -emit-llvm -o "cjq/trace/$filename.ll" "$file"
+    clang -g -S -funwind-tables -O3 -emit-llvm -o "cjq/trace/$filename.ll" "$file"
 done
 
 # Step 2: Link LLVM IR files together

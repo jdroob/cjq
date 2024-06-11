@@ -17,6 +17,8 @@
 #include "util.h"
 #include "linker.h"
 
+#include "../../trace/cjq_trace.h"
+
 struct closure {
   struct bytecode* bc;  // jq bytecode
   stack_ptr env;        // jq stack address of closed frame
@@ -308,10 +310,11 @@ static void set_error(jq_state *jq, jv value) {
 
 #define ON_BACKTRACK(op) ((op)+NUM_OPCODES)
 
-jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, 
-           uint16_t* jq_next_entry_list, int* jq_next_entry_list_len) {
+jv jq_next(jq_state* jq, void* popcode_trace) {
   // Tracing
-  jq_next_entry_list[(*jq_next_entry_list_len)++] = *opcode_list_len;
+  // jq_next_entry_list[(*jq_next_entry_list_len)++] = *opcode_list_len;
+  trace* opcode_trace = (trace*)popcode_trace;
+  update_entry_list(opcode_trace);
   
   jv cfunc_input[MAX_CFUNCTION_ARGS];
 
@@ -333,11 +336,10 @@ jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len,
       return jv_invalid();
     }
     uint16_t opcode = *pc;
-      idx = *opcode_list_len; ++(*opcode_list_len);
-      if (backtracking)
-        opcode_list[idx] = ON_BACKTRACK(opcode);  
+      if (backtracking) 
+        update_opcode_list(opcode_trace, ON_BACKTRACK(opcode));
       else 
-        opcode_list[idx] = opcode;  
+        update_opcode_list(opcode_trace, opcode);
     raising = 0;
 
     if (jq->debug_trace_enabled) {

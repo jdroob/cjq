@@ -14,16 +14,6 @@
 #include <../../usr/include/python3.12/Python.h>      
 #include <../../usr/include/python3.12/pyconfig.h>   
 
-void clean_up(trace *opcodes) {
-    free(opcodes->opcode_list); opcodes->opcode_list = NULL;
-    free(opcodes->opcode_list_len); opcodes->opcode_list_len = NULL;
-    free(opcodes->jq_next_entry_list); opcodes->jq_next_entry_list = NULL;
-    free(opcodes->jq_next_entry_list_len); opcodes->jq_next_entry_list_len = NULL;
-    free(opcodes->jq_next_input_list); opcodes->jq_next_input_list = NULL;
-    free(opcodes->jq_next_input_list_len); opcodes->jq_next_input_list_len = NULL;
-    free(opcodes->jq_halt_loc); opcodes->jq_halt_loc = NULL;
-    free(opcodes); opcodes = NULL;
-}
 
 int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject **pModuleLowering) {
     // Initialize CPython
@@ -67,7 +57,7 @@ int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject 
     return 0;
 }
 
-int get_llvm_ir(trace* opcodes, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
+int get_llvm_ir(trace* opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
     // Get generate_llvm_ir function from lowering module
     PyObject *pFuncGenerateLLVMIR = PyObject_GetAttrString(pModuleLowering, "generate_llvm_ir");
 
@@ -77,8 +67,8 @@ int get_llvm_ir(trace* opcodes, PyObject* pModule_llvmlite, PyObject* pModuleLow
         return 1;
     }
     
-    PyObject* opcodes_ptr = PyLong_FromVoidPtr((void*)opcodes);
-    PyObject* pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcodes_ptr, NULL);
+    PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
+    PyObject* pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, opcode_trace_ptr, NULL);
 
     // Clean up
     Py_DECREF(pResult);
@@ -108,10 +98,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    trace* opcodes = malloc(sizeof(trace));
-    int trace_error = cjq_trace(argc, argv, opcodes);
-    int gen_ir_error = get_llvm_ir(opcodes, pModule_llvmlite, pModuleLowering);
-    clean_up(opcodes);
+    trace* opcode_trace = init_trace();
+    int trace_error = cjq_trace(argc, argv, opcode_trace);
+    int gen_ir_error = get_llvm_ir(opcode_trace, pModule_llvmlite, pModuleLowering);
+    free_trace(opcode_trace);
 
     return 0;
 }

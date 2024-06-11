@@ -150,6 +150,83 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
   return 0;
 }
 
+trace* init_trace() {
+    trace* opcode_trace = malloc(sizeof(trace));
+    opcode_trace->opcodes = malloc(sizeof(opcode_list));
+    opcode_trace->opcodes->capacity = 0;
+    opcode_trace->opcodes->count = 0;
+    opcode_trace->opcodes->ops = NULL;
+    opcode_trace->entries = malloc(sizeof(jq_next_entry_list));
+    opcode_trace->entries->capacity = 0;
+    opcode_trace->entries->count = 0;
+    opcode_trace->entries->entry_locs = NULL;
+    opcode_trace->inputs = malloc(sizeof(jq_next_input_list));
+    opcode_trace->inputs->capacity = 0;
+    opcode_trace->inputs->count = 0;
+    opcode_trace->inputs->input_locs = NULL;
+    opcode_trace->jq_halt_loc = malloc(sizeof(int));
+    *opcode_trace->jq_halt_loc = -1;
+
+    return opcode_trace;
+}
+
+void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
+  if (opcode_trace->opcodes->capacity < opcode_trace->opcodes->count + 1) {
+    int oldCapacity = opcode_trace->opcodes->capacity;
+    opcode_trace->opcodes->capacity = GROW_CAPACITY(oldCapacity);
+    opcode_trace->opcodes->ops = GROW_ARRAY(uint8_t, opcode_trace->opcodes->ops,
+    oldCapacity, opcode_trace->opcodes->capacity);
+  }
+  opcode_trace->opcodes->ops[opcode_trace->opcodes->count] = opcode;
+  opcode_trace->opcodes->count++;
+}
+
+void update_entry_list(trace* opcode_trace) {
+  if (opcode_trace->entries->capacity < opcode_trace->entries->count + 1) {
+    int oldCapacity = opcode_trace->entries->capacity;
+    opcode_trace->entries->capacity = GROW_CAPACITY(oldCapacity);
+    opcode_trace->entries->entry_locs = GROW_ARRAY(uint16_t, opcode_trace->entries->entry_locs,
+    oldCapacity, opcode_trace->entries->capacity);
+  }
+  opcode_trace->entries->entry_locs[opcode_trace->entries->count] = opcode_trace->opcodes->count;
+  opcode_trace->entries->count++;
+}
+
+void update_input_list(trace* opcode_trace) {
+  if (opcode_trace->inputs->capacity < opcode_trace->inputs->count + 1) {
+    int oldCapacity = opcode_trace->inputs->capacity;
+    opcode_trace->inputs->capacity = GROW_CAPACITY(oldCapacity);
+    opcode_trace->inputs->input_locs = GROW_ARRAY(uint16_t, opcode_trace->inputs->input_locs,
+    oldCapacity, opcode_trace->inputs->capacity);
+  }
+  opcode_trace->inputs->input_locs[opcode_trace->inputs->count] = opcode_trace->opcodes->count;
+  opcode_trace->inputs->count++;
+}
+
+void update_halt_loc(trace* opcode_trace) {
+  *opcode_trace->jq_halt_loc = opcode_trace->opcodes->count-1; // Want jq_halt_loc to point to last opcode index
+}
+
+void free_trace(trace* opcode_trace) {
+  free(opcode_trace->opcodes);
+  free(opcode_trace->entries);
+  free(opcode_trace->inputs);
+  free(opcode_trace->jq_halt_loc);
+  free(opcode_trace);
+  opcode_trace = NULL;
+}
+
+void* reallocate(void* pointer, size_t old_size, size_t new_size) {
+  if (new_size == 0) {
+    free(pointer);
+    return NULL;
+  }
+  void* result = realloc(pointer, new_size);
+  if (!result) exit(EXIT_FAILURE);
+  return result;
+}
+
+
 // DEBUGGING
 static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
     const unsigned char *byte_ptr = (const unsigned char *)ptr;
@@ -424,13 +501,11 @@ static void serialize_bc(const char* filename, const struct bytecode* bc) {
   fclose(file);
 }
 
-static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
-                   uint8_t* opcode_list, int* opcode_list_len, uint16_t* jq_next_entry_list, 
-                   int* jq_next_entry_list_len, int* jq_halt_loc) {
+static int process(jq_state* jq, jv value, int flags, int dumpopts, int options, trace* opcode_trace) {
   int ret = JQ_OK_NO_OUTPUT; // No valid results && -e -> exit(4)
   jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack
   jv result;
-  while (jv_is_valid(result = jq_next(jq, opcode_list, opcode_list_len, jq_next_entry_list, jq_next_entry_list_len))) {
+  while (jv_is_valid(result = jq_next(jq, opcode_trace))) {
     if ((options & RAW_OUTPUT) && jv_get_kind(result) == JV_KIND_STRING) {
       if (options & ASCII_OUTPUT) {
         jv_dumpf(jv_copy(result), stdout, JV_PRINT_ASCII);
@@ -462,7 +537,7 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
       fflush(stdout);
   }
   if (jq_halted(jq)) {
-    *jq_halt_loc = *opcode_list_len-1;  // Want jq_halt_loc to point to last opcode index
+    update_halt_loc(opcode_trace);
     // jq program invoked `halt` or `halt_error`
     jv exit_code = jq_get_exit_code(jq);
     if (!jv_is_valid(exit_code))
@@ -505,26 +580,6 @@ static int process(jq_state *jq, jv value, int flags, int dumpopts, int options,
   return ret;
 }
 
-void trace_init(trace* opcodes, uint8_t* opcode_list, int opcode_list_len, 
-                uint16_t* jq_next_entry_list, int jq_next_entry_list_len,
-                int jq_halt_loc, uint16_t* jq_next_input_list, 
-                int jq_next_input_list_len) {
-  opcodes->opcode_list = opcode_list;
-  int* popcode_list_len = malloc(sizeof(int)); *popcode_list_len = opcode_list_len;
-  opcodes->opcode_list_len = popcode_list_len; popcode_list_len = NULL;
-  
-  opcodes->jq_next_entry_list = jq_next_entry_list;
-  int* pjq_next_entry_list_len = malloc(sizeof(int)); *pjq_next_entry_list_len = jq_next_entry_list_len;
-  opcodes->jq_next_entry_list_len = pjq_next_entry_list_len; pjq_next_entry_list_len = NULL;
-  
-  opcodes->jq_next_input_list = jq_next_input_list;
-  int* pjq_next_input_list_len = malloc(sizeof(int)); *pjq_next_input_list_len = jq_next_input_list_len;
-  opcodes->jq_next_input_list_len = pjq_next_input_list_len; pjq_next_input_list_len = NULL;
-
-  int* pjq_halt_loc = malloc(sizeof(int)); *pjq_halt_loc = jq_halt_loc;
-  opcodes->jq_halt_loc = pjq_halt_loc; pjq_halt_loc = NULL;
-}
-
 static void debug_cb(void *data, jv input) {
   int dumpopts = *(int*)data;
   jv_dumpf(JV_ARRAY(jv_string("DEBUG:"), input), stderr, dumpopts & ~(JV_PRINT_PRETTY));
@@ -561,7 +616,7 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int cjq_trace(int argc, char* argv[], trace* opcodes) {
+int cjq_trace(int argc, char* argv[], trace* opcode_trace) {
 #endif
   jq_state* jq = NULL;
   jq_util_input_state* input_state = NULL;
@@ -572,20 +627,6 @@ int cjq_trace(int argc, char* argv[], trace* opcodes) {
   int last_result = -1; /* -1 = no result, 0=null or false, 1=true */
   int badwrite;
   int options = 0;
-
-  // TODO: JOHN: Make this dynamic
-  uint8_t* opcode_list = malloc(sizeof(uint8_t)*100000);
-  for (int i = 0; i < 100000; ++i) { opcode_list[i] = -1; }
-  int opcode_list_len = 0;
-  // TODO: JOHN: Make this dynamic
-  uint16_t* jq_next_entry_list = malloc(sizeof(uint16_t)*1000);
-  for (int i = 0; i < 1000; ++i) { jq_next_entry_list[i] = -1; }
-  int jq_next_entry_list_len = 0;
-  int jq_halt_loc = -1;
-  // TODO: JOHN: Make this dynamic
-  uint16_t* jq_next_input_list = malloc(sizeof(uint16_t)*1000); // TODO: Add to trace struct
-  for (int i = 0; i < 1000; ++i) { jq_next_input_list[i] = -1; }   // TODO: Add to trace struct
-  int jq_next_input_list_len = 0; // TODO: Add to trace struct
 
 #ifdef HAVE_SETLOCALE
   (void) setlocale(LC_ALL, "");
@@ -1007,20 +1048,15 @@ int cjq_trace(int argc, char* argv[], trace* opcodes) {
   // Tracing run
   if (options & PROVIDE_NULL) {
     jv njv = jv_null();
-    jq_next_input_list[jq_next_input_list_len++] = opcode_list_len;
-    ++jq_next_input_list_len;
-    ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_list, 
-                  &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
-                  &jq_halt_loc);
+    update_input_list(opcode_trace);
+    ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_trace);
   } else {
     jv value;
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
-        jq_next_input_list[jq_next_input_list_len++] = opcode_list_len;
-        ret = process(jq, value, jq_flags, dumpopts, options, opcode_list, 
-                      &opcode_list_len, jq_next_entry_list, &jq_next_entry_list_len,
-                      &jq_halt_loc);
+        update_input_list(opcode_trace);
+        ret = process(jq, value, jq_flags, dumpopts, options, opcode_trace);
         if (ret <= 0 && ret != JQ_OK_NO_OUTPUT)
           last_result = (ret != JQ_OK_NULL_KIND);
         if (jq_halted(jq))
@@ -1053,10 +1089,6 @@ out:
 //     ret = JQ_ERROR_SYSTEM;
 //   }
 
-  trace_init(opcodes, opcode_list, opcode_list_len, jq_next_entry_list, 
-             jq_next_entry_list_len, jq_halt_loc, jq_next_input_list, 
-             jq_next_input_list_len);
-  opcode_list = NULL;
   jv_free(ARGS);
   jv_free(program_arguments);
   jq_util_input_free(&input_state);

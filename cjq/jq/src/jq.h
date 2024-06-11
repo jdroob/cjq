@@ -27,8 +27,7 @@ int jq_compile(jq_state *, const char*);
 int jq_compile_args(jq_state *, const char*, jv);
 void jq_dump_disassembly(jq_state *, int);
 void jq_start(jq_state *, jv value, int);
-jv jq_next(jq_state *jq, uint8_t* opcode_list, int* opcode_list_len, 
-           uint16_t* jq_next_entry_list, int* jq_next_entry_list_len);
+jv jq_next(jq_state *jq, void* popcode_trace);
 void jq_teardown(jq_state **);
 
 void jq_halt(jq_state *, jv, jv);
