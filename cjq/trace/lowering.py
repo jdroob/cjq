@@ -74,7 +74,7 @@ def jq_lower(opcodes_ptr):
     builder = ir.IRBuilder(main_block)
     
     # Get jq_program arg
-    _cjq_state_ptr, = main_func.args
+    _cjq, = main_func.args
     
     # Define opcode-functions
     _get_next_input = ir.Function(module,
@@ -356,7 +356,7 @@ def jq_lower(opcodes_ptr):
     # Define argument types for C function
     jq_util_funcs._get_jq_next_entry_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_jq_next_entry_list_len.restype = c_int
-    # Get opcode_list length from cjq_state
+    # Get opcode_list length from cjq
     jq_next_entry_lis_len = jq_util_funcs._get_jq_next_entry_list_len(opcodes_ptr)
     
     # Also, be able to determine when to iterate to next input
@@ -367,7 +367,7 @@ def jq_lower(opcodes_ptr):
     # Define argument types for C function
     jq_util_funcs._get_next_input_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_next_input_list_len.restype = c_int
-    # Get opcode_list length from cjq_state
+    # Get opcode_list length from cjq
     next_input_lis_len = jq_util_funcs._get_next_input_list_len(opcodes_ptr)
     
     # Define argument types for C function
@@ -378,108 +378,108 @@ def jq_lower(opcodes_ptr):
     
     for opcode_lis_idx in range(opcode_lis_len):
         if next_input_idx < next_input_lis_len:
-            # Check if we need to iterate cjq_state->value to the next JSON input
+            # Check if we need to iterate cjq->value to the next JSON input
             next_input_loc = jq_util_funcs._next_input_list_at(opcodes_ptr, next_input_idx)
             if opcode_lis_idx == next_input_loc:
                 if opcode_lis_idx != 0:
-                    builder.call(_update_result_state, [_cjq_state_ptr])
-                builder.call(_get_next_input, [_cjq_state_ptr])
+                    builder.call(_update_result_state, [_cjq])
+                builder.call(_get_next_input, [_cjq])
                 next_input_idx += 1
         if jq_next_entry_idx < jq_next_entry_lis_len:
             # Check if we're at a jq_next entry point
             next_entry_point = jq_util_funcs._jq_next_entry_list_at(opcodes_ptr, jq_next_entry_idx)
             if opcode_lis_idx == next_entry_point:
-                builder.call(_init_jq_next, [_cjq_state_ptr])
+                builder.call(_init_jq_next, [_cjq])
                 jq_next_entry_idx += 1
         curr_opcode = jq_util_funcs._opcode_list_at(opcodes_ptr, opcode_lis_idx)
         match curr_opcode:
             case Opcode.LOADK.value:
-                builder.call(_opcode_LOADK, [_cjq_state_ptr])
+                builder.call(_opcode_LOADK, [_cjq])
             case Opcode.DUP.value:
-                builder.call(_opcode_DUP, [_cjq_state_ptr])
+                builder.call(_opcode_DUP, [_cjq])
             case Opcode.DUPN.value:
-                builder.call(_opcode_DUPN, [_cjq_state_ptr])
+                builder.call(_opcode_DUPN, [_cjq])
             case Opcode.DUP2.value:
-                builder.call(_opcode_DUP2, [_cjq_state_ptr])
+                builder.call(_opcode_DUP2, [_cjq])
             case Opcode.PUSHK_UNDER.value:
-                builder.call(_opcode_PUSHK_UNDER, [_cjq_state_ptr])
+                builder.call(_opcode_PUSHK_UNDER, [_cjq])
             case Opcode.POP.value:
-                builder.call(_opcode_POP, [_cjq_state_ptr])
+                builder.call(_opcode_POP, [_cjq])
             case Opcode.LOADV.value:
-                builder.call(_opcode_LOADV, [_cjq_state_ptr])
+                builder.call(_opcode_LOADV, [_cjq])
             case Opcode.LOADVN.value:
-                builder.call(_opcode_LOADVN, [_cjq_state_ptr])
+                builder.call(_opcode_LOADVN, [_cjq])
             case Opcode.STOREV.value:
-                builder.call(_opcode_STOREV, [_cjq_state_ptr])
+                builder.call(_opcode_STOREV, [_cjq])
             case Opcode.STORE_GLOBAL.value:
-                builder.call(_opcode_STORE_GLOBAL, [_cjq_state_ptr])
+                builder.call(_opcode_STORE_GLOBAL, [_cjq])
             case Opcode.INDEX.value:
-                builder.call(_opcode_INDEX, [_cjq_state_ptr])
+                builder.call(_opcode_INDEX, [_cjq])
             case Opcode.INDEX_OPT.value:
-                builder.call(_opcode_INDEX_OPT, [_cjq_state_ptr])
+                builder.call(_opcode_INDEX_OPT, [_cjq])
             case Opcode.EACH.value:
-                builder.call(_opcode_EACH, [_cjq_state_ptr])
+                builder.call(_opcode_EACH, [_cjq])
             case Opcode.EACH_OPT.value:
-                builder.call(_opcode_EACH_OPT, [_cjq_state_ptr])
+                builder.call(_opcode_EACH_OPT, [_cjq])
             case Opcode.FORK.value:
-                builder.call(_opcode_FORK, [_cjq_state_ptr])
+                builder.call(_opcode_FORK, [_cjq])
             case Opcode.TRY_BEGIN.value:
-                builder.call(_opcode_TRY_BEGIN, [_cjq_state_ptr])
+                builder.call(_opcode_TRY_BEGIN, [_cjq])
             case Opcode.TRY_END.value:
-                builder.call(_opcode_TRY_END, [_cjq_state_ptr])
+                builder.call(_opcode_TRY_END, [_cjq])
             case Opcode.JUMP.value:
-                builder.call(_opcode_JUMP, [_cjq_state_ptr])
+                builder.call(_opcode_JUMP, [_cjq])
             case Opcode.JUMP_F.value:
-                builder.call(_opcode_JUMP_F, [_cjq_state_ptr])
+                builder.call(_opcode_JUMP_F, [_cjq])
             case Opcode.BACKTRACK.value:
-                builder.call(_opcode_BACKTRACK, [_cjq_state_ptr])
+                builder.call(_opcode_BACKTRACK, [_cjq])
             case Opcode.APPEND.value:
-                builder.call(_opcode_APPEND, [_cjq_state_ptr])
+                builder.call(_opcode_APPEND, [_cjq])
             case Opcode.INSERT.value:
-                builder.call(_opcode_INSERT, [_cjq_state_ptr])
+                builder.call(_opcode_INSERT, [_cjq])
             case Opcode.RANGE.value:
-                builder.call(_opcode_RANGE, [_cjq_state_ptr])
+                builder.call(_opcode_RANGE, [_cjq])
             case Opcode.SUBEXP_BEGIN.value:
-                builder.call(_opcode_SUBEXP_BEGIN, [_cjq_state_ptr])
+                builder.call(_opcode_SUBEXP_BEGIN, [_cjq])
             case Opcode.SUBEXP_END.value:
-                builder.call(_opcode_SUBEXP_END, [_cjq_state_ptr])
+                builder.call(_opcode_SUBEXP_END, [_cjq])
             case Opcode.PATH_BEGIN.value:
-                builder.call(_opcode_PATH_BEGIN, [_cjq_state_ptr])
+                builder.call(_opcode_PATH_BEGIN, [_cjq])
             case Opcode.PATH_END.value:
-                builder.call(_opcode_PATH_END, [_cjq_state_ptr])
+                builder.call(_opcode_PATH_END, [_cjq])
             case Opcode.CALL_BUILTIN.value:
-                builder.call(_opcode_CALL_BUILTIN, [_cjq_state_ptr])
+                builder.call(_opcode_CALL_BUILTIN, [_cjq])
             case Opcode.CALL_JQ.value:
-                builder.call(_opcode_CALL_JQ, [_cjq_state_ptr])
+                builder.call(_opcode_CALL_JQ, [_cjq])
             case Opcode.RET.value:
-                builder.call(_opcode_RET, [_cjq_state_ptr])
+                builder.call(_opcode_RET, [_cjq])
             case Opcode.TAIL_CALL_JQ.value:
-                builder.call(_opcode_TAIL_CALL_JQ, [_cjq_state_ptr])
+                builder.call(_opcode_TAIL_CALL_JQ, [_cjq])
             case Opcode.TOP.value:
-                builder.call(_opcode_TOP, [_cjq_state_ptr])
+                builder.call(_opcode_TOP, [_cjq])
             case Opcode.GENLABEL.value:
-                builder.call(_opcode_GENLABEL, [_cjq_state_ptr])
+                builder.call(_opcode_GENLABEL, [_cjq])
             case Opcode.DESTRUCTURE_ALT.value:
-                builder.call(_opcode_DESTRUCTURE_ALT, [_cjq_state_ptr])
+                builder.call(_opcode_DESTRUCTURE_ALT, [_cjq])
             case Opcode.STOREVN.value:
-                builder.call(_opcode_STOREVN, [_cjq_state_ptr])
+                builder.call(_opcode_STOREVN, [_cjq])
             case Opcode.ERRORK.value:
-                builder.call(_opcode_ERRORK, [_cjq_state_ptr])
+                builder.call(_opcode_ERRORK, [_cjq])
             case _:
                 backtracking_opcodes = (Opcode.RANGE.value, Opcode.STOREVN.value, Opcode.PATH_BEGIN.value, Opcode.PATH_END.value, Opcode.EACH.value, Opcode.EACH_OPT.value, Opcode.TRY_BEGIN.value, Opcode.TRY_END.value, Opcode.DESTRUCTURE_ALT.value, Opcode.FORK.value, Opcode.RET.value)
                 backtracking_opcodes = tuple([opcode_val + num_opcodes for opcode_val in backtracking_opcodes])
                 backtracking_opcode_funcs = (_opcode_BACKTRACK_RANGE, _opcode_BACKTRACK_STOREVN, _opcode_BACKTRACK_PATH_BEGIN, _opcode_BACKTRACK_PATH_END, _opcode_BACKTRACK_EACH, _opcode_BACKTRACK_EACH_OPT, _opcode_BACKTRACK_TRY_BEGIN, _opcode_BACKTRACK_TRY_END, _opcode_BACKTRACK_DESTRUCTURE_ALT, _opcode_BACKTRACK_FORK, _opcode_BACKTRACK_RET)
                 if curr_opcode in backtracking_opcodes:
                     opcode_idx = backtracking_opcodes.index(curr_opcode)
-                    builder.call(backtracking_opcode_funcs[opcode_idx], [_cjq_state_ptr])
+                    builder.call(backtracking_opcode_funcs[opcode_idx], [_cjq])
                 else:
                     raise ValueError(f"Current opcode: {curr_opcode} does not match any existing opcodes")
     
     # Check if JQ program halted
     if opcode_lis_idx == jq_halt_loc:
-        builder.call(_jq_halt, [_cjq_state_ptr])
+        builder.call(_jq_halt, [_cjq])
     # Update for final state
-    builder.call(_update_result_state, [_cjq_state_ptr])
+    builder.call(_update_result_state, [_cjq])
     # Return from main
     builder.ret_void()
     

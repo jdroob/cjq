@@ -38,7 +38,7 @@ extern void jv_tsd_dtoa_ctx_init();
 #include "../jq/src/version.h"
 #include "../jq/src/builtin.h"
 #include "../jq/src/config_opts.inc"
-#include "cjq_runtime.h"
+#include "cjq_bootstrap.h"
 
 int jq_testsuite(jv lib_dirs, int verbose, int argc, char* argv[]);
 
@@ -149,9 +149,9 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
   return 0;
 }
 
-void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, int dumpopts, int last_result,
+void cjq_init(cjq_state* cjq, int ret, int jq_flags, int options, int dumpopts, int last_result,
  jq_util_input_state* input_state, jq_state* jq) {
-  int* pret = malloc(sizeof(int)); *pret = ret; // TODO: I don't think last_result needs to be passed in here
+  int* pret = malloc(sizeof(int)); *pret = ret;
   int* pjq_flags = malloc(sizeof(int)); *pjq_flags = jq_flags;
   int* poptions = malloc(sizeof(int)); *poptions = options;
   int* pdumpopts = malloc(sizeof(int)); *pdumpopts = dumpopts;
@@ -160,41 +160,41 @@ void cjq_init(compiled_jq_state *cjq_state, int ret, int jq_flags, int options, 
   int* praising = malloc(sizeof(int)); *praising = 0;
   uint8_t* pfallthrough = malloc(sizeof(uint8_t)); *pfallthrough = 0;
   uint16_t* popcode = malloc(sizeof(uint16_t)); *popcode = -1;
-  cjq_state->ret = pret; pret = NULL;
-  cjq_state->jq_flags = pjq_flags; pjq_flags = NULL;
-  cjq_state->options = poptions; poptions = NULL;
-  cjq_state->dumpopts = pdumpopts; pdumpopts = NULL;
-  cjq_state->last_result = plast_result; plast_result = NULL;
-  cjq_state->fallthrough = pfallthrough; pfallthrough = NULL;
-  cjq_state->pc = NULL;
-  cjq_state->opcode = popcode; popcode = NULL;
-  cjq_state->jq = jq; jq = NULL;
-  cjq_state->result = malloc(sizeof(jv));
-  cjq_state->backtracking = pbacktracking; pbacktracking = NULL;
-  cjq_state->raising = praising; praising = NULL;
-  cjq_state->input_state = input_state; input_state = NULL;
-  cjq_state->value = NULL;
+  cjq->ret = pret; pret = NULL;
+  cjq->jq_flags = pjq_flags; pjq_flags = NULL;
+  cjq->options = poptions; poptions = NULL;
+  cjq->dumpopts = pdumpopts; pdumpopts = NULL;
+  cjq->last_result = plast_result; plast_result = NULL;
+  cjq->fallthrough = pfallthrough; pfallthrough = NULL;
+  cjq->pc = NULL;
+  cjq->opcode = popcode; popcode = NULL;
+  cjq->jq = jq; jq = NULL;
+  cjq->result = malloc(sizeof(jv));
+  cjq->backtracking = pbacktracking; pbacktracking = NULL;
+  cjq->raising = praising; praising = NULL;
+  cjq->input_state = input_state; input_state = NULL;
+  cjq->value = NULL;
 }
 
-void cjq_free(compiled_jq_state *cjq_state) {
-  cjq_state->pc = NULL;
-  free(cjq_state->opcode); cjq_state->opcode = NULL;
-  free(cjq_state->ret); cjq_state->ret = NULL;
-  free(cjq_state->jq_flags); cjq_state->jq_flags = NULL;
-  free(cjq_state->options); cjq_state->options = NULL;
-  free(cjq_state->dumpopts); cjq_state->dumpopts = NULL;
-  free(cjq_state->last_result); cjq_state->last_result = NULL;
-  if (cjq_state->value) {
-    if (!cjq_state->value->u.ptr) 
-      jv_free(*cjq_state->value);
-    free(cjq_state->value);
-    cjq_state->value = NULL;
+void cjq_free(cjq_state* cjq) {
+  cjq->pc = NULL;
+  free(cjq->opcode); cjq->opcode = NULL;
+  free(cjq->ret); cjq->ret = NULL;
+  free(cjq->jq_flags); cjq->jq_flags = NULL;
+  free(cjq->options); cjq->options = NULL;
+  free(cjq->dumpopts); cjq->dumpopts = NULL;
+  free(cjq->last_result); cjq->last_result = NULL;
+  if (cjq->value) {
+    if (!cjq->value->u.ptr) 
+      jv_free(*cjq->value);
+    free(cjq->value);
+    cjq->value = NULL;
   }
-  free(cjq_state->result); cjq_state->result = NULL;
-  free(cjq_state->raising); cjq_state->raising = NULL;
-  free(cjq_state->backtracking); cjq_state->backtracking = NULL;
-  free(cjq_state->fallthrough); cjq_state->fallthrough = NULL;
-  free(cjq_state); cjq_state = NULL;
+  free(cjq->result); cjq->result = NULL;
+  free(cjq->raising); cjq->raising = NULL;
+  free(cjq->backtracking); cjq->backtracking = NULL;
+  free(cjq->fallthrough); cjq->fallthrough = NULL;
+  free(cjq); cjq = NULL;
 }
 
 void free_cfunction_names(void* bc) {
@@ -202,6 +202,32 @@ void free_cfunction_names(void* bc) {
   for (int i=0; i<pbc->globals->ncfunctions; ++i) {
     free((void*)pbc->globals->cfunctions[i].name);
   }
+}
+
+cjq_state* cjq_mem_alloc() {
+  cjq_state* p = malloc(sizeof(cjq_state));
+  if (!p) {
+    fprintf(stderr, "Failed to allocate memory for cjq_state object.\n");
+    return NULL;
+  }
+
+  // Initialize member pointers to NULL
+  p->ret = NULL;
+  p->jq_flags = NULL;
+  p->dumpopts = NULL;
+  p->options = NULL;
+  p->last_result = NULL;
+  p->raising = NULL;
+  p->input_state = NULL;
+  p->value = NULL;
+  p->result = NULL;
+  p->jq = NULL;
+  p->pc = NULL;
+  p->opcode = NULL;
+  p->backtracking = NULL;
+  p->fallthrough = NULL;
+
+  return p;
 }
 
 // DEBUGGING
@@ -557,7 +583,7 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int cjq_run(int argc, char* argv[], compiled_jq_state *cjq_state) {
+int cjq_bootstrap(int argc, char* argv[], cjq_state *cjq) {
   #endif
   jq_state* jq = NULL;
   jq_util_input_state* cjq_input_state = NULL;
@@ -948,7 +974,7 @@ int cjq_run(int argc, char* argv[], compiled_jq_state *cjq_state) {
                                         jv_string(JQ_CONFIG)); /* named arguments */
   }
   
-  struct bytecode* bc = deserialize_bc("serialize.bin");
+  struct bytecode* bc = deserialize_bc("serialize.bin");    // TODO: Not a long-term solution
   jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
   _jq_reset(jq);
   jq->bc = bc;
@@ -990,9 +1016,9 @@ out:
 //   }
 
   if (options & PROVIDE_NULL)
-    cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, NULL, jq);
+    cjq_init(cjq, ret, jq_flags, options, dumpopts, last_result, NULL, jq);
   else
-    cjq_init(cjq_state, ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
+    cjq_init(cjq, ret, jq_flags, options, dumpopts, last_result, cjq_input_state, jq);
 
   jv_free(ARGS);
   jv_free(program_arguments);

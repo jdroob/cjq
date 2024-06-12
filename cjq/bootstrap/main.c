@@ -9,30 +9,33 @@
 #include "../jq/src/util.h"
 #include "../jq/src/version.h"
 #include "../jq/src/common.h"
-#include "cjq_runtime.h"
+#include "cjq_bootstrap.h"
 
 extern void jq_program();
 
-void clean_up(compiled_jq_state* cjq_state) {
-    jq_util_input_free(&(cjq_state->input_state));
-    free_cfunction_names(cjq_state->jq->bc);
-    jq_teardown(&(cjq_state->jq));
-    cjq_free(cjq_state);
+void clean_up(cjq_state* cjq) {
+    jq_util_input_free(&(cjq->input_state));
+    free_cfunction_names(cjq->jq->bc);
+    jq_teardown(&(cjq->jq));
+    cjq_free(cjq);
 }
 
 int main(int argc, char *argv[]) {
-  compiled_jq_state* cjq_state = malloc(sizeof(compiled_jq_state));
-  int runtime_error = cjq_run(argc, argv, cjq_state);
-  
-  jq_program((void*)cjq_state);
+  cjq_state* cjq = cjq_mem_alloc();
 
-  // Store exit data prior to freeing cjq_state
-  int options = *cjq_state->options;
-  int ret = *cjq_state->ret;
-  if (cjq_state->input_state != NULL && jq_util_input_errors(cjq_state->input_state) != 0)
+  // Initialize state information req'd for execution
+  int bootstrap_error = cjq_bootstrap(argc, argv, cjq);
+  
+  // Run the jq program
+  jq_program((void*)cjq);
+
+  // Store exit data prior to freeing cjq
+  int options = *cjq->options;
+  int ret = *cjq->ret;
+  if (cjq->input_state != NULL && jq_util_input_errors(cjq->input_state) != 0)
     ret = JQ_ERROR_SYSTEM;
-  int last_result = *cjq_state->last_result;
-  clean_up(cjq_state);
+  int last_result = *cjq->last_result;
+  clean_up(cjq);
 
   if (options & EXIT_STATUS) {
     if (ret != JQ_OK_NO_OUTPUT)

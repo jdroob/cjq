@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../runtime/cjq_runtime.h"
+#include "../bootstrap/cjq_bootstrap.h"
 #include "../trace/cjq_trace.h"
 #include "../jq/src/bytecode.h"
 
 
-uint16_t _get_opcode(void* cjq_state_ptr) {
+uint16_t _get_opcode(void* cjq) {
     // Deprecated?
-    return *((compiled_jq_state*)cjq_state_ptr)->pc;
+    return *((cjq_state*)cjq)->pc;
 }
 
 int _get_opcode_list_len(void* opcode_trace_ptr) {

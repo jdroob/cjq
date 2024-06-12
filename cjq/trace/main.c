@@ -11,32 +11,23 @@
 #include "cjq_trace.h"
 
 #define PY_SSIZE_T_CLEAN
-#include <../../usr/include/python3.12/Python.h>      
-#include <../../usr/include/python3.12/pyconfig.h>   
+#include <Python.h>
 
 
 int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject **pModuleLowering) {
-    // Initialize CPython
     Py_Initialize();
     
-    // Append paths to Python sys.path
     PyRun_SimpleString("import sys");
     char python_code[512];
     snprintf(python_code, sizeof(python_code), "sys.path.append(\"%s\")", path_to_cjq);
     PyRun_SimpleString(python_code);
 
-     // Get $HOME environment variable
-    const char *home = getenv("HOME");
-    if (!home) {
-        fprintf(stderr, "Error: HOME environment variable is not set\n");
-        return 1;
+    const char *python_path = getenv("PYTHONPATH");
+    if (python_path) {
+        snprintf(python_code, sizeof(python_code), "sys.path.append(\"%s\")", python_path);
+        PyRun_SimpleString(python_code);
     }
 
-    // Append site-packages path
-    snprintf(python_code, sizeof(python_code), "sys.path.append('%s/anaconda3/envs/numbaEnv/lib/python3.12/site-packages/')", home);
-    PyRun_SimpleString(python_code);
-
-    // Import llvmlite module
     *pModule_llvmlite = PyImport_ImportModule("llvmlite");
     if (!(*pModule_llvmlite)) {
         PyErr_Print();
@@ -44,7 +35,6 @@ int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, PyObject 
         return 1;
     }
 
-    // Import lowering module
     snprintf(python_code, sizeof(python_code), "sys.path.append(\"%s\")", path_to_cjq);
     PyRun_SimpleString(python_code);
     *pModuleLowering = PyImport_ImportModule("lowering");
