@@ -143,3 +143,5 @@ perf.data.old
 cjq/testing/basic_ops/json/builtin_ops/flatten_large_example.json
 cjq/testing/basic_ops/jq/builtin_ops/flatten_large_example.jq
 *.bc
+cjq/testing/basic_ops/jq/builtin_ops/flatten_large64k.jq
+cjq/testing/basic_ops/json/builtin_ops/flatten_large64k.json
