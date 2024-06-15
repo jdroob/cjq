@@ -145,3 +145,7 @@ cjq/testing/basic_ops/jq/builtin_ops/flatten_large_example.jq
 *.bc
 cjq/testing/basic_ops/jq/builtin_ops/flatten_large64k.jq
 cjq/testing/basic_ops/json/builtin_ops/flatten_large64k.json
+llvmgen
+run
+cjq/testing/basic_ops/json/builtin_ops/flatten_large5MB.json
+cjq/testing/basic_ops/json/builtin_ops/flatten_large128k.json
