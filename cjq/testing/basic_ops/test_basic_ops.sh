@@ -48,7 +48,7 @@ for jq_file in cjq/testing/basic_ops/jq/prod_example/*.jq; do
     
     # Command 1: Generate LLVM IR (suppress output)
     # echo "Generating LLVM IR for $jq_filename..." # Debug
-    ./llvm_gen -f -s "$jq_file" "$json_file1" "$json_file2" --debug-dump-disasm >/dev/null
+    ./llvmgen -f -s "$jq_file" "$json_file1" "$json_file2" --debug-dump-disasm >/dev/null
     
     # Compile runjq
     # echo "Compiling jq for $jq_filename..." # Debug
@@ -132,7 +132,7 @@ for test_case in "${test_cases[@]}"; do
 
     # Command 1: Generate LLVM IR (suppress output)
     # echo "Generating LLVM IR for $jq_file..." # Debug
-    ./llvm_gen -f "$jq_file" "$json_file" --debug-dump-disasm > /dev/null
+    ./llvmgen -f "$jq_file" "$json_file" --debug-dump-disasm > /dev/null
 
     # Compile runjq
     # echo "Compiling jq for $jq_file..." # Debug
@@ -156,7 +156,7 @@ test_cases2=("have_literal_numbers" "have_decnum" "$ENV.pager" "env.pager")
 for test_case2 in "${test_cases2[@]}"; do
     # Command 1: Generate LLVM IR (suppress output)
     # echo "Generating LLVM IR for $jq_file..." # Debug
-    ./llvm_gen -n "$test_case2" --debug-dump-disasm > /dev/null
+    ./llvmgen -n "$test_case2" --debug-dump-disasm > /dev/null
 
     # Compile runjq
     # echo "Compiling jq for $jq_file..." # Debug
@@ -175,19 +175,19 @@ for test_case2 in "${test_cases2[@]}"; do
 done
 
 # @base64 test
-echo '{"message": "This is a secret message"}' | ./llvm_gen '.message |= @base64' > /dev/null
+echo '{"message": "This is a secret message"}' | ./llvmgen '.message |= @base64' > /dev/null
 ./build/compile_runjq.sh
 cjq_output=$(echo '{"message": "This is a secret message"}' | ./runjq '.message |= @base64')
 jq_output=$(echo '{"message": "This is a secret message"}' | jq '.message |= @base64')
 compare_outputs "$cjq_output" "$jq_output" "base64.jq"
 # @base64d test
-echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./llvm_gen '.message |= @base64d' > /dev/null
+echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./llvmgen '.message |= @base64d' > /dev/null
 ./build/compile_runjq.sh
 cjq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./runjq '.message |= @base64d')
 jq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | jq '.message |= @base64d')
 compare_outputs "$cjq_output" "$jq_output" "base64d.jq"
 # @html test
-echo '{"message": "x<y"}' | ./llvm_gen '.message |= @html' > /dev/null
+echo '{"message": "x<y"}' | ./llvmgen '.message |= @html' > /dev/null
 ./build/compile_runjq.sh
 cjq_output=$(echo '{"message": "x<y"}' | ./runjq '.message |= @html')
 jq_output=$(echo '{"message": "x<y"}' | jq '.message |= @html')
