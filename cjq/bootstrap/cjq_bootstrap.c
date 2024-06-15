@@ -246,7 +246,7 @@ static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
 static void _deserialize_jv(FILE* file, jv* value);
 
 static void deserialize_jv_object(FILE* file, jvp_object* obj, int size) {
-  for (int i = 0; i < size; ++i) {
+  for (int i = 0; i<size; ++i) {
       struct object_slot* slot = &obj->elements[i];
       fread(&slot->next, sizeof(int), 1, file);
       fread(&slot->hash, sizeof(uint32_t), 1, file);
@@ -256,7 +256,7 @@ static void deserialize_jv_object(FILE* file, jvp_object* obj, int size) {
 }
 
 static void deserialize_jv_array(FILE *file, int size, jvp_array* arr) {
-  for (int i = 0; i < size; ++i) {
+  for (int i = 0; i<size; ++i) {
       _deserialize_jv(file, &arr->elements[i]); // Deserialize the ith element
   }
 }
@@ -528,7 +528,7 @@ static struct bytecode* _deserialize_bc(FILE* file) {
   }
   else
     bc->subfunctions = NULL;
-  for (int i = 0; i < bc->nsubfunctions; ++i) {
+  for (int i = 0; i<bc->nsubfunctions; ++i) {
       bc->subfunctions[i] = _deserialize_bc(file);
   }
   _deserialize_jv(file, &bc->debuginfo);
