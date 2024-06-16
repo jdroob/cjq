@@ -10,36 +10,32 @@ def unique_subseq(sequence):
     current_subsequence = []
 
     for call in sequence:
-        subsequences.add(tuple([call]))
-    return subsequences
-    #     if not current_subsequence or call.opcode > current_subsequence[-1].opcode:
-    #         current_subsequence.append(call)
-    #     else:
-    #         if current_subsequence:
-    #             subsequences.add(tuple(current_subsequence))
-    #         current_subsequence = [call]
+        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:
+            current_subsequence.append(call)
+        else:
+            if current_subsequence:
+                subsequences.add(tuple(current_subsequence))
+            current_subsequence = [call]
 
-    # if current_subsequence:
-    #     subsequences.add(tuple(current_subsequence))
+    if current_subsequence:
+        subsequences.add(tuple(current_subsequence))
 
-    # return sorted(subsequences, key=len, reverse=True)
+    return sorted(subsequences, key=len, reverse=True)
 
 def generate_subseq_lis(dyn_op_seq, subseqs):
     gen_lis = []
-    for op in dyn_op_seq:
-        gen_lis.append(tuple([op]))
-    # i = 0  # Start index
-    # while i < len(dyn_op_seq):
-    #     matched = False
-    #     for subseq in subseqs:
-    #         subseq_len = len(subseq)
-    #         if tuple(dyn_op_seq[i:i + subseq_len]) == subseq:
-    #             gen_lis.append(subseq)
-    #             i += subseq_len  # Move the index forward by the length of the matched subsequence
-    #             matched = True
-    #             break
-    #     if not matched:
-    #         i += 1  # If no subsequence matches, move the index forward by 1
+    i = 0  # Start index
+    while i < len(dyn_op_seq):
+        matched = False
+        for subseq in subseqs:
+            subseq_len = len(subseq)
+            if tuple(dyn_op_seq[i:i + subseq_len]) == subseq:
+                gen_lis.append(subseq)
+                i += subseq_len  # Move the index forward by the length of the matched subsequence
+                matched = True
+                break
+        if not matched:
+            i += 1  # If no subsequence matches, move the index forward by 1
     return gen_lis
 
 def coalesce_tuples(tuples_list):
