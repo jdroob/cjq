@@ -226,7 +226,6 @@ void* reallocate(void* pointer, size_t old_size, size_t new_size) {
   return result;
 }
 
-
 // DEBUGGING
 static void log_write_stdout_hex(const void *ptr, size_t size, size_t nmemb) {
     const unsigned char *byte_ptr = (const unsigned char *)ptr;
