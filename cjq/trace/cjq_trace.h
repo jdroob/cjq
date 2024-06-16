@@ -19,28 +19,28 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 
 
 typedef struct {
-    int count;
-    int capacity;
+    uint64_t count;
+    uint64_t capacity;
     uint8_t* ops;
 } opcode_list;
 
 typedef struct {
-    int count;
-    int capacity;
-    uint16_t* entry_locs;
+    uint64_t count;
+    uint64_t capacity;
+    uint64_t* entry_locs;
 } jq_next_entry_list;
 
 typedef struct {
-    int count;
-    int capacity;
-    uint16_t* input_locs;
+    uint64_t count;
+    uint64_t capacity;
+    uint64_t* input_locs;
 } jq_next_input_list;
 
 typedef struct {
     opcode_list* opcodes;
     jq_next_entry_list* entries;
     jq_next_input_list* inputs;
-    int* jq_halt_loc;
+    uint64_t jq_halt_loc;
 } trace;
 
 trace* init_trace();

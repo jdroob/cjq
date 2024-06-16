@@ -549,39 +549,39 @@ def jq_lower(opcodes_ptr):
     
     # Define argument types for C function
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
-    jq_util_funcs._get_opcode_list_len.restype = c_int
+    jq_util_funcs._get_opcode_list_len.restype = c_uint64
     # Get opcode_list length from cjq_state
     opcode_lis_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
     
     # Get all opcodes from opcode_list
-    jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_int]
+    jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_uint64]
     jq_util_funcs._opcode_list_at.restype = c_uint8
     
     # Also, get all entry points from jq_next_entry_list
-    jq_util_funcs._jq_next_entry_list_at.argtypes = [c_void_p, c_int]
-    jq_util_funcs._jq_next_entry_list_at.restype = c_uint16
+    jq_util_funcs._jq_next_entry_list_at.argtypes = [c_void_p, c_uint64]
+    jq_util_funcs._jq_next_entry_list_at.restype = c_uint64
     jq_next_entry_idx = 0
     
     # Define argument types for C function
     jq_util_funcs._get_jq_next_entry_list_len.argtypes = [c_void_p]
-    jq_util_funcs._get_jq_next_entry_list_len.restype = c_int
+    jq_util_funcs._get_jq_next_entry_list_len.restype = c_uint64
     # Get opcode_list length from cjq
     jq_next_entry_lis_len = jq_util_funcs._get_jq_next_entry_list_len(opcodes_ptr)
     
     # Also, be able to determine when to iterate to next input
-    jq_util_funcs._next_input_list_at.argtypes = [c_void_p, c_int]
-    jq_util_funcs._next_input_list_at.restype = c_uint16
+    jq_util_funcs._next_input_list_at.argtypes = [c_void_p, c_uint64]
+    jq_util_funcs._next_input_list_at.restype = c_uint64
     next_input_idx = 0
     
     # Define argument types for C function
     jq_util_funcs._get_next_input_list_len.argtypes = [c_void_p]
-    jq_util_funcs._get_next_input_list_len.restype = c_int
+    jq_util_funcs._get_next_input_list_len.restype = c_uint64
     # Get opcode_list length from cjq
     next_input_lis_len = jq_util_funcs._get_next_input_list_len(opcodes_ptr)
     
     # Define argument types for C function
     jq_util_funcs._get_jq_halt_loc.argtypes = [c_void_p]
-    jq_util_funcs._get_jq_halt_loc.restype = c_int
+    jq_util_funcs._get_jq_halt_loc.restype = c_uint64
     # Get opcode_list length from cjq_state
     jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
     

@@ -164,15 +164,15 @@ trace* init_trace() {
     opcode_trace->inputs->capacity = 0;
     opcode_trace->inputs->count = 0;
     opcode_trace->inputs->input_locs = NULL;
-    opcode_trace->jq_halt_loc = malloc(sizeof(int));
-    *opcode_trace->jq_halt_loc = -1;
+    // opcode_trace->jq_halt_loc = malloc(sizeof(int));
+    // *opcode_trace->jq_halt_loc = -1;
 
     return opcode_trace;
 }
 
 void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
   if (opcode_trace->opcodes->capacity < opcode_trace->opcodes->count + 1) {
-    int oldCapacity = opcode_trace->opcodes->capacity;
+    uint64_t oldCapacity = opcode_trace->opcodes->capacity;
     opcode_trace->opcodes->capacity = GROW_CAPACITY(oldCapacity);
     opcode_trace->opcodes->ops = GROW_ARRAY(uint8_t, opcode_trace->opcodes->ops,
     oldCapacity, opcode_trace->opcodes->capacity);
@@ -183,9 +183,9 @@ void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
 
 void update_entry_list(trace* opcode_trace) {
   if (opcode_trace->entries->capacity < opcode_trace->entries->count + 1) {
-    int oldCapacity = opcode_trace->entries->capacity;
+    uint64_t oldCapacity = opcode_trace->entries->capacity;
     opcode_trace->entries->capacity = GROW_CAPACITY(oldCapacity);
-    opcode_trace->entries->entry_locs = GROW_ARRAY(uint16_t, opcode_trace->entries->entry_locs,
+    opcode_trace->entries->entry_locs = GROW_ARRAY(uint64_t, opcode_trace->entries->entry_locs,
     oldCapacity, opcode_trace->entries->capacity);
   }
   opcode_trace->entries->entry_locs[opcode_trace->entries->count] = opcode_trace->opcodes->count;
@@ -194,9 +194,9 @@ void update_entry_list(trace* opcode_trace) {
 
 void update_input_list(trace* opcode_trace) {
   if (opcode_trace->inputs->capacity < opcode_trace->inputs->count + 1) {
-    int oldCapacity = opcode_trace->inputs->capacity;
+    uint64_t oldCapacity = opcode_trace->inputs->capacity;
     opcode_trace->inputs->capacity = GROW_CAPACITY(oldCapacity);
-    opcode_trace->inputs->input_locs = GROW_ARRAY(uint16_t, opcode_trace->inputs->input_locs,
+    opcode_trace->inputs->input_locs = GROW_ARRAY(uint64_t, opcode_trace->inputs->input_locs,
     oldCapacity, opcode_trace->inputs->capacity);
   }
   opcode_trace->inputs->input_locs[opcode_trace->inputs->count] = opcode_trace->opcodes->count;
@@ -204,14 +204,14 @@ void update_input_list(trace* opcode_trace) {
 }
 
 void update_halt_loc(trace* opcode_trace) {
-  *opcode_trace->jq_halt_loc = opcode_trace->opcodes->count-1; // Want jq_halt_loc to point to last opcode index
+  opcode_trace->jq_halt_loc = opcode_trace->opcodes->count-1; // Want jq_halt_loc to point to last opcode index
 }
 
 void free_trace(trace* opcode_trace) {
   free(opcode_trace->opcodes);
   free(opcode_trace->entries);
   free(opcode_trace->inputs);
-  free(opcode_trace->jq_halt_loc);
+  // free(opcode_trace->jq_halt_loc);
   free(opcode_trace);
   opcode_trace = NULL;
 }
