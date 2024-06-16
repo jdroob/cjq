@@ -10,32 +10,36 @@ def unique_subseq(sequence):
     current_subsequence = []
 
     for call in sequence:
-        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:
-            current_subsequence.append(call)
-        else:
-            if current_subsequence:
-                subsequences.add(tuple(current_subsequence))
-            current_subsequence = [call]
+        subsequences.add(tuple([call]))
+    return subsequences
+    #     if not current_subsequence or call.opcode > current_subsequence[-1].opcode:
+    #         current_subsequence.append(call)
+    #     else:
+    #         if current_subsequence:
+    #             subsequences.add(tuple(current_subsequence))
+    #         current_subsequence = [call]
 
-    if current_subsequence:
-        subsequences.add(tuple(current_subsequence))
+    # if current_subsequence:
+    #     subsequences.add(tuple(current_subsequence))
 
-    return sorted(subsequences, key=len, reverse=True)
+    # return sorted(subsequences, key=len, reverse=True)
 
 def generate_subseq_lis(dyn_op_seq, subseqs):
     gen_lis = []
-    i = 0  # Start index
-    while i < len(dyn_op_seq):
-        matched = False
-        for subseq in subseqs:
-            subseq_len = len(subseq)
-            if tuple(dyn_op_seq[i:i + subseq_len]) == subseq:
-                gen_lis.append(subseq)
-                i += subseq_len  # Move the index forward by the length of the matched subsequence
-                matched = True
-                break
-        if not matched:
-            i += 1  # If no subsequence matches, move the index forward by 1
+    for op in dyn_op_seq:
+        gen_lis.append(tuple([op]))
+    # i = 0  # Start index
+    # while i < len(dyn_op_seq):
+    #     matched = False
+    #     for subseq in subseqs:
+    #         subseq_len = len(subseq)
+    #         if tuple(dyn_op_seq[i:i + subseq_len]) == subseq:
+    #             gen_lis.append(subseq)
+    #             i += subseq_len  # Move the index forward by the length of the matched subsequence
+    #             matched = True
+    #             break
+    #     if not matched:
+    #         i += 1  # If no subsequence matches, move the index forward by 1
     return gen_lis
 
 def coalesce_tuples(tuples_list):
@@ -226,9 +230,7 @@ def jq_lower(opcodes_ptr):
     # Define entry point
     main_func_type = ir.FunctionType(ir.VoidType(), [void_ptr_type])
     main_func = ir.Function(module, main_func_type, "jq_program")
-    # main_func.attributes.add('alwaysinline')
     main_block = main_func.append_basic_block("entry")
-    # builder = ir.IRBuilder(main_block)
     
     # Get jq_program arg
     _cjq, = main_func.args
@@ -612,10 +614,10 @@ def jq_lower(opcodes_ptr):
     # Update for final state
     dyn_op_lis.append(CallType(Opcode.UPDATE_RES_STATE.value))
     
-    # Write LLVM IR to file
-    with open("dyn_op_lis.txt", "w") as file:
-        for op in dyn_op_lis:
-            file.write(str(op)+'\n')
+    # # Write LLVM IR to file
+    # with open("dyn_op_lis.txt", "w") as file:
+    #     for op in dyn_op_lis:
+    #         file.write(str(op)+'\n')
     
     # 2. Generate set of subsequences in dynamic opcode sequence
     subseqs = unique_subseq(dyn_op_lis) # list of tuples of CallList objects
