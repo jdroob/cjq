@@ -151,3 +151,4 @@ cjq/testing/basic_ops/json/builtin_ops/flatten_large5MB.json
 run
 run_opt
 llvmgen
+dyn_op_lis.txt

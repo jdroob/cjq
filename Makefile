@@ -4,7 +4,7 @@ LINKER = llvm-link
 OPT = opt
 
 # Compilation flags
-CFLAGS = -O3 -emit-llvm -c -g
+CFLAGS = -O0 -emit-llvm -c -g
 LDFLAGS = -lm -lpython3.12 -lonig -g
 DEFINES = -DHAVE_STDIO_H=1 \
           -DHAVE_STDLIB_H=1 \
