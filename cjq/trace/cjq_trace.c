@@ -164,13 +164,12 @@ trace* init_trace() {
     opcode_trace->inputs->capacity = 0;
     opcode_trace->inputs->count = 0;
     opcode_trace->inputs->input_locs = NULL;
-    // opcode_trace->jq_halt_loc = malloc(sizeof(int));
-    // *opcode_trace->jq_halt_loc = -1;
 
     return opcode_trace;
 }
 
 void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
+  // TODO: Add check here to see if we need to empty buffer and write LLVM now
   if (opcode_trace->opcodes->capacity < opcode_trace->opcodes->count + 1) {
     uint64_t oldCapacity = opcode_trace->opcodes->capacity;
     opcode_trace->opcodes->capacity = GROW_CAPACITY(oldCapacity);
@@ -211,7 +210,6 @@ void free_trace(trace* opcode_trace) {
   free(opcode_trace->opcodes);
   free(opcode_trace->entries);
   free(opcode_trace->inputs);
-  // free(opcode_trace->jq_halt_loc);
   free(opcode_trace);
   opcode_trace = NULL;
 }

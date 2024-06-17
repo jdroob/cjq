@@ -10,7 +10,7 @@ def unique_subseq(sequence):
     current_subsequence = []
 
     for call in sequence:
-        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:
+        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:  # TODO: Find better heuristic - currently incorrectly assuming that each subsequent opcode in dynamic opcode sequence has 50:50 chance of being greater than previous
             current_subsequence.append(call)
         else:
             if current_subsequence:
@@ -202,7 +202,14 @@ def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
 
 def jq_lower(opcodes_ptr):
     """
-    Uses llvmlite C-binding feature to call opcode functions from llvmlite.
+    Using Python-C API, gather information from tracing phase.
+    Use this information to generate LLVM IR.
+    Generated IR is a sequence of of calls to opcode functions
+    equivalent to dynamic opcode sequence executed by bytecode interpreter
+    in standard JQ implementation.
+    
+    The goal is to optimize the LLVM IR in order to achieve better
+    runtime performance.
     """
     
     # Get the home directory
@@ -214,6 +221,7 @@ def jq_lower(opcodes_ptr):
    
     # Create LLVM module
     module = ir.Module()
+    
     # Set the data layout
     #TODO: Find better way than hard-coding
     data_layout_str = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
@@ -541,6 +549,7 @@ def jq_lower(opcodes_ptr):
     # Define argument types for C function
     jq_util_funcs._get_num_opcodes.argtypes = []
     jq_util_funcs._get_num_opcodes.restype = c_int
+    
     # Get value of NUM_OPCODES
     num_opcodes = jq_util_funcs._get_num_opcodes()
     backtracking_opcodes = (Opcode.RANGE.value, Opcode.STOREVN.value, Opcode.PATH_BEGIN.value, Opcode.PATH_END.value, Opcode.EACH.value, Opcode.EACH_OPT.value, Opcode.TRY_BEGIN.value, Opcode.TRY_END.value, Opcode.DESTRUCTURE_ALT.value, Opcode.FORK.value, Opcode.RET.value)
@@ -550,6 +559,7 @@ def jq_lower(opcodes_ptr):
     # Define argument types for C function
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_opcode_list_len.restype = c_uint64
+    
     # Get opcode_list length from cjq_state
     opcode_lis_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
     
@@ -565,6 +575,7 @@ def jq_lower(opcodes_ptr):
     # Define argument types for C function
     jq_util_funcs._get_jq_next_entry_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_jq_next_entry_list_len.restype = c_uint64
+    
     # Get opcode_list length from cjq
     jq_next_entry_lis_len = jq_util_funcs._get_jq_next_entry_list_len(opcodes_ptr)
     
@@ -576,13 +587,15 @@ def jq_lower(opcodes_ptr):
     # Define argument types for C function
     jq_util_funcs._get_next_input_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_next_input_list_len.restype = c_uint64
-    # Get opcode_list length from cjq
+    
+    # Get next_input_list length from cjq
     next_input_lis_len = jq_util_funcs._get_next_input_list_len(opcodes_ptr)
     
     # Define argument types for C function
     jq_util_funcs._get_jq_halt_loc.argtypes = [c_void_p]
     jq_util_funcs._get_jq_halt_loc.restype = c_uint64
-    # Get opcode_list length from cjq_state
+    
+    # Get jq_halt location from cjq_state
     jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
     
     # 1. Record dynamic opcodes
@@ -604,21 +617,18 @@ def jq_lower(opcodes_ptr):
                 jq_next_entry_idx += 1
         curr_opcode = jq_util_funcs._opcode_list_at(opcodes_ptr, opcode_lis_idx)
         match_on_opcode(dyn_op_lis, curr_opcode, backtracking_opcodes)
+        
     # Check if program halted
     if opcode_lis_idx == jq_halt_loc:
         dyn_op_lis.append(CallType(Opcode.JQ_HALT.value))
+        
     # Update for final state
     dyn_op_lis.append(CallType(Opcode.UPDATE_RES_STATE.value))
     
-    # # Write LLVM IR to file
-    # with open("dyn_op_lis.txt", "w") as file:
-    #     for op in dyn_op_lis:
-    #         file.write(str(op)+'\n')
-    
     # 2. Generate set of subsequences in dynamic opcode sequence
-    subseqs = unique_subseq(dyn_op_lis) # list of tuples of CallList objects
+    subseqs = unique_subseq(dyn_op_lis) # list of tuples of CallType objects
     
-    # 3. Generate map of corresponding CallList object subsequences to corresponding subsequences of LLVM function calls
+    # 3. Generate map of CallType object subsequences to corresponding subsequences of LLVM function calls
     dyn_op_subseq_to_op_func_subseq = {} # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
     for subseq in subseqs:
         func = []
@@ -711,7 +721,7 @@ def jq_lower(opcodes_ptr):
                 func.append(backtracking_opcode_funcs[dyn_op.opcode])   # index of backtracking func in backtracking_opcode_funcs
         dyn_op_subseq_to_op_func_subseq[subseq] = tuple(func)
     
-    # 4. Create map of subsequences of CallList objects to subsequence functions (LLVM functions that call a specific subsequence)
+    # 4. Create map of subsequences of CallType objects to subsequence functions (LLVM functions that call a specific subsequence of opcode functions)
     subseq_func_idx = 0
     dyn_op_subseq_to_subseq_func = {}
     subseq_func_type = main_func_type
@@ -726,7 +736,7 @@ def jq_lower(opcodes_ptr):
         builder.ret_void()
     
     # 5. Reconstruct dynamic opcode sequence from recorded subsequences
-    dyn_op_subseq_lis = generate_subseq_lis(dyn_op_lis, subseqs)     # returns a subsequence of ints that matches dynamic sequence of opcodes
+    dyn_op_subseq_lis = generate_subseq_lis(dyn_op_lis, subseqs)     # returns a subsequence of CallType objects that matches dynamic sequence of opcodes
     
     # 6. Using dynamic opcode sequence constructed from subsequences in step 5, and subsequence -> subsequence function from step 4,
     #       generate the corresponding sequence of calls to subsequence functions in LLVM IR
