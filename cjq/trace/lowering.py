@@ -761,5 +761,11 @@ def generate_llvm_ir(opcodes_ptr):
         print("Error generating LLVM IR:", e)
         exit(1)
 
-if __name__ == "__main__":
-    generate_llvm_ir()
+def dummy_test(opcodes_ptr):
+    n = 1
+    while True:
+        yield n
+        n += 1
+
+# if __name__ == "__main__":
+#     generate_llvm_ir()

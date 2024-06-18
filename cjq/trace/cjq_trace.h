@@ -2,6 +2,10 @@
 
 #include "../jq/src/jv.h"
 #include "../jq/src/jq.h"
+
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
 #ifndef CJQ_TRACE_H
 #define CJQ_TRACE_H
 
@@ -49,6 +53,6 @@ void update_entry_list(trace* opcode_trace);
 void update_input_list(trace* opcode_trace);
 void update_halt_loc(trace* opcode_trace);
 void free_trace(trace* opcode_trace);
-int cjq_trace(int argc, char* argv[], trace* opcode_trace);
+int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pDummy);
 
 #endif  /* CJQ_TRACE_H */

@@ -168,8 +168,22 @@ trace* init_trace() {
     return opcode_trace;
 }
 
-void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
+// TODO: Delete
+void dummy_func(trace* opcode_trace, PyObject* pGen) {
   // TODO: Add check here to see if we need to empty buffer and write LLVM now
+  if (opcode_trace->opcodes->count % 1000 == 0) {
+    // Get the builtins module
+    PyObject *builtins = PyEval_GetBuiltins();
+
+    // Get the 'next' function from the builtins module
+    PyObject *pFuncNext = PyDict_GetItemString(builtins, "next");
+
+    PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
+    PyObject* pResult = PyObject_CallFunctionObjArgs(pFuncNext, pGen, NULL);
+  }
+}
+
+void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
   if (opcode_trace->opcodes->capacity < opcode_trace->opcodes->count + 1) {
     uint64_t oldCapacity = opcode_trace->opcodes->capacity;
     opcode_trace->opcodes->capacity = GROW_CAPACITY(oldCapacity);
@@ -613,7 +627,7 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int cjq_trace(int argc, char* argv[], trace* opcode_trace) {
+int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pGen) {
 #endif
   jq_state* jq = NULL;
   jq_util_input_state* input_state = NULL;
