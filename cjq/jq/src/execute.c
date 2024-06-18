@@ -310,10 +310,10 @@ static void set_error(jq_state *jq, jv value) {
 
 #define ON_BACKTRACK(op) ((op)+NUM_OPCODES)
 
-jv jq_next(jq_state* jq, void* popcode_trace) {
-  // Tracing
-  // jq_next_entry_list[(*jq_next_entry_list_len)++] = *opcode_list_len;
-  trace* opcode_trace = (trace*)popcode_trace;
+jv jq_next(jq_state* jq, void** popcode_trace, void* Module_llvmlite, void* ModuleLowering) {
+  trace* opcode_trace = (trace*)(*popcode_trace);
+  PyObject* pModule_llvmlite = (PyObject*)Module_llvmlite;
+  PyObject* pModuleLowering = (PyObject*)ModuleLowering;
   update_entry_list(opcode_trace);
   
   jv cfunc_input[MAX_CFUNCTION_ARGS];
@@ -336,10 +336,11 @@ jv jq_next(jq_state* jq, void* popcode_trace) {
       return jv_invalid();
     }
     uint16_t opcode = *pc;
-      if (backtracking) 
-        update_opcode_list(opcode_trace, ON_BACKTRACK(opcode));
-      else 
-        update_opcode_list(opcode_trace, opcode);
+    if (backtracking) 
+      opcode_trace = update_opcode_list(opcode_trace, ON_BACKTRACK(opcode), pModule_llvmlite, pModuleLowering);
+    else 
+      opcode_trace = update_opcode_list(opcode_trace, opcode, pModule_llvmlite, pModuleLowering);
+    *popcode_trace = (void*)opcode_trace;
     raising = 0;
 
     if (jq->debug_trace_enabled) {

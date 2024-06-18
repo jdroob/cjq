@@ -48,11 +48,11 @@ typedef struct {
 } trace;
 
 trace* init_trace();
-void update_opcode_list(trace* opcode_trace, uint8_t opcode);
+trace* update_opcode_list(trace* opcode_trace, uint8_t opcode, PyObject* pModule_llvmlite, PyObject* pModuleLowering);
 void update_entry_list(trace* opcode_trace);
 void update_input_list(trace* opcode_trace);
 void update_halt_loc(trace* opcode_trace);
 void free_trace(trace* opcode_trace);
-int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pDummy);
+int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering);
 
 #endif  /* CJQ_TRACE_H */

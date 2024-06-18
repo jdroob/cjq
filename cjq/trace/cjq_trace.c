@@ -152,38 +152,42 @@ static int isoption(const char* text, char shortopt, const char* longopt, size_t
 
 trace* init_trace() {
     trace* opcode_trace = malloc(sizeof(trace));
+
     opcode_trace->opcodes = malloc(sizeof(opcode_list));
     opcode_trace->opcodes->capacity = 0;
     opcode_trace->opcodes->count = 0;
     opcode_trace->opcodes->ops = NULL;
+    
     opcode_trace->entries = malloc(sizeof(jq_next_entry_list));
     opcode_trace->entries->capacity = 0;
     opcode_trace->entries->count = 0;
     opcode_trace->entries->entry_locs = NULL;
+
     opcode_trace->inputs = malloc(sizeof(jq_next_input_list));
     opcode_trace->inputs->capacity = 0;
     opcode_trace->inputs->count = 0;
     opcode_trace->inputs->input_locs = NULL;
+    
+    #include <limits.h>
+    opcode_trace->jq_halt_loc = UINT64_MAX;
 
     return opcode_trace;
 }
 
-// TODO: Delete
-void dummy_func(trace* opcode_trace, PyObject* pGen) {
-  // TODO: Add check here to see if we need to empty buffer and write LLVM now
-  if (opcode_trace->opcodes->count % 1000 == 0) {
-    // Get the builtins module
-    PyObject *builtins = PyEval_GetBuiltins();
-
-    // Get the 'next' function from the builtins module
-    PyObject *pFuncNext = PyDict_GetItemString(builtins, "next");
-
-    PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
-    PyObject* pResult = PyObject_CallFunctionObjArgs(pFuncNext, pGen, NULL);
-  }
+static void flush_trace(trace* opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
+  PyObject *pFuncSave = PyObject_GetAttrString(pModuleLowering, "save_trace");
+  PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
+  PyObject* pRes = PyObject_CallFunctionObjArgs(pFuncSave, opcode_trace_ptr, NULL);
 }
 
-void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
+# define MAX_OPS 10
+
+trace* update_opcode_list(trace* opcode_trace, uint8_t opcode, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
+  if (opcode_trace->opcodes->count >= MAX_OPS) {
+      flush_trace(opcode_trace, pModule_llvmlite, pModuleLowering);
+      free_trace(opcode_trace);
+      opcode_trace = init_trace();
+  }
   if (opcode_trace->opcodes->capacity < opcode_trace->opcodes->count + 1) {
     uint64_t oldCapacity = opcode_trace->opcodes->capacity;
     opcode_trace->opcodes->capacity = GROW_CAPACITY(oldCapacity);
@@ -192,6 +196,8 @@ void update_opcode_list(trace* opcode_trace, uint8_t opcode) {
   }
   opcode_trace->opcodes->ops[opcode_trace->opcodes->count] = opcode;
   opcode_trace->opcodes->count++;
+
+  return opcode_trace;
 }
 
 void update_entry_list(trace* opcode_trace) {
@@ -512,11 +518,11 @@ static void serialize_bc(const char* filename, const struct bytecode* bc) {
   fclose(file);
 }
 
-static int process(jq_state* jq, jv value, int flags, int dumpopts, int options, trace* opcode_trace) {
+static int process(jq_state* jq, jv value, int flags, int dumpopts, int options, trace** opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
   int ret = JQ_OK_NO_OUTPUT; // No valid results && -e -> exit(4)
   jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack
   jv result;
-  while (jv_is_valid(result = jq_next(jq, opcode_trace))) {
+  while (jv_is_valid(result = jq_next(jq, opcode_trace, pModule_llvmlite, pModuleLowering))) {
     if ((options & RAW_OUTPUT) && jv_get_kind(result) == JV_KIND_STRING) {
       if (options & ASCII_OUTPUT) {
         jv_dumpf(jv_copy(result), stdout, JV_PRINT_ASCII);
@@ -548,7 +554,7 @@ static int process(jq_state* jq, jv value, int flags, int dumpopts, int options,
       fflush(stdout);
   }
   if (jq_halted(jq)) {
-    update_halt_loc(opcode_trace);
+    update_halt_loc(*opcode_trace);
     // jq program invoked `halt` or `halt_error`
     jv exit_code = jq_get_exit_code(jq);
     if (!jv_is_valid(exit_code))
@@ -627,7 +633,7 @@ int wmain(int argc, wchar_t* wargv[]) {
 
 int umain(int argc, char* argv[]) {
 #else /*}*/
-int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pGen) {
+int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
 #endif
   jq_state* jq = NULL;
   jq_util_input_state* input_state = NULL;
@@ -1060,14 +1066,14 @@ int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pGen) {
   if (options & PROVIDE_NULL) {
     jv njv = jv_null();
     update_input_list(opcode_trace);
-    ret = process(jq, jv_null(), jq_flags, dumpopts, options, opcode_trace);
+    ret = process(jq, jv_null(), jq_flags, dumpopts, options, &opcode_trace, pModule_llvmlite, pModuleLowering);
   } else {
     jv value;
     while (jq_util_input_errors(input_state) == 0 &&
            (jv_is_valid((value = jq_util_input_next_input(input_state))) || jv_invalid_has_msg(jv_copy(value)))) {
       if (jv_is_valid(value)) {
         update_input_list(opcode_trace);
-        ret = process(jq, value, jq_flags, dumpopts, options, opcode_trace);
+        ret = process(jq, value, jq_flags, dumpopts, options, &opcode_trace, pModule_llvmlite, pModuleLowering);
         if (ret <= 0 && ret != JQ_OK_NO_OUTPUT)
           last_result = (ret != JQ_OK_NULL_KIND);
         if (jq_halted(jq))
@@ -1099,6 +1105,10 @@ out:
 //     fprintf(stderr,"jq: error: writing output failed: %s\n", strerror(errno));
 //     ret = JQ_ERROR_SYSTEM;
 //   }
+
+  flush_trace(opcode_trace, pModule_llvmlite, pModuleLowering);
+  free_trace(opcode_trace);
+  opcode_trace = init_trace();
 
   jv_free(ARGS);
   jv_free(program_arguments);

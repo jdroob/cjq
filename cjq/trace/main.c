@@ -86,18 +86,7 @@ int main(int argc, char *argv[]) {
     }
 
     trace* opcode_trace = init_trace();
-    PyObject *pFuncDumDum = PyObject_GetAttrString(pModuleLowering, "dummy_test");
-
-    if (!pFuncDumDum || !PyCallable_Check(pFuncDumDum)) {
-        if (PyErr_Occurred()) PyErr_Print();
-        fprintf(stderr, "Cannot find function 'generate_llvm_ir'\n");
-        return 1;
-    }
-    
-    PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
-    PyObject* pGen = PyObject_CallFunctionObjArgs(pFuncDumDum, opcode_trace_ptr, NULL);
-
-    int trace_error = cjq_trace(argc, argv, opcode_trace, pGen);
+    int trace_error = cjq_trace(argc, argv, opcode_trace, pModule_llvmlite, pModuleLowering);
     int gen_ir_error = get_llvm_ir(opcode_trace, pModule_llvmlite, pModuleLowering);
     free_trace(opcode_trace);
 

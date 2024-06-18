@@ -154,3 +154,5 @@ llvmgen
 dyn_op_lis.txt
 cjq/testing/basic_ops/json/builtin_ops/flatten_large1MB.json
 cjq/testing/basic_ops/json/builtin_ops/flatten_large512k.json
+del.txt
+del2.txt
