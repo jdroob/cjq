@@ -177,10 +177,11 @@ trace* init_trace() {
 static void flush_trace(trace* opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
   PyObject *pFuncSave = PyObject_GetAttrString(pModuleLowering, "save_trace");
   PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
+  printf("Calling save_trace\n");
   PyObject* pRes = PyObject_CallFunctionObjArgs(pFuncSave, opcode_trace_ptr, NULL);
 }
 
-# define MAX_OPS 10
+#define MAX_OPS 10
 
 trace* update_opcode_list(trace* opcode_trace, uint8_t opcode, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
   if (opcode_trace->opcodes->count >= MAX_OPS) {

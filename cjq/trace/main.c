@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
     trace* opcode_trace = init_trace();
     int trace_error = cjq_trace(argc, argv, opcode_trace, pModule_llvmlite, pModuleLowering);
-    int gen_ir_error = get_llvm_ir(opcode_trace, pModule_llvmlite, pModuleLowering);
+    // int gen_ir_error = get_llvm_ir(opcode_trace, pModule_llvmlite, pModuleLowering);
     free_trace(opcode_trace);
 
     return 0;

@@ -1,6 +1,7 @@
 .vscode/c_cpp_properties.json
 experiment/.remake-version-h
 experiment/jq
+*.txt
 experiment/jq
 experiment/prod1.json
 experiment/prod2.json
@@ -156,3 +157,4 @@ cjq/testing/basic_ops/json/builtin_ops/flatten_large1MB.json
 cjq/testing/basic_ops/json/builtin_ops/flatten_large512k.json
 del.txt
 del2.txt
+bel.txt

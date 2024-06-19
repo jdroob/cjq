@@ -25,7 +25,6 @@ def unique_subseq(sequence):
 
     return sorted(subsequences, key=len, reverse=True)
 
-
 def generate_subseq_lis(dyn_op_seq, subseqs):
     gen_lis = []
     i = 0  # Start index
@@ -41,24 +40,6 @@ def generate_subseq_lis(dyn_op_seq, subseqs):
         if not matched:
             i += 1  # If no subsequence matches, move the index forward by 1
     return gen_lis
-
-def coalesce_tuples(tuples_list):
-    # TODO: Experiment with coalescing - see how it affects compile time
-    if not tuples_list:
-        return []
-
-    result = []
-    current_tuple = list(tuples_list[0])
-
-    for i in range(1, len(tuples_list)):
-        if tuples_list[i] == tuples_list[i - 1]:
-            current_tuple.extend(tuples_list[i])
-        else:
-            result.append(tuple(current_tuple))
-            current_tuple = list(tuples_list[i])
-
-    result.append(tuple(current_tuple))
-    return result
 
 class Opcode(Enum):
     LOADK=0
@@ -118,7 +99,7 @@ class CallType:
         return self.opcode < other.opcode
     
     def __eq__(self, other):
-        return self.opcode == other.opcode and self.backtracking == other.backtracking
+        return isinstance(other, CallType) and self.opcode == other.opcode and self.backtracking == other.backtracking
     
     def __ne__(self, other):
         return self.opcode != other.opcode and self.backtracking != other.backtracking
@@ -137,7 +118,7 @@ def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
             case Opcode.DUP2.value:
                 lis.append(CallType(Opcode.DUP2.value))
             case Opcode.PUSHK_UNDER.value:
-                print("PUSHK_UNDER match")
+                # print("PUSHK_UNDER match")
                 lis.append(CallType(Opcode.PUSHK_UNDER.value))
             case Opcode.POP.value:
                 lis.append(CallType(Opcode.POP.value))
@@ -176,7 +157,7 @@ def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
             case Opcode.RANGE.value:
                 lis.append(CallType(Opcode.RANGE.value))
             case Opcode.SUBEXP_BEGIN.value:
-                print("SUBEXP_BEGIN match")
+                # print("SUBEXP_BEGIN match")
                 lis.append(CallType(Opcode.SUBEXP_BEGIN.value))
             case Opcode.SUBEXP_END.value:
                 lis.append(CallType(Opcode.SUBEXP_END.value))
@@ -189,7 +170,7 @@ def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
             case Opcode.CALL_JQ.value:
                 lis.append(CallType(Opcode.CALL_JQ.value))
             case Opcode.RET.value:
-                print("RET match")
+                # print("RET match")
                 lis.append(CallType(Opcode.RET.value))
             case Opcode.TAIL_CALL_JQ.value:
                 lis.append(CallType(Opcode.TAIL_CALL_JQ.value))
@@ -777,30 +758,6 @@ def generate_llvm_ir(opcodes_ptr):
         print("Error generating LLVM IR:", e)
         exit(1)
 
-number_list = []
-
-def dummy_test(opcodes_ptr):
-    # Get the home directory
-    home_dir = os.path.expanduser("~")
-    so_file = os.path.join(home_dir, "cjq/jq_util.so")
-    
-    # Need this to call C functions from Python
-    jq_util_funcs = CDLL(so_file)
-    # Define argument types for C function
-    jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
-    jq_util_funcs._get_opcode_list_len.restype = c_uint64
-    
-    # Get opcode_list length from cjq_state
-    opcode_lis_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
-    if opcode_lis_len > 0:
-        # Get all opcodes from opcode_list
-        jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_uint64]
-        jq_util_funcs._opcode_list_at.restype = c_uint8
-        
-        number = jq_util_funcs._opcode_list_at(opcodes_ptr, opcode_lis_len-1)
-        
-        global number_list
-        number_list.append(number)
 
 #=============
 # GLOBALS
@@ -1132,67 +1089,55 @@ _opcode_ERRORK.attributes.add('optsize')
 
 
 backtracking_opcode_funcs = (_opcode_BACKTRACK_RANGE, _opcode_BACKTRACK_STOREVN, _opcode_BACKTRACK_PATH_BEGIN, _opcode_BACKTRACK_PATH_END, _opcode_BACKTRACK_EACH, _opcode_BACKTRACK_EACH_OPT, _opcode_BACKTRACK_TRY_BEGIN, _opcode_BACKTRACK_TRY_END, _opcode_BACKTRACK_DESTRUCTURE_ALT, _opcode_BACKTRACK_FORK, _opcode_BACKTRACK_RET)
-
-# def check_subseq(buffer, i, subseq_len, subseq):
-#     if len(buffer) < i + subseq_len:
-#         return False
-    
-#     for j in range(subseq_len):
-#         if buffer[i + j] != subseq[j]:
-#             return False
-    
-#     return True
-
-# def update_dyn_op_lis_g(buffer):
-#     global dyn_op_lis_g
-#     global subseqs_g
-#     i = 0  # Start index
-#     while i < len(buffer):
-#         matched = False
-#         for subseq in subseqs_g:
-#             subseq_len = len(subseq)
-#             if check_subseq(buffer, i, subseq_len, subseq):
-#                 if len(dyn_op_lis_g) < 10:
-#                     dyn_op_lis_g.append(subseq)
-#                     i += subseq_len  # Move the index forward by the length of the matched subsequence
-#                     matched = True
-#                     break
-#         if not matched:
-#             i += 1  # If no subsequence matches, move the index forward by 1 <-- shouldn't ever get here!
             
-def update_dyn_op_lis_g(buffer):
-    # dyn_op_lis_g = []  # Result list
+def update_dyn_op_lis_g(buffer, buffer_subseqs):
     global dyn_op_lis_g
-    global subseqs_g
+    print("buffer length")
+    print(len(buffer))
+    bs_len = 0
+    for tup in buffer_subseqs:
+        bs_len += len(tup)
+    print("buffer_subseqs len")
+    print(bs_len)
     i = 0  # Start index
-    print(f"in update dyn list: {len(buffer)}")
     
     with open("del2.txt", "w") as file:    
         while i < len(buffer):
             matched = False
-            for subseq in subseqs_g:
+            print("buffer_subseqs")
+            for subseq in buffer_subseqs:
+                print("subseq")
+                for op in subseq:
+                    print(op)
                 subseq_len = len(subseq)
-                if tuple(buffer[i:i+subseq_len]) == subseq:
+                buffer_slice = tuple(buffer[i:i+subseq_len])
+                print("buffer slice")
+                for op in buffer_slice:
+                    print(op)
+
+                if buffer_slice == subseq:
                     file.write("SUBSEQ MATCH\n")
-                    for j in range(i,i+subseq_len):
-                        file.write(str(buffer[j])+'\n')
-                    file.write("the supposedly matching subseq\n")
+                    for j in range(i, i + subseq_len):
+                        file.write(str(buffer[j]) + '\n')
+                    file.write("The supposedly matching subseq\n")
                     for op in subseq:
-                        file.write(str(op)+'\n')
+                        file.write(str(op) + '\n')
                     dyn_op_lis_g.append(subseq)
                     i += subseq_len  # Move the index forward by the length of the matched subsequence
                     matched = True
                     break
-            if not matched:
-                print(f"could not match {buffer[i]}")
-                # dyn_op_lis_g.append(tuple(buffer[i]))
+            if not matched: # Explicitly add to set and start over
+                buffer_subseqs.add(tuple([buffer[i]]))
+                print(f"Could not match {buffer[i]}")
+                for _subseq in buffer_subseqs:
+                    if _subseq == tuple([buffer[i]]):
+                        dyn_op_lis_g.append(_subseq)  # Uncomment if you want to append single unmatched items
                 i += 1  # If no subsequence matches, move the index forward by 1
-                # This should not happen if subseqs cover all cases as mentioned
-        
-    # return dyn_op_lis_g            
-        
+
 def save_trace(opcodes_ptr):
     global subseqs
+    global dyn_op_lis_g
+    print("in the func")
     # Get the home directory
     home_dir = os.path.expanduser("~")
     so_file = os.path.join(home_dir, "cjq/jq_util.so")
@@ -1252,9 +1197,7 @@ def save_trace(opcodes_ptr):
     
     # 1. Record dynamic opcodes
     buffer = []     # List of CallType objects
-    print(f"opcode_lis_len: {opcode_lis_len}")
     for opcode_lis_idx in range(opcode_lis_len):
-        print("in for loop")
         if next_input_idx < next_input_lis_len:
             # Check if we need to iterate cjq->value to the next JSON input
             next_input_loc = jq_util_funcs._next_input_list_at(opcodes_ptr, next_input_idx)
@@ -1273,7 +1216,6 @@ def save_trace(opcodes_ptr):
                 print(CallType(Opcode.INIT_JQ_NEXT.value))
                 jq_next_entry_idx += 1
         curr_opcode = jq_util_funcs._opcode_list_at(opcodes_ptr, opcode_lis_idx)
-        print(f"curr_opcode: {curr_opcode}")
         match_on_opcode(buffer, curr_opcode, backtracking_opcodes)
     # Check if program halted
     if opcode_lis_len-1 == jq_halt_loc:
@@ -1283,12 +1225,12 @@ def save_trace(opcodes_ptr):
     # buffer.append(CallType(Opcode.UPDATE_RES_STATE.value))
 
     # 2. Generate set of subsequences in dynamic opcode sequence
-    subseqs_g.update(set(unique_subseq(buffer))) # list of tuples of CallType objects
-    # print(subseqs_g)
-    print("calling dyn")
-    update_dyn_op_lis_g(buffer)
-    # Write LLVM IR to file
-    with open("del.txt", "w") as file:
+    buffer_subseqs = set(unique_subseq(buffer)) # set of tuples of CallType objects
+    update_dyn_op_lis_g(buffer, buffer_subseqs)
+    subseqs_g.update(buffer_subseqs)
+    
+    # Write output to file for debugging
+    with open("bel.txt", "w") as file:
         for tup in dyn_op_lis_g:
             for op in tup:
                 file.write(str(op)+'\n')
