@@ -10,6 +10,12 @@ dyn_op_lis_g = []
 # Set of unique subseqs
 subseqs_g = set()
 
+dyn_op_subseq_to_op_func_subseq = {} # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
+
+subseq_func_idx = 0
+
+dyn_op_subseq_to_subseq_func = {}
+
 # Create LLVM module
 module = ir.Module()
 
@@ -26,6 +32,9 @@ void_ptr_type = ir.IntType(8).as_pointer()
 main_func_type = ir.FunctionType(ir.VoidType(), [void_ptr_type])
 main_func = ir.Function(module, main_func_type, "jq_program")
 main_block = main_func.append_basic_block("entry")
+builder = ir.IRBuilder(main_block)
+# Get jq_program arg
+_cjq, = main_func.args
 
 # Define opcode-functions
 _get_next_input = ir.Function(module,
@@ -518,8 +527,8 @@ def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
                 else:
                     raise ValueError(f"Current opcode: {curr_opcode} does not match any existing opcodes")
             
-def update_dyn_op_lis_g(buffer, buffer_subseqs):
-    global dyn_op_lis_g
+def gen_dyn_op_lis_g(buffer, buffer_subseqs):
+    dyn_op_lis_g = []
     i = 0  # Start index
        
     while i < len(buffer):
@@ -538,10 +547,14 @@ def update_dyn_op_lis_g(buffer, buffer_subseqs):
                 if _subseq == tuple([buffer[i]]):
                     dyn_op_lis_g.append(_subseq) 
             i += 1 
+    return dyn_op_lis_g
 
 def save_trace(opcodes_ptr):
     global subseqs
-    global dyn_op_lis_g
+    global dyn_op_subseq_to_op_func_subseq # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
+    global subseq_func_idx
+    global dyn_op_subseq_to_subseq_func
+    global _cjq
     home_dir = os.path.expanduser("~")
     so_file = os.path.join(home_dir, "cjq/jq_util.so")
     # Need this to call C functions from Python
@@ -624,15 +637,146 @@ def save_trace(opcodes_ptr):
     # 2. Generate set of subsequences that appear in buffer
     buffer_subseqs = set(unique_subseq(buffer)) # JOHN: I belive using this approach saves memory as dyn_op_lis_g will now be a list of references - each pointing to one subseq in a finite set of subseqs in subseqs_g
     
-    # 3. Append to global list. dyn_op_lis_g stores a list of references to subsequences in a finite set
-    #    of subsequences in order to save space
-    update_dyn_op_lis_g(buffer, buffer_subseqs)
+    # 3. Generate a list of references to subsequences that matches 
+    #    order of dynamic opcodes from buffer
+    dyn_op_lis_g = gen_dyn_op_lis_g(buffer, buffer_subseqs)
     
     # 4. subseqs_g := subseqs_g UNION buffer_subseqs
     # subseqs_g.update(buffer_subseqs)
     for subseq in buffer_subseqs:
         subseqs_g.add(subseq)
-        
+    
+    # 5. Update map of CallType object subsequences to corresponding subsequences of LLVM function calls
+    for subseq in subseqs_g:
+        func = []
+        for dyn_op in subseq:
+            if not dyn_op.backtracking:
+                match dyn_op.opcode:
+                    case Opcode.LOADK.value:
+                        func.append(_opcode_LOADK)
+                    case Opcode.DUP.value:
+                        func.append(_opcode_DUP)
+                    case Opcode.DUPN.value:
+                        func.append(_opcode_DUPN)
+                    case Opcode.DUP2.value:
+                        func.append(_opcode_DUP2)
+                    case Opcode.PUSHK_UNDER.value:
+                        func.append(_opcode_PUSHK_UNDER)
+                    case Opcode.POP.value:
+                        func.append(_opcode_POP)
+                    case Opcode.LOADV.value:
+                        func.append(_opcode_LOADV)
+                    case Opcode.LOADVN.value:
+                        func.append(_opcode_LOADVN)
+                    case Opcode.STOREV.value:
+                        func.append(_opcode_STOREV)
+                    case Opcode.STORE_GLOBAL.value:
+                        func.append(_opcode_STORE_GLOBAL)
+                    case Opcode.INDEX.value:
+                        func.append(_opcode_INDEX)
+                    case Opcode.INDEX_OPT.value:
+                        func.append(_opcode_INDEX_OPT)
+                    case Opcode.EACH.value:
+                        func.append(_opcode_EACH)
+                    case Opcode.EACH_OPT.value:
+                        func.append(_opcode_EACH_OPT)
+                    case Opcode.FORK.value:
+                        func.append(_opcode_FORK)
+                    case Opcode.TRY_BEGIN.value:
+                        func.append(_opcode_TRY_BEGIN)
+                    case Opcode.TRY_END.value:
+                        func.append(_opcode_TRY_END)
+                    case Opcode.JUMP.value:
+                        func.append(_opcode_JUMP)
+                    case Opcode.JUMP_F.value:
+                        func.append(_opcode_JUMP_F)
+                    case Opcode.BACKTRACK.value:
+                        func.append(_opcode_BACKTRACK)
+                    case Opcode.APPEND.value:
+                        func.append(_opcode_APPEND)
+                    case Opcode.INSERT.value:
+                        func.append(_opcode_INSERT)
+                    case Opcode.RANGE.value:
+                        func.append(_opcode_RANGE)
+                    case Opcode.SUBEXP_BEGIN.value:
+                        func.append(_opcode_SUBEXP_BEGIN)
+                    case Opcode.SUBEXP_END.value:
+                        func.append(_opcode_SUBEXP_END)
+                    case Opcode.PATH_BEGIN.value:
+                        func.append(_opcode_PATH_BEGIN)
+                    case Opcode.PATH_END.value:
+                        func.append(_opcode_PATH_END)
+                    case Opcode.CALL_BUILTIN.value:
+                        func.append(_opcode_CALL_BUILTIN)
+                    case Opcode.CALL_JQ.value:
+                        func.append(_opcode_CALL_JQ)
+                    case Opcode.RET.value:
+                        func.append(_opcode_RET)
+                    case Opcode.TAIL_CALL_JQ.value:
+                        func.append(_opcode_TAIL_CALL_JQ)
+                    case Opcode.TOP.value:
+                        func.append(_opcode_TOP)
+                    case Opcode.GENLABEL.value:
+                        func.append(_opcode_GENLABEL)
+                    case Opcode.DESTRUCTURE_ALT.value:
+                        func.append(_opcode_DESTRUCTURE_ALT)
+                    case Opcode.STOREVN.value:
+                        func.append(_opcode_STOREVN)
+                    case Opcode.ERRORK.value:
+                        func.append(_opcode_ERRORK)
+                    case Opcode.INIT_JQ_NEXT.value:
+                        func.append(_init_jq_next)
+                    case Opcode.GET_NEXT_INPUT.value:
+                        func.append(_get_next_input)
+                    case Opcode.UPDATE_RES_STATE.value:
+                        func.append(_update_result_state)
+                    case Opcode.JQ_HALT.value:
+                        func.append(_jq_halt)
+                    case _:
+                        raise ValueError(f"Current opcode: {dyn_op.opcode} does not match any existing opcodes")
+            else:
+                func.append(backtracking_opcode_funcs[dyn_op.opcode])   # index of backtracking func in backtracking_opcode_funcs
+        if not subseq in dyn_op_subseq_to_op_func_subseq:
+            dyn_op_subseq_to_op_func_subseq[subseq] = tuple(func)
+    
+    # 6. Create map of subsequences of CallType objects to subsequence functions (LLVM functions that call a specific subsequence of opcode functions)
+    subseq_func_type = main_func_type
+    for subseq in subseqs_g:
+        if not subseq in dyn_op_subseq_to_subseq_func:
+            dyn_op_subseq_to_subseq_func[subseq] = ir.Function(module, subseq_func_type, "_subsequence_func"+str(subseq_func_idx))
+            dyn_op_subseq_to_subseq_func[subseq].attributes.add('noinline')
+            subseq_block = dyn_op_subseq_to_subseq_func[subseq].append_basic_block("subsequence_"+str(subseq_func_idx))
+            builder = ir.IRBuilder(subseq_block)
+            for opcode_func in dyn_op_subseq_to_op_func_subseq[subseq]:
+                builder.call(opcode_func, [_cjq])
+            builder.ret_void()
+            subseq_func_idx += 1
+    # 7. Using dynamic opcode sequence constructed from subsequences in step 5, and subsequence -> subsequence function from step 4,
+    #       generate the corresponding sequence of calls to subsequence functions in LLVM IR
+    builder = ir.IRBuilder(main_block)
+    for subseq in dyn_op_lis_g:
+        if subseq in dyn_op_subseq_to_subseq_func:
+            builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
+        else:
+            for op in subseq:
+                print(op)
+    
+def jq_lower2():
+    # Update for final state
+    # final_op = tuple([CallType(Opcode.UPDATE_RES_STATE.value)])
+    # subseqs_g.add(final_op)
+    # if not final_op in dyn_op_subseq_to_op_func_subseq:
+    #     dyn_op_subseq_to_op_func_subseq[final_op] = [_update_result_state]
+    # subseq_func_type = main_func_type
+    # if not final_op in dyn_op_subseq_to_subseq_func:
+    #     dyn_op_subseq_to_subseq_func[final_op] = ir.Function(module, subseq_func_type, "_subsequence_func"+str(subseq_func_idx))
+    #     dyn_op_subseq_to_subseq_func[final_op].attributes.add('noinline')
+    #     subseq_block = dyn_op_subseq_to_subseq_func[final_op].append_basic_block("subsequence_"+str(subseq_func_idx))
+    #     builder.call(_update_result_state, [_cjq])
+    #     builder.ret_void
+    # builder.call(dyn_op_subseq_to_subseq_func[final_op], [_cjq])
+    builder.ret_void()
+    return module      
 
 def jq_lower():
     """
@@ -655,6 +799,12 @@ def jq_lower():
     final_op = tuple([CallType(Opcode.UPDATE_RES_STATE.value)])
     subseqs_g.add(final_op)
     dyn_op_lis_g.append(final_op)
+    
+    from pympler import asizeof
+    print(asizeof.asizeof(dyn_op_lis_g))
+    print(len(dyn_op_lis_g))
+    print(asizeof.asizeof(subseqs_g))
+    print(len(subseqs_g))
     
     # 1. Generate map of CallType object subsequences to corresponding subsequences of LLVM function calls
     dyn_op_subseq_to_op_func_subseq = {} # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
@@ -774,7 +924,8 @@ def jq_lower():
     
 def generate_llvm_ir():
     try:
-        llvm_ir = jq_lower()
+        llvm_ir = jq_lower2()
+        print(llvm_ir)
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
         
