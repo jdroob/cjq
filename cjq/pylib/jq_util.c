@@ -18,7 +18,7 @@ uint64_t _get_opcode_list_len(void* opcode_trace_ptr) {
 
 uint8_t _opcode_list_at(void* opcode_trace_ptr, uint64_t index) {
     trace* popcode_trace_ptr = (trace*)opcode_trace_ptr;
-    printf("in get opcode: %hhu\n", popcode_trace_ptr->opcodes->ops[index]);
+    // printf("in get opcode: %hhu\n", popcode_trace_ptr->opcodes->ops[index]);
     return popcode_trace_ptr->opcodes->ops[index];
 }
 

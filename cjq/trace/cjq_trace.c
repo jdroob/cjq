@@ -177,11 +177,14 @@ trace* init_trace() {
 static void flush_trace(trace* opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
   PyObject *pFuncSave = PyObject_GetAttrString(pModuleLowering, "save_trace");
   PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
-  printf("Calling save_trace\n");
   PyObject* pRes = PyObject_CallFunctionObjArgs(pFuncSave, opcode_trace_ptr, NULL);
+
+  Py_XDECREF(pFuncSave);
+  Py_XDECREF(opcode_trace_ptr);
+  Py_XDECREF(pRes);
 }
 
-#define MAX_OPS 10
+#define MAX_OPS 10000
 
 trace* update_opcode_list(trace* opcode_trace, uint8_t opcode, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
   if (opcode_trace->opcodes->count >= MAX_OPS) {
@@ -228,8 +231,11 @@ void update_halt_loc(trace* opcode_trace) {
 }
 
 void free_trace(trace* opcode_trace) {
+  free(opcode_trace->opcodes->ops);
   free(opcode_trace->opcodes);
+  free(opcode_trace->entries->entry_locs);
   free(opcode_trace->entries);
+  free(opcode_trace->inputs->input_locs);
   free(opcode_trace->inputs);
   free(opcode_trace);
   opcode_trace = NULL;
@@ -523,7 +529,7 @@ static int process(jq_state* jq, jv value, int flags, int dumpopts, int options,
   int ret = JQ_OK_NO_OUTPUT; // No valid results && -e -> exit(4)
   jq_start(jq, value, flags);   // John: Pushes entire value (all json objects) to stack
   jv result;
-  while (jv_is_valid(result = jq_next(jq, opcode_trace, pModule_llvmlite, pModuleLowering))) {
+  while (jv_is_valid(result = jq_next(jq, (void**)opcode_trace, pModule_llvmlite, pModuleLowering))) {
     if ((options & RAW_OUTPUT) && jv_get_kind(result) == JV_KIND_STRING) {
       if (options & ASCII_OUTPUT) {
         jv_dumpf(jv_copy(result), stdout, JV_PRINT_ASCII);
@@ -1109,7 +1115,7 @@ out:
 
   flush_trace(opcode_trace, pModule_llvmlite, pModuleLowering);
   free_trace(opcode_trace);
-  opcode_trace = init_trace();
+  // opcode_trace = init_trace();
 
   jv_free(ARGS);
   jv_free(program_arguments);
