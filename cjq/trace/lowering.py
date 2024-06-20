@@ -763,18 +763,20 @@ def save_trace(opcodes_ptr):
     
 def jq_lower2():
     # Update for final state
-    # final_op = tuple([CallType(Opcode.UPDATE_RES_STATE.value)])
-    # subseqs_g.add(final_op)
-    # if not final_op in dyn_op_subseq_to_op_func_subseq:
-    #     dyn_op_subseq_to_op_func_subseq[final_op] = [_update_result_state]
-    # subseq_func_type = main_func_type
-    # if not final_op in dyn_op_subseq_to_subseq_func:
-    #     dyn_op_subseq_to_subseq_func[final_op] = ir.Function(module, subseq_func_type, "_subsequence_func"+str(subseq_func_idx))
-    #     dyn_op_subseq_to_subseq_func[final_op].attributes.add('noinline')
-    #     subseq_block = dyn_op_subseq_to_subseq_func[final_op].append_basic_block("subsequence_"+str(subseq_func_idx))
-    #     builder.call(_update_result_state, [_cjq])
-    #     builder.ret_void
-    # builder.call(dyn_op_subseq_to_subseq_func[final_op], [_cjq])
+    final_op = tuple([CallType(Opcode.UPDATE_RES_STATE.value)])
+    subseqs_g.add(final_op)
+    if not final_op in dyn_op_subseq_to_op_func_subseq:
+        dyn_op_subseq_to_op_func_subseq[final_op] = [_update_result_state]
+    subseq_func_type = main_func_type
+    if not final_op in dyn_op_subseq_to_subseq_func:
+        dyn_op_subseq_to_subseq_func[final_op] = ir.Function(module, subseq_func_type, "_subsequence_func"+str(subseq_func_idx))
+        dyn_op_subseq_to_subseq_func[final_op].attributes.add('noinline')
+        subseq_block = dyn_op_subseq_to_subseq_func[final_op].append_basic_block("subsequence_"+str(subseq_func_idx))
+        builder = ir.IRBuilder(subseq_block)
+        builder.call(_update_result_state, [_cjq])
+        builder.ret_void
+    builder = ir.IRBuilder(main_block)
+    builder.call(dyn_op_subseq_to_subseq_func[final_op], [_cjq])
     builder.ret_void()
     return module      
 
@@ -925,7 +927,7 @@ def jq_lower():
 def generate_llvm_ir():
     try:
         llvm_ir = jq_lower2()
-        print(llvm_ir)
+        # print(llvm_ir)
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
         
