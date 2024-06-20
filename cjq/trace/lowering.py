@@ -774,7 +774,7 @@ def jq_lower2():
         subseq_block = dyn_op_subseq_to_subseq_func[final_op].append_basic_block("subsequence_"+str(subseq_func_idx))
         builder = ir.IRBuilder(subseq_block)
         builder.call(_update_result_state, [_cjq])
-        builder.ret_void
+        builder.ret_void()
     builder = ir.IRBuilder(main_block)
     builder.call(dyn_op_subseq_to_subseq_func[final_op], [_cjq])
     builder.ret_void()
