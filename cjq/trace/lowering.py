@@ -4,46 +4,45 @@ from ctypes import *
 from enum import Enum
 import os
 
-# List of subseqs
-dyn_op_lis_g = []
-
-# Set of unique subseqs
+# set of unique subsequences of calls to opcode functions
 subseqs_g = set()
 
 dyn_op_subseq_to_op_func_subseq = {} # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
 
 subseq_func_idx = 0
-
 loop_block_idx = 0
-
 new_block_idx = 0
-
 i_idx = 0
 
 dyn_op_subseq_to_subseq_func = {}
 
-# Create LLVM module
+# set up llvmlite
+llvm.initialize()
+llvm.initialize_native_target()
+llvm.initialize_native_asmprinter()
+
+target = llvm.Target.from_default_triple()
+target_machine = target.create_target_machine()
+
+data_layout = target_machine.target_data
+triple = llvm.get_process_triple()
+
 module = ir.Module()
+module.data_layout = data_layout
+module.triple = triple
 
-# Set the data layout
-#TODO: Find better way than hard-coding
-data_layout_str = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
-module.data_layout = llvm.create_target_data(data_layout_str)
-module.triple = llvm.get_process_triple()
-
-# Create a void pointer type
+# declare llvmlite primitives
 void_ptr_type = ir.IntType(8).as_pointer()
-
-# Define entry point
 main_func_type = ir.FunctionType(ir.VoidType(), [void_ptr_type])
 main_func = ir.Function(module, main_func_type, "jq_program")
 main_block = main_func.append_basic_block("entry")
 builder = ir.IRBuilder(main_block)
 most_recent_block = main_block
-# Get jq_program arg
+
+# get reference to jq_program arg
 _cjq, = main_func.args
 
-# Define opcode-functions
+# define opcode functions
 _get_next_input = ir.Function(module,
                         ir.FunctionType(ir.VoidType(), [void_ptr_type]),
                         name='_get_next_input')
@@ -350,42 +349,8 @@ _opcode_ERRORK = ir.Function(module,
                         name='_opcode_ERRORK')
 _opcode_ERRORK.attributes.add('alwaysinline')
 _opcode_ERRORK.attributes.add('optsize')
-
-
 backtracking_opcode_funcs = (_opcode_BACKTRACK_RANGE, _opcode_BACKTRACK_STOREVN, _opcode_BACKTRACK_PATH_BEGIN, _opcode_BACKTRACK_PATH_END, _opcode_BACKTRACK_EACH, _opcode_BACKTRACK_EACH_OPT, _opcode_BACKTRACK_TRY_BEGIN, _opcode_BACKTRACK_TRY_END, _opcode_BACKTRACK_DESTRUCTURE_ALT, _opcode_BACKTRACK_FORK, _opcode_BACKTRACK_RET)
 
-def unique_subseq(sequence):
-    subsequences = set()
-    current_subsequence = []
-
-    for call in sequence:
-        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:  # TODO: This heuristic is fine but I wonder if there's something better I could use
-            current_subsequence.append(call)
-        else:
-            if current_subsequence:
-                subsequences.add(tuple(current_subsequence))
-            current_subsequence = [call]
-
-    if current_subsequence:
-        subsequences.add(tuple(current_subsequence))
-
-    return sorted(subsequences, key=len, reverse=True)
-
-def generate_subseq_lis(dyn_op_seq, subseqs):
-    gen_lis = []
-    i = 0  # Start index
-    while i < len(dyn_op_seq):
-        matched = False
-        for subseq in subseqs:
-            subseq_len = len(subseq)
-            if tuple(dyn_op_seq[i:i + subseq_len]) == subseq:
-                gen_lis.append(subseq)
-                i += subseq_len  # Move the index forward by the length of the matched subsequence
-                matched = True
-                break
-        if not matched:
-            i += 1  # If no subsequence matches, move the index forward by 1
-    return gen_lis
 
 class Opcode(Enum):
     LOADK=0
@@ -430,6 +395,7 @@ class Opcode(Enum):
     UPDATE_RES_STATE=99
     JQ_HALT=100
 
+
 class CallType:
     def __init__(self, opcode, backtracking=0):
         self.opcode = opcode
@@ -449,9 +415,10 @@ class CallType:
     
     def __ne__(self, other):
         return self.opcode != other.opcode and self.backtracking != other.backtracking
-    
+
     def __hash__(self):
         return hash((self.opcode, self.backtracking))
+    
     
 def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
     match curr_opcode:
@@ -550,9 +517,9 @@ def find_shortest_repeating_subsequence(sequence):
 
     return None, 0
 
-def compress_op_lis(call_types):
-    n = len(call_types)
-    result = []
+def compress_op_lis(op_lis):
+    n = len(op_lis)
+    encoding = []
     i = 0
 
     while i < n:
@@ -560,50 +527,65 @@ def compress_op_lis(call_types):
         best_subseq = []
         max_count = 0
 
-        # Check for repeating sequences
+        # check for repeating sequences
         for j in range(i + 1, n + 1):
-            subseq = call_types[i:j]
+            subseq = op_lis[i:j]
             sub_length = len(subseq)
             count = 0
             pos = i
 
-            # Count how many times the sequence repeats consecutively
-            while pos + sub_length <= n and call_types[pos:pos+sub_length] == subseq:
+            # count number of times the sequence repeats consecutively
+            while pos + sub_length <= n and op_lis[pos:pos+sub_length] == subseq:
                 count += 1
                 pos += sub_length
 
-            # Update the best (shortest) repeating sequence found
+            # update the best (shortest) repeating sequence found
             if count > 1 and (sub_length < max_length or (sub_length == max_length and count > max_count)):
                 max_length = sub_length
                 best_subseq = subseq
                 max_count = count
 
-        # If a repeating sequence is found
         if best_subseq:
-            result.append((best_subseq, max_count))
+            encoding.append((best_subseq, max_count))
             i += max_length * max_count
         else:
-            result.append(([call_types[i]], 1))
+            encoding.append(([op_lis[i]], 1))
             i += 1
 
-    # Further compress each found sequence if it has internal repetitions
-    final_result = []
-    for sequence, count in result:
+    # compress each found sequence if it has internal repetitions
+    compressed_op_lis = []
+    for sequence, count in encoding:
         if len(sequence) > 1:
             sub_seq, sub_count = find_shortest_repeating_subsequence(sequence)
             if sub_seq:
-                final_result.append((sub_seq, sub_count * count))
+                compressed_op_lis.append((sub_seq, sub_count * count))
             else:
-                final_result.append((sequence, count))
+                compressed_op_lis.append((sequence, count))
         else:
-            final_result.append((sequence, count))
+            compressed_op_lis.append((sequence, count))
 
-    return final_result
+    return compressed_op_lis
 
+def unique_subseq(sequence):
+    subsequences = set()
+    current_subsequence = []
+
+    for call in sequence:
+        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:  # TODO: This heuristic is fine but I wonder if there's something better I could use
+            current_subsequence.append(call)
+        else:
+            if current_subsequence:
+                subsequences.add(tuple(current_subsequence))
+            current_subsequence = [call]
+
+    if current_subsequence:
+        subsequences.add(tuple(current_subsequence))
+
+    return sorted(subsequences, key=len, reverse=True)
            
 def gen_dyn_op_lis_g(buffer, buffer_subseqs):
     dyn_op_lis_g = []
-    i = 0  # Start index
+    i = 0
        
     while i < len(buffer):
         matched = False
@@ -612,10 +594,10 @@ def gen_dyn_op_lis_g(buffer, buffer_subseqs):
             buffer_slice = tuple(buffer[i:i+subseq_len])
             if buffer_slice == subseq:
                 dyn_op_lis_g.append(subseq)
-                i += subseq_len  # Move the index forward by the length of the matched subsequence
+                i += subseq_len
                 matched = True
                 break
-        if not matched: # Explicitly add to set and start over
+        if not matched:
             buffer_subseqs.add(tuple([buffer[i]]))
             for _subseq in buffer_subseqs:
                 if _subseq == tuple([buffer[i]]):
@@ -635,65 +617,66 @@ def save_trace(opcodes_ptr):
     global _cjq
     home_dir = os.path.expanduser("~")
     so_file = os.path.join(home_dir, "cjq/jq_util.so")
-    # Need this to call C functions from Python
+    
+    # need this to call C functions from Python
     jq_util_funcs = CDLL(so_file)
     
-    # Define argument types for C function
+    # define argument types for C function
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_opcode_list_len.restype = c_uint64
     opcode_lis_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
     
-    # Define argument types for C function
+    # define argument types for C function
     jq_util_funcs._get_next_input_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_next_input_list_len.restype = c_uint64
     
-    # Get next_input_list length from cjq
+    # get next_input_list length from cjq
     next_input_lis_len = jq_util_funcs._get_next_input_list_len(opcodes_ptr)
     
-    # Get all opcodes from opcode_list
+    # get all opcodes from opcode_list
     jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_uint64]
     jq_util_funcs._opcode_list_at.restype = c_uint8
     
-    # Also, get all entry points from jq_next_entry_list
+    # also, get all entry points from jq_next_entry_list
     jq_util_funcs._jq_next_entry_list_at.argtypes = [c_void_p, c_uint64]
     jq_util_funcs._jq_next_entry_list_at.restype = c_uint64
     jq_next_entry_idx = 0
     
-    # Define argument types for C function
+    # define argument types for C function
     jq_util_funcs._get_jq_next_entry_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_jq_next_entry_list_len.restype = c_uint64
     
-    # Get opcode_list length from cjq
+    # get opcode_list length from cjq
     jq_next_entry_lis_len = jq_util_funcs._get_jq_next_entry_list_len(opcodes_ptr)
     
-    # Also, be able to determine when to iterate to next input
+    # also, be able to determine when to iterate to next input
     jq_util_funcs._next_input_list_at.argtypes = [c_void_p, c_uint64]
     jq_util_funcs._next_input_list_at.restype = c_uint64
     next_input_idx = 0
     
-    # Define argument types for C function
+    # define argument types for C function
     jq_util_funcs._get_jq_halt_loc.argtypes = [c_void_p]
     jq_util_funcs._get_jq_halt_loc.restype = c_uint64
     
-    # Get jq_halt location from cjq_state
+    # get jq_halt location from cjq_state
     jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
     
-     # Define argument types for C function
+     # define argument types for C function
     jq_util_funcs._get_num_opcodes.argtypes = []
     jq_util_funcs._get_num_opcodes.restype = c_int
     
-    # Get value of NUM_OPCODES
+    # get value of NUM_OPCODES
     num_opcodes = jq_util_funcs._get_num_opcodes()
     jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
     
     backtracking_opcodes = (Opcode.RANGE.value, Opcode.STOREVN.value, Opcode.PATH_BEGIN.value, Opcode.PATH_END.value, Opcode.EACH.value, Opcode.EACH_OPT.value, Opcode.TRY_BEGIN.value, Opcode.TRY_END.value, Opcode.DESTRUCTURE_ALT.value, Opcode.FORK.value, Opcode.RET.value)
     backtracking_opcodes = tuple([opcode_val + num_opcodes for opcode_val in backtracking_opcodes])
     
-    # 1. Record this buffer of dynamic opcodes as a list of CallType object
-    buffer = []     # List of CallType objects
+    # 1. record this buffer of dynamic opcodes as a list of CallType object
+    buffer = []     # list of CallType objects
     for opcode_lis_idx in range(opcode_lis_len):
         if next_input_idx < next_input_lis_len:
-            # Check if we need to iterate cjq->value to the next JSON input
+            # check if we need to iterate cjq->value to the next JSON input
             next_input_loc = jq_util_funcs._next_input_list_at(opcodes_ptr, next_input_idx)
             if opcode_lis_idx == next_input_loc:
                 if opcode_lis_idx != 0:
@@ -701,21 +684,21 @@ def save_trace(opcodes_ptr):
                 buffer.append(CallType(Opcode.GET_NEXT_INPUT.value))
                 next_input_idx += 1
         if jq_next_entry_idx < jq_next_entry_lis_len:
-            # Check if we're at a jq_next entry point
+            # check if we're at a jq_next entry point
             next_entry_point = jq_util_funcs._jq_next_entry_list_at(opcodes_ptr, jq_next_entry_idx)
             if opcode_lis_idx == next_entry_point:
                 buffer.append(CallType(Opcode.INIT_JQ_NEXT.value))
                 jq_next_entry_idx += 1
         curr_opcode = jq_util_funcs._opcode_list_at(opcodes_ptr, opcode_lis_idx)
         match_on_opcode(buffer, curr_opcode, backtracking_opcodes)
-    # Check if program halted
+    # check if program halted
     if opcode_lis_len-1 == jq_halt_loc:
         buffer.append(CallType(Opcode.JQ_HALT.value))
 
-    # 2. Generate set of subsequences that appear in buffer
-    buffer_subseqs = set(unique_subseq(buffer)) # JOHN: I belive using this approach saves memory as dyn_op_lis_g will now be a list of references - each pointing to one subseq in a finite set of subseqs in subseqs_g
+    # 2. generate set of subsequences that appear in buffer
+    buffer_subseqs = set(unique_subseq(buffer))
     
-    # 3. Generate a list of references to subsequences that matches 
+    # 3. generate a list of references to subsequences that matches 
     #    order of dynamic opcodes from buffer
     dyn_op_lis_g = gen_dyn_op_lis_g(buffer, buffer_subseqs)
     
@@ -724,7 +707,7 @@ def save_trace(opcodes_ptr):
     for subseq in buffer_subseqs:
         subseqs_g.add(subseq)
     
-    # 5. Update map of CallType object subsequences to corresponding subsequences of LLVM function calls
+    # 5. update map of CallType object subsequences to corresponding subsequences of LLVM function calls
     for subseq in subseqs_g:
         func = []
         for dyn_op in subseq:
@@ -817,7 +800,7 @@ def save_trace(opcodes_ptr):
         if not subseq in dyn_op_subseq_to_op_func_subseq:
             dyn_op_subseq_to_op_func_subseq[subseq] = tuple(func)
     
-    # 6. Create map of subsequences of CallType objects to subsequence functions (LLVM functions that call a specific subsequence of opcode functions)
+    # 6. create map of subsequences of CallType objects to subsequence functions (LLVM functions that call a specific subsequence of opcode functions)
     subseq_func_type = main_func_type
     for subseq in subseqs_g:
         if not subseq in dyn_op_subseq_to_subseq_func:
@@ -829,51 +812,33 @@ def save_trace(opcodes_ptr):
                 builder.call(opcode_func, [_cjq])
             builder.ret_void()
             subseq_func_idx += 1
-    # 7. Using dynamic opcode sequence constructed from subsequences in step 5, and subsequence -> subsequence function from step 4,
-    #       generate the corresponding sequence of calls to subsequence functions in LLVM IR
-    builder = ir.IRBuilder(most_recent_block)
-    # repeats = find_repeating_subsequences(dyn_op_lis_g)
-    # print(repeats)
+    # 7. generate compressed representation of dynamic opcode sequence.
+    #    this is required for loop construction - compressed representation is variant of run-length encoding (RLE)
+    #       e.g. (subseq3, subseq4, subseq5) *10, (subseq6) *1, (subseq7,subseq8) * 50, ...
     compressed_op_lis = compress_op_lis(dyn_op_lis_g)
-    formatted_output = ', '.join([f"{''.join([str(ct)+" " for ct in sequence])} * {count}\n" for sequence, count in compressed_op_lis])
-    # print(formatted_output)
-    # for subseq in dyn_op_lis_g:
-    #     # if subseq in repeats:
-    #     #     print(subseq)
-    #     if subseq in dyn_op_subseq_to_subseq_func:
-    #         builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
+    # formatted_output = ', '.join([f"{''.join([str(ct)+" " for ct in sequence])} * {count}\n" for sequence, count in compressed_op_lis])
             
-    # TODO: Remember, as long as you have 2 loops, your program will crash
+    builder = ir.IRBuilder(most_recent_block)
     for sequence, n_iterations in compressed_op_lis:
         if n_iterations == 1:
             builder.call(dyn_op_subseq_to_subseq_func[sequence[0]], [_cjq]) # TODO: confirm sequence is a list of subseqs
         else:
-            # TODO: implement loop construct - sequence should be repeated count times
-            # Allocate and initialize the loop variable
             i = builder.alloca(ir.IntType(32), name="loop_counter"+str(i_idx))
             i_idx += 1
             builder.store(ir.Constant(ir.IntType(32), 0), i)
             
-            # Create the loop condition and body blocks
             loop_cond_block = main_func.append_basic_block(name="loop_cond"+str(loop_block_idx))
             loop_body_block = main_func.append_basic_block(name="loop_body"+str(loop_block_idx))
             loop_end_block = main_func.append_basic_block(name="loop_end"+str(loop_block_idx))
             loop_block_idx += 1
-
-            # Jump to the loop condition block
-            # print(f"in loop case\n{loop_cond_block}\n{n_iterations}\n{sequence}")
             builder.branch(loop_cond_block)
-            print("n_iterations > 1")
 
-            # Build the loop condition block
             builder.position_at_end(loop_cond_block)
             i_val = builder.load(i, name="i_val")
             condition = builder.icmp_signed('<', i_val, ir.Constant(ir.IntType(32), n_iterations), name="loop_cond_var"+str(loop_block_idx))
             builder.cbranch(condition, loop_body_block, loop_end_block)
 
-            # Build the loop body block
             builder.position_at_end(loop_body_block)
-            # TODO: call all funcs in sequence
             for subseq in sequence:
                 builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
             i_val = builder.load(i, name="i_val")
@@ -881,22 +846,15 @@ def save_trace(opcodes_ptr):
             builder.store(incremented, i)
             builder.branch(loop_cond_block)
 
-            # Build the loop end block
             builder.position_at_end(loop_end_block)
-            # Add the dummy add instruction
-            # dummy = builder.add(ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0), name="dummy")
             
         new_block = main_func.append_basic_block(name="new_block"+str(new_block_idx))
         builder.branch(new_block)
         builder.position_at_end(new_block)
         most_recent_block = new_block
-        # dummy = builder.add(ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0), name="dummy")
-        # new_block_idx += 1
-        # print(str(n_iterations))
-        # print(str(module))
     
-def jq_lower2():
-    # Update for final state
+def finalize_ir():
+    # update for final state
     final_op = tuple([CallType(Opcode.UPDATE_RES_STATE.value)])
     subseqs_g.add(final_op)
     if not final_op in dyn_op_subseq_to_op_func_subseq:
@@ -910,163 +868,17 @@ def jq_lower2():
         builder.call(_update_result_state, [_cjq])
         builder.ret_void()
     builder = ir.IRBuilder(most_recent_block)
-    # builder = ir.IRBuilder(main_block)
     builder.call(dyn_op_subseq_to_subseq_func[final_op], [_cjq])
     builder.ret_void()
     return module      
 
-def jq_lower():
-    """
-    Using dyn_op_lis_g (list of subsequences of dynamic)
-    and subseqs_g (subset of all subsequences of opcodes), generate  LLVM IR.
-    
-    Generated IR is a sequence of of calls to subsequence functions.
-    Each subsequence function is a series of calls to opcode functions.
-    The sequence of calls is equivalent to dynamic opcode sequence executed 
-    by the bytecode interpreter in standard JQ implementation.
-    
-    From this point, the goal is to optimize the LLVM IR to achieve better
-    runtime performance.
-    """
-    
-    # Get jq_program arg
-    _cjq, = main_func.args
-        
-    # Update for final state
-    final_op = tuple([CallType(Opcode.UPDATE_RES_STATE.value)])
-    subseqs_g.add(final_op)
-    dyn_op_lis_g.append(final_op)
-    
-    from pympler import asizeof
-    print(asizeof.asizeof(dyn_op_lis_g))
-    print(len(dyn_op_lis_g))
-    print(asizeof.asizeof(subseqs_g))
-    print(len(subseqs_g))
-    
-    # 1. Generate map of CallType object subsequences to corresponding subsequences of LLVM function calls
-    dyn_op_subseq_to_op_func_subseq = {} # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
-    for subseq in subseqs_g:
-        func = []
-        for dyn_op in subseq:
-            if not dyn_op.backtracking:
-                match dyn_op.opcode:
-                    case Opcode.LOADK.value:
-                        func.append(_opcode_LOADK)
-                    case Opcode.DUP.value:
-                        func.append(_opcode_DUP)
-                    case Opcode.DUPN.value:
-                        func.append(_opcode_DUPN)
-                    case Opcode.DUP2.value:
-                        func.append(_opcode_DUP2)
-                    case Opcode.PUSHK_UNDER.value:
-                        func.append(_opcode_PUSHK_UNDER)
-                    case Opcode.POP.value:
-                        func.append(_opcode_POP)
-                    case Opcode.LOADV.value:
-                        func.append(_opcode_LOADV)
-                    case Opcode.LOADVN.value:
-                        func.append(_opcode_LOADVN)
-                    case Opcode.STOREV.value:
-                        func.append(_opcode_STOREV)
-                    case Opcode.STORE_GLOBAL.value:
-                        func.append(_opcode_STORE_GLOBAL)
-                    case Opcode.INDEX.value:
-                        func.append(_opcode_INDEX)
-                    case Opcode.INDEX_OPT.value:
-                        func.append(_opcode_INDEX_OPT)
-                    case Opcode.EACH.value:
-                        func.append(_opcode_EACH)
-                    case Opcode.EACH_OPT.value:
-                        func.append(_opcode_EACH_OPT)
-                    case Opcode.FORK.value:
-                        func.append(_opcode_FORK)
-                    case Opcode.TRY_BEGIN.value:
-                        func.append(_opcode_TRY_BEGIN)
-                    case Opcode.TRY_END.value:
-                        func.append(_opcode_TRY_END)
-                    case Opcode.JUMP.value:
-                        func.append(_opcode_JUMP)
-                    case Opcode.JUMP_F.value:
-                        func.append(_opcode_JUMP_F)
-                    case Opcode.BACKTRACK.value:
-                        func.append(_opcode_BACKTRACK)
-                    case Opcode.APPEND.value:
-                        func.append(_opcode_APPEND)
-                    case Opcode.INSERT.value:
-                        func.append(_opcode_INSERT)
-                    case Opcode.RANGE.value:
-                        func.append(_opcode_RANGE)
-                    case Opcode.SUBEXP_BEGIN.value:
-                        func.append(_opcode_SUBEXP_BEGIN)
-                    case Opcode.SUBEXP_END.value:
-                        func.append(_opcode_SUBEXP_END)
-                    case Opcode.PATH_BEGIN.value:
-                        func.append(_opcode_PATH_BEGIN)
-                    case Opcode.PATH_END.value:
-                        func.append(_opcode_PATH_END)
-                    case Opcode.CALL_BUILTIN.value:
-                        func.append(_opcode_CALL_BUILTIN)
-                    case Opcode.CALL_JQ.value:
-                        func.append(_opcode_CALL_JQ)
-                    case Opcode.RET.value:
-                        func.append(_opcode_RET)
-                    case Opcode.TAIL_CALL_JQ.value:
-                        func.append(_opcode_TAIL_CALL_JQ)
-                    case Opcode.TOP.value:
-                        func.append(_opcode_TOP)
-                    case Opcode.GENLABEL.value:
-                        func.append(_opcode_GENLABEL)
-                    case Opcode.DESTRUCTURE_ALT.value:
-                        func.append(_opcode_DESTRUCTURE_ALT)
-                    case Opcode.STOREVN.value:
-                        func.append(_opcode_STOREVN)
-                    case Opcode.ERRORK.value:
-                        func.append(_opcode_ERRORK)
-                    case Opcode.INIT_JQ_NEXT.value:
-                        func.append(_init_jq_next)
-                    case Opcode.GET_NEXT_INPUT.value:
-                        func.append(_get_next_input)
-                    case Opcode.UPDATE_RES_STATE.value:
-                        func.append(_update_result_state)
-                    case Opcode.JQ_HALT.value:
-                        func.append(_jq_halt)
-                    case _:
-                        raise ValueError(f"Current opcode: {dyn_op.opcode} does not match any existing opcodes")
-            else:
-                func.append(backtracking_opcode_funcs[dyn_op.opcode])   # index of backtracking func in backtracking_opcode_funcs
-        dyn_op_subseq_to_op_func_subseq[subseq] = tuple(func)
-    
-    # 2. Create map of subsequences of CallType objects to subsequence functions (LLVM functions that call a specific subsequence of opcode functions)
-    subseq_func_idx = 0
-    dyn_op_subseq_to_subseq_func = {}
-    subseq_func_type = main_func_type
-    for subseq in subseqs_g:
-        dyn_op_subseq_to_subseq_func[subseq] = ir.Function(module, subseq_func_type, "_subsequence_func"+str(subseq_func_idx))
-        dyn_op_subseq_to_subseq_func[subseq].attributes.add('noinline')
-        subseq_block = dyn_op_subseq_to_subseq_func[subseq].append_basic_block("subsequence_"+str(subseq_func_idx))
-        builder = ir.IRBuilder(subseq_block)
-        for opcode_func in dyn_op_subseq_to_op_func_subseq[subseq]:
-            builder.call(opcode_func, [_cjq])
-        subseq_func_idx += 1
-        builder.ret_void()
-    
-    # 3. Using dynamic opcode sequence constructed from subsequences in step 5, and subsequence -> subsequence function from step 4,
-    #       generate the corresponding sequence of calls to subsequence functions in LLVM IR
-    builder = ir.IRBuilder(main_block)
-    for subseq in dyn_op_lis_g:
-        builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
-    builder.ret_void()
-    
-    return module
     
 def generate_llvm_ir():
     try:
-        llvm_ir = jq_lower2()
-        # print(llvm_ir)
+        llvm_ir = finalize_ir()
         mod = llvm.parse_assembly(str(llvm_ir))
         mod.verify()
         
-        # Write LLVM IR to file
         with open("ir.ll", "w") as file:
             file.write(str(mod))
             

@@ -184,7 +184,7 @@ static void flush_trace(trace* opcode_trace, PyObject* pModule_llvmlite, PyObjec
   Py_XDECREF(pRes);
 }
 
-#define MAX_OPS 200
+#define MAX_OPS 1000
 
 trace* update_opcode_list(trace* opcode_trace, uint8_t opcode, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
   if (opcode_trace->opcodes->count >= MAX_OPS) {
