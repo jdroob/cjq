@@ -526,7 +526,64 @@ def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
                     lis.append(CallType(opcode_idx, 1))
                 else:
                     raise ValueError(f"Current opcode: {curr_opcode} does not match any existing opcodes")
-            
+
+def find_repeating_subsequences(lst):
+    from collections import defaultdict
+    
+    n = len(lst)
+    subseq_dict = defaultdict(list)
+    
+    for length in range(1, n // 2 + 1):
+        for i in range(n - length + 1):
+            subseq = tuple(lst[i:i + length])
+            subseq_dict[subseq].append(i)
+    
+    # Filter out subsequences that are not repeating
+    repeating_subsequences = {k: v for k, v in subseq_dict.items() if len(v) > 1}
+    
+    # Check adjacency of subsequences and remove non-adjacent occurrences
+    for subseq, indices in repeating_subsequences.items():
+        adjacent_indices = []
+        subseq_length = len(subseq)
+        for idx in indices:
+            if all(idx + subseq_length * i in indices for i in range(len(indices) // subseq_length)):
+                adjacent_indices.extend(idx + subseq_length * i for i in range(len(indices) // subseq_length))
+        repeating_subsequences[subseq] = adjacent_indices
+
+    def remove_inferior_subsequences(subsequences):
+        result = {}
+        for subseq, indices in subsequences.items():
+            overlapping = False
+            for other_subseq, other_indices in subsequences.items():
+                if subseq == other_subseq:
+                    continue
+                # Check if subseq overlaps with other_subseq
+                if any(start in range(other_start, other_start + len(other_subseq)) for start in indices for other_start in other_indices):
+                    # Check frequency
+                    if len(indices) <= len(other_indices):
+                        overlapping = True
+                        break
+            if not overlapping:
+                result[subseq] = indices
+        return result
+
+    final_subsequences = remove_inferior_subsequences(repeating_subsequences)
+    
+    # Remove key-value pairs with empty value lists
+    final_subsequences = {k: v for k, v in final_subsequences.items() if v}
+    
+    # Compute the first occurrence and count of repeats
+    result = {}
+    for subseq, indices in final_subsequences.items():
+        if not indices:
+            continue
+        first_occurrence = indices[0]
+        repeat_count = len(indices)
+        len_subseq = len(subseq)
+        result[subseq] = (first_occurrence, len_subseq, repeat_count)
+    
+    return result
+           
 def gen_dyn_op_lis_g(buffer, buffer_subseqs):
     dyn_op_lis_g = []
     i = 0  # Start index
@@ -754,12 +811,14 @@ def save_trace(opcodes_ptr):
     # 7. Using dynamic opcode sequence constructed from subsequences in step 5, and subsequence -> subsequence function from step 4,
     #       generate the corresponding sequence of calls to subsequence functions in LLVM IR
     builder = ir.IRBuilder(main_block)
+    # TODO: Replace with comppression algorithm
+    repeats = find_repeating_subsequences(dyn_op_lis_g)
+    print(repeats)
     for subseq in dyn_op_lis_g:
+        if subseq in repeats:
+            print(subseq)
         if subseq in dyn_op_subseq_to_subseq_func:
             builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
-        else:
-            for op in subseq:
-                print(op)
     
 def jq_lower2():
     # Update for final state
