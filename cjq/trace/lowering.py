@@ -14,6 +14,12 @@ dyn_op_subseq_to_op_func_subseq = {} # map of subseq -> func (e.g. (CallType(1,0
 
 subseq_func_idx = 0
 
+loop_block_idx = 0
+
+new_block_idx = 0
+
+i_idx = 0
+
 dyn_op_subseq_to_subseq_func = {}
 
 # Create LLVM module
@@ -33,6 +39,7 @@ main_func_type = ir.FunctionType(ir.VoidType(), [void_ptr_type])
 main_func = ir.Function(module, main_func_type, "jq_program")
 main_block = main_func.append_basic_block("entry")
 builder = ir.IRBuilder(main_block)
+most_recent_block = main_block
 # Get jq_program arg
 _cjq, = main_func.args
 
@@ -620,7 +627,11 @@ def save_trace(opcodes_ptr):
     global subseqs
     global dyn_op_subseq_to_op_func_subseq # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
     global subseq_func_idx
+    global loop_block_idx
+    global i_idx
     global dyn_op_subseq_to_subseq_func
+    global main_block
+    global most_recent_block
     global _cjq
     home_dir = os.path.expanduser("~")
     so_file = os.path.join(home_dir, "cjq/jq_util.so")
@@ -820,25 +831,69 @@ def save_trace(opcodes_ptr):
             subseq_func_idx += 1
     # 7. Using dynamic opcode sequence constructed from subsequences in step 5, and subsequence -> subsequence function from step 4,
     #       generate the corresponding sequence of calls to subsequence functions in LLVM IR
-    builder = ir.IRBuilder(main_block)
+    builder = ir.IRBuilder(most_recent_block)
     # repeats = find_repeating_subsequences(dyn_op_lis_g)
     # print(repeats)
     compressed_op_lis = compress_op_lis(dyn_op_lis_g)
     formatted_output = ', '.join([f"{''.join([str(ct)+" " for ct in sequence])} * {count}\n" for sequence, count in compressed_op_lis])
-    print(formatted_output)
-    for subseq in dyn_op_lis_g:
-        # if subseq in repeats:
-        #     print(subseq)
-        if subseq in dyn_op_subseq_to_subseq_func:
-            builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
+    # print(formatted_output)
+    # for subseq in dyn_op_lis_g:
+    #     # if subseq in repeats:
+    #     #     print(subseq)
+    #     if subseq in dyn_op_subseq_to_subseq_func:
+    #         builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
             
     # TODO: Remember, as long as you have 2 loops, your program will crash
-    for sequence, count in compressed_op_lis:
-        if count == 1:
+    for sequence, n_iterations in compressed_op_lis:
+        if n_iterations == 1:
             builder.call(dyn_op_subseq_to_subseq_func[sequence[0]], [_cjq]) # TODO: confirm sequence is a list of subseqs
         else:
             # TODO: implement loop construct - sequence should be repeated count times
-            pass
+            # Allocate and initialize the loop variable
+            i = builder.alloca(ir.IntType(32), name="loop_counter"+str(i_idx))
+            i_idx += 1
+            builder.store(ir.Constant(ir.IntType(32), 0), i)
+            
+            # Create the loop condition and body blocks
+            loop_cond_block = main_func.append_basic_block(name="loop_cond"+str(loop_block_idx))
+            loop_body_block = main_func.append_basic_block(name="loop_body"+str(loop_block_idx))
+            loop_end_block = main_func.append_basic_block(name="loop_end"+str(loop_block_idx))
+            loop_block_idx += 1
+
+            # Jump to the loop condition block
+            # print(f"in loop case\n{loop_cond_block}\n{n_iterations}\n{sequence}")
+            builder.branch(loop_cond_block)
+            print("n_iterations > 1")
+
+            # Build the loop condition block
+            builder.position_at_end(loop_cond_block)
+            i_val = builder.load(i, name="i_val")
+            condition = builder.icmp_signed('<', i_val, ir.Constant(ir.IntType(32), n_iterations), name="loop_cond_var"+str(loop_block_idx))
+            builder.cbranch(condition, loop_body_block, loop_end_block)
+
+            # Build the loop body block
+            builder.position_at_end(loop_body_block)
+            # TODO: call all funcs in sequence
+            for subseq in sequence:
+                builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
+            i_val = builder.load(i, name="i_val")
+            incremented = builder.add(i_val, ir.Constant(ir.IntType(32), 1), name="incremented")
+            builder.store(incremented, i)
+            builder.branch(loop_cond_block)
+
+            # Build the loop end block
+            builder.position_at_end(loop_end_block)
+            # Add the dummy add instruction
+            # dummy = builder.add(ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0), name="dummy")
+            
+        new_block = main_func.append_basic_block(name="new_block"+str(new_block_idx))
+        builder.branch(new_block)
+        builder.position_at_end(new_block)
+        most_recent_block = new_block
+        # dummy = builder.add(ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0), name="dummy")
+        # new_block_idx += 1
+        # print(str(n_iterations))
+        # print(str(module))
     
 def jq_lower2():
     # Update for final state
@@ -854,7 +909,8 @@ def jq_lower2():
         builder = ir.IRBuilder(subseq_block)
         builder.call(_update_result_state, [_cjq])
         builder.ret_void()
-    builder = ir.IRBuilder(main_block)
+    builder = ir.IRBuilder(most_recent_block)
+    # builder = ir.IRBuilder(main_block)
     builder.call(dyn_op_subseq_to_subseq_func[final_op], [_cjq])
     builder.ret_void()
     return module      
