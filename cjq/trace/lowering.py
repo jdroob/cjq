@@ -527,62 +527,72 @@ def match_on_opcode(lis, curr_opcode, backtracking_opcodes):
                 else:
                     raise ValueError(f"Current opcode: {curr_opcode} does not match any existing opcodes")
 
-def find_repeating_subsequences(lst):
-    from collections import defaultdict
-    
-    n = len(lst)
-    subseq_dict = defaultdict(list)
-    
+def find_shortest_repeating_subsequence(sequence):
+    n = len(sequence)
     for length in range(1, n // 2 + 1):
-        for i in range(n - length + 1):
-            subseq = tuple(lst[i:i + length])
-            subseq_dict[subseq].append(i)
-    
-    # Filter out subsequences that are not repeating
-    repeating_subsequences = {k: v for k, v in subseq_dict.items() if len(v) > 1}
-    
-    # Check adjacency of subsequences and remove non-adjacent occurrences
-    for subseq, indices in repeating_subsequences.items():
-        adjacent_indices = []
-        subseq_length = len(subseq)
-        for idx in indices:
-            if all(idx + subseq_length * i in indices for i in range(len(indices) // subseq_length)):
-                adjacent_indices.extend(idx + subseq_length * i for i in range(len(indices) // subseq_length))
-        repeating_subsequences[subseq] = adjacent_indices
+        subseq = sequence[:length]
+        count = 0
+        pos = 0
 
-    def remove_inferior_subsequences(subsequences):
-        result = {}
-        for subseq, indices in subsequences.items():
-            overlapping = False
-            for other_subseq, other_indices in subsequences.items():
-                if subseq == other_subseq:
-                    continue
-                # Check if subseq overlaps with other_subseq
-                if any(start in range(other_start, other_start + len(other_subseq)) for start in indices for other_start in other_indices):
-                    # Check frequency
-                    if len(indices) <= len(other_indices):
-                        overlapping = True
-                        break
-            if not overlapping:
-                result[subseq] = indices
-        return result
+        while pos + length <= n and sequence[pos:pos+length] == subseq:
+            count += 1
+            pos += length
 
-    final_subsequences = remove_inferior_subsequences(repeating_subsequences)
-    
-    # Remove key-value pairs with empty value lists
-    final_subsequences = {k: v for k, v in final_subsequences.items() if v}
-    
-    # Compute the first occurrence and count of repeats
-    result = {}
-    for subseq, indices in final_subsequences.items():
-        if not indices:
-            continue
-        first_occurrence = indices[0]
-        repeat_count = len(indices)
-        len_subseq = len(subseq)
-        result[subseq] = (first_occurrence, len_subseq, repeat_count)
-    
-    return result
+        if count > 1 and pos == n:
+            return subseq, count
+
+    return None, 0
+
+def custom_compress_calltypes(call_types):
+    n = len(call_types)
+    result = []
+    i = 0
+
+    while i < n:
+        max_length = float('inf')
+        best_substring = []
+        max_count = 0
+
+        # Check for repeating sequences
+        for j in range(i + 1, n + 1):
+            substring = call_types[i:j]
+            sub_length = len(substring)
+            count = 0
+            pos = i
+
+            # Count how many times the sequence repeats consecutively
+            while pos + sub_length <= n and call_types[pos:pos+sub_length] == substring:
+                count += 1
+                pos += sub_length
+
+            # Update the best (shortest) repeating sequence found
+            if count > 1 and (sub_length < max_length or (sub_length == max_length and count > max_count)):
+                max_length = sub_length
+                best_substring = substring
+                max_count = count
+
+        # If a repeating sequence is found
+        if best_substring:
+            result.append((best_substring, max_count))
+            i += max_length * max_count
+        else:
+            result.append(([call_types[i]], 1))
+            i += 1
+
+    # Further compress each found sequence if it has internal repetitions
+    final_result = []
+    for sequence, count in result:
+        if len(sequence) > 1:
+            sub_seq, sub_count = find_shortest_repeating_subsequence(sequence)
+            if sub_seq:
+                final_result.append((sub_seq, sub_count * count))
+            else:
+                final_result.append((sequence, count))
+        else:
+            final_result.append((sequence, count))
+
+    return final_result
+
            
 def gen_dyn_op_lis_g(buffer, buffer_subseqs):
     dyn_op_lis_g = []
@@ -811,12 +821,14 @@ def save_trace(opcodes_ptr):
     # 7. Using dynamic opcode sequence constructed from subsequences in step 5, and subsequence -> subsequence function from step 4,
     #       generate the corresponding sequence of calls to subsequence functions in LLVM IR
     builder = ir.IRBuilder(main_block)
-    # TODO: Replace with comppression algorithm
-    repeats = find_repeating_subsequences(dyn_op_lis_g)
-    print(repeats)
+    # repeats = find_repeating_subsequences(dyn_op_lis_g)
+    # print(repeats)
+    compressed_output = custom_compress_calltypes(dyn_op_lis_g)
+    formatted_output = ', '.join([f"{''.join([str(ct)+" " for ct in sequence])} * {count}\n" for sequence, count in compressed_output])
+    print(formatted_output)
     for subseq in dyn_op_lis_g:
-        if subseq in repeats:
-            print(subseq)
+        # if subseq in repeats:
+        #     print(subseq)
         if subseq in dyn_op_subseq_to_subseq_func:
             builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
     
