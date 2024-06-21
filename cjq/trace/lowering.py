@@ -543,37 +543,37 @@ def find_shortest_repeating_subsequence(sequence):
 
     return None, 0
 
-def custom_compress_calltypes(call_types):
+def compress_op_lis(call_types):
     n = len(call_types)
     result = []
     i = 0
 
     while i < n:
         max_length = float('inf')
-        best_substring = []
+        best_subseq = []
         max_count = 0
 
         # Check for repeating sequences
         for j in range(i + 1, n + 1):
-            substring = call_types[i:j]
-            sub_length = len(substring)
+            subseq = call_types[i:j]
+            sub_length = len(subseq)
             count = 0
             pos = i
 
             # Count how many times the sequence repeats consecutively
-            while pos + sub_length <= n and call_types[pos:pos+sub_length] == substring:
+            while pos + sub_length <= n and call_types[pos:pos+sub_length] == subseq:
                 count += 1
                 pos += sub_length
 
             # Update the best (shortest) repeating sequence found
             if count > 1 and (sub_length < max_length or (sub_length == max_length and count > max_count)):
                 max_length = sub_length
-                best_substring = substring
+                best_subseq = subseq
                 max_count = count
 
         # If a repeating sequence is found
-        if best_substring:
-            result.append((best_substring, max_count))
+        if best_subseq:
+            result.append((best_subseq, max_count))
             i += max_length * max_count
         else:
             result.append(([call_types[i]], 1))
@@ -823,14 +823,22 @@ def save_trace(opcodes_ptr):
     builder = ir.IRBuilder(main_block)
     # repeats = find_repeating_subsequences(dyn_op_lis_g)
     # print(repeats)
-    compressed_output = custom_compress_calltypes(dyn_op_lis_g)
-    formatted_output = ', '.join([f"{''.join([str(ct)+" " for ct in sequence])} * {count}\n" for sequence, count in compressed_output])
+    compressed_op_lis = compress_op_lis(dyn_op_lis_g)
+    formatted_output = ', '.join([f"{''.join([str(ct)+" " for ct in sequence])} * {count}\n" for sequence, count in compressed_op_lis])
     print(formatted_output)
     for subseq in dyn_op_lis_g:
         # if subseq in repeats:
         #     print(subseq)
         if subseq in dyn_op_subseq_to_subseq_func:
             builder.call(dyn_op_subseq_to_subseq_func[subseq], [_cjq])
+            
+    # TODO: Remember, as long as you have 2 loops, your program will crash
+    for sequence, count in compressed_op_lis:
+        if count == 1:
+            builder.call(dyn_op_subseq_to_subseq_func[sequence[0]], [_cjq]) # TODO: confirm sequence is a list of subseqs
+        else:
+            # TODO: implement loop construct - sequence should be repeated count times
+            pass
     
 def jq_lower2():
     # Update for final state
