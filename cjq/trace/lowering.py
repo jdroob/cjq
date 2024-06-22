@@ -583,8 +583,8 @@ def unique_subseq(sequence):
 
     return sorted(subsequences, key=len, reverse=True)
            
-def gen_dyn_op_lis_g(buffer, buffer_subseqs):
-    dyn_op_lis_g = []
+def gen_dyn_op_lis(buffer, buffer_subseqs):
+    dyn_op_lis = []
     i = 0
        
     while i < len(buffer):
@@ -593,7 +593,7 @@ def gen_dyn_op_lis_g(buffer, buffer_subseqs):
             subseq_len = len(subseq)
             buffer_slice = tuple(buffer[i:i+subseq_len])
             if buffer_slice == subseq:
-                dyn_op_lis_g.append(subseq)
+                dyn_op_lis.append(subseq)
                 i += subseq_len
                 matched = True
                 break
@@ -601,9 +601,9 @@ def gen_dyn_op_lis_g(buffer, buffer_subseqs):
             buffer_subseqs.add(tuple([buffer[i]]))
             for _subseq in buffer_subseqs:
                 if _subseq == tuple([buffer[i]]):
-                    dyn_op_lis_g.append(_subseq) 
+                    dyn_op_lis.append(_subseq) 
             i += 1 
-    return dyn_op_lis_g
+    return dyn_op_lis
 
 def save_trace(opcodes_ptr):
     global subseqs
@@ -687,7 +687,7 @@ def save_trace(opcodes_ptr):
     
     # 3. generate a list of references to subsequences that matches 
     #    order of dynamic opcodes from buffer
-    dyn_op_lis_g = gen_dyn_op_lis_g(buffer, buffer_subseqs)
+    dyn_op_lis = gen_dyn_op_lis(buffer, buffer_subseqs)
     
     # 4. subseqs_g := subseqs_g UNION buffer_subseqs
     # subseqs_g.update(buffer_subseqs)
@@ -802,7 +802,7 @@ def save_trace(opcodes_ptr):
     # 7. generate compressed representation of dynamic opcode sequence.
     #    this is required for loop construction - compressed representation is variant of run-length encoding (RLE)
     #       e.g. (subseq3, subseq4, subseq5) *10, (subseq6) *1, (subseq7,subseq8) * 50, ...
-    compressed_op_lis = compress_op_lis(dyn_op_lis_g)
+    compressed_op_lis = compress_op_lis(dyn_op_lis)
     # formatted_output = ', '.join([f"{''.join([str(ct)+" " for ct in sequence])} * {count}\n" for sequence, count in compressed_op_lis])
             
     builder = ir.IRBuilder(most_recent_block)
