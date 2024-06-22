@@ -621,54 +621,41 @@ def save_trace(opcodes_ptr):
     # need this to call C functions from Python
     jq_util_funcs = CDLL(so_file)
     
-    # define argument types for C function
+    # define argument / return types for C functions
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_opcode_list_len.restype = c_uint64
     opcode_lis_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
     
-    # define argument types for C function
     jq_util_funcs._get_next_input_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_next_input_list_len.restype = c_uint64
-    
-    # get next_input_list length from cjq
     next_input_lis_len = jq_util_funcs._get_next_input_list_len(opcodes_ptr)
     
-    # get all opcodes from opcode_list
     jq_util_funcs._opcode_list_at.argtypes = [c_void_p, c_uint64]
     jq_util_funcs._opcode_list_at.restype = c_uint8
     
-    # also, get all entry points from jq_next_entry_list
     jq_util_funcs._jq_next_entry_list_at.argtypes = [c_void_p, c_uint64]
     jq_util_funcs._jq_next_entry_list_at.restype = c_uint64
     jq_next_entry_idx = 0
     
-    # define argument types for C function
     jq_util_funcs._get_jq_next_entry_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_jq_next_entry_list_len.restype = c_uint64
-    
-    # get opcode_list length from cjq
     jq_next_entry_lis_len = jq_util_funcs._get_jq_next_entry_list_len(opcodes_ptr)
     
-    # also, be able to determine when to iterate to next input
     jq_util_funcs._next_input_list_at.argtypes = [c_void_p, c_uint64]
     jq_util_funcs._next_input_list_at.restype = c_uint64
     next_input_idx = 0
     
-    # define argument types for C function
     jq_util_funcs._get_jq_halt_loc.argtypes = [c_void_p]
     jq_util_funcs._get_jq_halt_loc.restype = c_uint64
-    
-    # get jq_halt location from cjq_state
     jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
     
-     # define argument types for C function
     jq_util_funcs._get_num_opcodes.argtypes = []
     jq_util_funcs._get_num_opcodes.restype = c_int
     
     # get value of NUM_OPCODES
     num_opcodes = jq_util_funcs._get_num_opcodes()
-    jq_halt_loc = jq_util_funcs._get_jq_halt_loc(opcodes_ptr)
     
+    # trick to easily look up reference to backtracking opcode function given opcode
     backtracking_opcodes = (Opcode.RANGE.value, Opcode.STOREVN.value, Opcode.PATH_BEGIN.value, Opcode.PATH_END.value, Opcode.EACH.value, Opcode.EACH_OPT.value, Opcode.TRY_BEGIN.value, Opcode.TRY_END.value, Opcode.DESTRUCTURE_ALT.value, Opcode.FORK.value, Opcode.RET.value)
     backtracking_opcodes = tuple([opcode_val + num_opcodes for opcode_val in backtracking_opcodes])
     
