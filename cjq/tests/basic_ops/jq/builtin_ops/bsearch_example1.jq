@@ -1,0 +1,1 @@
+bsearch(4) as $ix | if $ix < 0 then .[-(1+$ix)] = 4 else . end

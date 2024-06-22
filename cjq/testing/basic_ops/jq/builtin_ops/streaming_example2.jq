@@ -1,1 +1,0 @@
-fromstream(1|truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]]))

@@ -1,1 +1,0 @@
-combinations(2)

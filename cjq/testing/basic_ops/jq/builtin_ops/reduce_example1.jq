@@ -1,1 +1,0 @@
-reduce .[] as $item (0; . + $item)

@@ -1,1 +1,0 @@
-inside(["foobar", "foobaz", "blarp"])

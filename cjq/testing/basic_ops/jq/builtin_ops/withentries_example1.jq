@@ -1,1 +1,0 @@
-with_entries(.key |= "KEY_" + .)

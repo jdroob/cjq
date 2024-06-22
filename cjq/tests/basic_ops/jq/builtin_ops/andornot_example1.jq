@@ -1,0 +1,1 @@
+42 and "a string"

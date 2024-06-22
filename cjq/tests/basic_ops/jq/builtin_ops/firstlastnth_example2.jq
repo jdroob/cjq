@@ -1,0 +1,1 @@
+[range(.)]|[first, last, nth(5)]

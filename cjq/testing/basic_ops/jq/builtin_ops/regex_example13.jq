@@ -1,1 +1,0 @@
-[sub("(?<a>.)"; "\(.a|ascii_upcase)", "\(.a|ascii_downcase)")]

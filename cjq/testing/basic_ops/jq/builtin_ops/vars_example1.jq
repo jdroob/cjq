@@ -1,1 +1,0 @@
-.bar as $x | .foo | . + $x

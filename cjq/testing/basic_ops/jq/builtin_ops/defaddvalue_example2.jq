@@ -1,1 +1,0 @@
-def addvalue(f): f as $x | map(. + $x); addvalue(.[0])

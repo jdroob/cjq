@@ -1,0 +1,1 @@
+[paths(type == "number")]

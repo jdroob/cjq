@@ -821,7 +821,7 @@ def save_trace(opcodes_ptr):
     builder = ir.IRBuilder(most_recent_block)
     for sequence, n_iterations in compressed_op_lis:
         if n_iterations == 1:
-            builder.call(dyn_op_subseq_to_subseq_func[sequence[0]], [_cjq]) # TODO: confirm sequence is a list of subseqs
+            builder.call(dyn_op_subseq_to_subseq_func[sequence[0]], [_cjq])
         else:
             i = builder.alloca(ir.IntType(32), name="loop_counter"+str(i_idx))
             i_idx += 1

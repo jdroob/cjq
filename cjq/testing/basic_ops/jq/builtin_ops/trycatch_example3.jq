@@ -1,1 +1,0 @@
-try error("some exception") catch .

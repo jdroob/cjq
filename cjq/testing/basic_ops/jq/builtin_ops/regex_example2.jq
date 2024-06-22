@@ -1,1 +1,0 @@
-.[] | test("a b c # spaces are ignored"; "ix")

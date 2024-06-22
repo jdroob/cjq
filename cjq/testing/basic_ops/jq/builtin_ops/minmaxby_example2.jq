@@ -1,1 +1,0 @@
-max_by(.foo)

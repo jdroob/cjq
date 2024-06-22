@@ -1,1 +1,0 @@
-try map(select(.age | type != "number") | error("\($__loc__)")) catch .
