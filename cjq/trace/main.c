@@ -45,7 +45,7 @@ static int init_cpython(const char *path_to_cjq, PyObject **pModule_llvmlite, Py
 }
 
 static int get_llvm_ir(PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
-    // Get generate_llvm_ir function from lowering module
+    // get generate_llvm_ir function from lowering module
     PyObject *pFuncGenerateLLVMIR = PyObject_GetAttrString(pModuleLowering, "generate_llvm_ir");
 
     if (!pFuncGenerateLLVMIR || !PyCallable_Check(pFuncGenerateLLVMIR)) {
@@ -54,10 +54,9 @@ static int get_llvm_ir(PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
         return 1;
     }
     
-    // PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
     PyObject* pResult = PyObject_CallFunctionObjArgs(pFuncGenerateLLVMIR, NULL);
 
-    // Clean up
+    // clean up
     Py_XDECREF(pResult);
     Py_XDECREF(pFuncGenerateLLVMIR);
     Py_XDECREF(pModuleLowering);
@@ -81,13 +80,12 @@ int main(int argc, char *argv[]) {
     PyObject* pModuleLowering = NULL;
 
     if (init_cpython(path_to_cjq, &pModule_llvmlite, &pModuleLowering) != 0) {
-        // Error occurred during Python initialization
+        // error occurred during Python initialization
         return 1;
     }
 
     trace* opcode_trace = init_trace();
     int trace_error = cjq_trace(argc, argv, opcode_trace, pModule_llvmlite, pModuleLowering);
-    // free_trace(opcode_trace);   // TODO: I think it's okay to free here - refactor below
     opcode_trace = NULL;    // memory alloc'd for opcode_trace is freed in cjq_trace()
     int gen_ir_error = get_llvm_ir(pModule_llvmlite, pModuleLowering);
 

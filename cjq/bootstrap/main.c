@@ -13,7 +13,7 @@
 
 extern void jq_program();
 
-void clean_up(cjq_state* cjq) {
+static void clean_up(cjq_state* cjq) {
     jq_util_input_free(&(cjq->input_state));
     free_cfunction_names(cjq->jq->bc);
     jq_teardown(&(cjq->jq));
@@ -23,13 +23,13 @@ void clean_up(cjq_state* cjq) {
 int main(int argc, char *argv[]) {
   cjq_state* cjq = cjq_mem_alloc();
 
-  // Initialize state information req'd for execution
+  // set/get information req'd for execution
   int bootstrap_error = cjq_bootstrap(argc, argv, cjq);
   
-  // Run the jq program
+  // run the jq program
   jq_program((void*)cjq);
 
-  // Store exit data prior to freeing cjq
+  // store exit data prior to freeing cjq
   int options = *cjq->options;
   int ret = *cjq->ret;
   if (cjq->input_state != NULL && jq_util_input_errors(cjq->input_state) != 0)
