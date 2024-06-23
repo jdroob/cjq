@@ -621,7 +621,7 @@ def save_trace(opcodes_ptr):
     # need this to call C functions from Python
     jq_util_funcs = CDLL(so_file)
     
-    # define argument / return types for C functions
+    # get current trace state
     jq_util_funcs._get_opcode_list_len.argtypes = [c_void_p]
     jq_util_funcs._get_opcode_list_len.restype = c_uint64
     opcode_lis_len = jq_util_funcs._get_opcode_list_len(opcodes_ptr)
@@ -809,8 +809,8 @@ def save_trace(opcodes_ptr):
     for sequence, n_iterations in compressed_op_lis:
         if n_iterations == 1:
             builder.call(dyn_op_subseq_to_subseq_func[sequence[0]], [_cjq])
-        else:
-            i = builder.alloca(ir.IntType(32), name="loop_counter"+str(i_idx))
+        else:   # build a loop
+            i = builder.alloca(ir.IntType(32), name="i."+str(i_idx))
             i_idx += 1
             builder.store(ir.Constant(ir.IntType(32), 0), i)
             
@@ -841,21 +841,9 @@ def save_trace(opcodes_ptr):
         most_recent_block = new_block
     
 def finalize_ir():
-    # update for final state
-    final_op = tuple([CallType(Opcode.UPDATE_RES_STATE.value)])
-    subseqs_g.add(final_op)
-    if not final_op in dyn_op_subseq_to_op_func_subseq:
-        dyn_op_subseq_to_op_func_subseq[final_op] = [_update_result_state]
-    subseq_func_type = main_func_type
-    if not final_op in dyn_op_subseq_to_subseq_func:
-        dyn_op_subseq_to_subseq_func[final_op] = ir.Function(module, subseq_func_type, "_subsequence_func"+str(subseq_func_idx))
-        dyn_op_subseq_to_subseq_func[final_op].attributes.add('noinline')
-        subseq_block = dyn_op_subseq_to_subseq_func[final_op].append_basic_block("subsequence_"+str(subseq_func_idx))
-        builder = ir.IRBuilder(subseq_block)
-        builder.call(_update_result_state, [_cjq])
-        builder.ret_void()
+    # add in final instructions
     builder = ir.IRBuilder(most_recent_block)
-    builder.call(dyn_op_subseq_to_subseq_func[final_op], [_cjq])
+    builder.call(_update_result_state, [_cjq])
     builder.ret_void()
     return module      
 
