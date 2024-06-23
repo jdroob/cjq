@@ -62,6 +62,7 @@ In case you're interested, `cjq` does perform quite well compared to the standar
 - $\ge$ python version 3.10
 - [python3-config](https://helpmanual.io/man1/python3-config/)
 - [llvmlite](https://llvmlite.readthedocs.io/en/latest/index.html)
+- jq - this is optional but helpful for running tests - [install jq for mac](https://stackoverflow.com/questions/37668134/how-to-install-jq-on-mac-on-the-command-line)
 
 ### Instructions
 ```console
@@ -70,6 +71,7 @@ make llvmgen    # run this command
 ./llvmgen   # a help menu should show up
 ./cjq/tests/basic_ops/test_basic_ops.sh   # run a bunch of tests to see if your installation is working. You can go to cjq/tests/basic_ops, and find a testresults.log file
 # if you fail any tests, there's an installation issue
+# NOTE: you need to install jq to run the above tests
 # If something fails, you might need to cd as follows
 cd cjq/jq/oniguruma
 # Read the oniguruma README on how to install oniguruma locally then try installing it
