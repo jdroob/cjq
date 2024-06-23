@@ -22,7 +22,7 @@ make run    # or 'make run_opt' for O3 clang optimizations
 ```
 
 
-`cjq` is currently in version 0.1... and it shows. Obviously, tracing a dynamic sequence of opcodes becomes a bottleneck as the number of dynamic opcodes becomes larger. To help mitigate this, `cjq` does use a variant of [run-length encoding](https://en.wikipedia.org/wiki/Run-length_encoding) to compress the dynamic sequence of opcodes in an effort to slow the rapid explosion in size of the generated LLVM IR. However, compression can only reduce the code footprint so much. Consequently, `cjq` is not the ideal tool for executing simple `jq` filters that incur many dynamic opcodes.
+`cjq` is currently in version 0.1... and it shows. Obviously, tracing a dynamic sequence of opcodes becomes a bottleneck as the number of dynamic opcodes becomes larger. To help mitigate this, `cjq` does use a variant of [run-length encoding](https://en.wikipedia.org/wiki/Run-length_encoding) to compress the dynamic sequence of opcodes in an effort to slow the rapid explosion in size of the generated LLVM IR. However, compression can only reduce the code size so much. Consequently, `cjq` is not the ideal tool for executing simple `jq` filters that incur many dynamic opcodes.
 
 Example:
 
