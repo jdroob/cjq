@@ -1,0 +1,1 @@
+[.docs[] | { title, author_name: .author_name[0], publish_year: .publish_year[0] } | select(.publish_year != null and .author_name != null)] | group_by(.author_name) | .[] | {author_name: .[0].author_name}
