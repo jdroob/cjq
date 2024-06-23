@@ -859,7 +859,6 @@ def finalize_ir():
     builder.ret_void()
     return module      
 
-    
 def generate_llvm_ir():
     try:
         llvm_ir = finalize_ir()
