@@ -55,7 +55,7 @@ static void usage(int code, int keep_it_short) {
     f = stdout;
 
   int ret = fprintf(f,
-    "cjq - commandline JSON processor \n"
+    "cjq - commandline JSON processor [version 0.1]\n"
     "\nUsage:\t%s [options] <jq filter> [file...]\n"
     "\t%s [options] --args <jq filter> [strings...]\n"
     "\t%s [options] --jsonargs <jq filter> [JSON_TEXTS...]\n\n"
@@ -64,7 +64,7 @@ static void usage(int code, int keep_it_short) {
     "standard output.\n\n"
     "Example:\n\n\t$ echo '{\"foo\": 0}' | ./<executable-name>\n"
     "\t{\n\t  \"foo\": 0\n\t}\n\n",
-    JQ_VERSION, progname, progname, progname);
+    JQ_VERSION, progname, progname);
   if (keep_it_short) {
     fprintf(f,
       "For listing the command options, use %s --help.\n",
