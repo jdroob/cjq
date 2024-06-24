@@ -63,9 +63,9 @@ static void usage(int code, int keep_it_short) {
     "cjq is a tool for processing JSON inputs, applying the given filter to\n"
     "its JSON text inputs and producing the filter's results as JSON on\n"
     "standard output.\n\n"
-    "Example:\n\n\t$ echo '{\"foo\": 0}' | ./llvmgen .\n"
+    "Example:\n\n\t$ echo '{\"foo\": 0}' | ./llvmgen\n"
     "\t{\n\t  \"foo\": 0\n\t}\n\n",
-    JQ_VERSION, progname, progname);
+    progname, progname, progname);
   if (keep_it_short) {
     fprintf(f,
       "For listing the command options, use %s --help.\n",
@@ -905,7 +905,7 @@ int cjq_trace(int argc, char* argv[], trace* opcode_trace, PyObject* pModule_llv
         if (!short_opts) continue;
       }
       if (isoption(argv[i], 'V', "version", &short_opts)) {
-        printf("jq-%s\n", JQ_VERSION);
+        printf("cjq-v0.1\n");
         ret = JQ_OK;
         goto out;
       }

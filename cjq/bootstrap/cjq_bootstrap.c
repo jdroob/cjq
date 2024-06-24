@@ -64,7 +64,7 @@ static void usage(int code, int keep_it_short) {
     "standard output.\n\n"
     "Example:\n\n\t$ echo '{\"foo\": 0}' | ./<executable-name>\n"
     "\t{\n\t  \"foo\": 0\n\t}\n\n",
-    JQ_VERSION, progname, progname);
+    progname, progname, progname);
   if (keep_it_short) {
     fprintf(f,
       "For listing the command options, use %s --help.\n",
@@ -848,7 +848,7 @@ int cjq_bootstrap(int argc, char* argv[], cjq_state *cjq) {
         if (!short_opts) continue;
       }
       if (isoption(argv[i], 'V', "version", &short_opts)) {
-        printf("jq-%s\n", JQ_VERSION);
+        printf("cjq-v0.1\n");
         ret = JQ_OK;
         goto out;
       }
