@@ -610,6 +610,7 @@ def save_trace(opcodes_ptr):
     global dyn_op_subseq_to_op_func_subseq # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
     global subseq_func_idx
     global loop_block_idx
+    global block_idx
     global i_idx
     global dyn_op_subseq_to_subseq_func
     global main_block
@@ -835,10 +836,11 @@ def save_trace(opcodes_ptr):
 
             builder.position_at_end(loop_end_block)
             
-        block = main_func.append_basic_block(name="block"+str(block_idx))
+        block = main_func.append_basic_block(name="block_"+str(block_idx))
         builder.branch(block)
         builder.position_at_end(block)
         most_recent_block = block
+        block_idx += 1
     
 def finalize_ir():
     # add in final instructions
