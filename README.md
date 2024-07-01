@@ -6,7 +6,12 @@ in flavor to `sed`, `awk`, and `grep`. The [standard implementation](https://git
 
 Example:
 
-1. Trace and lower to LLVM IR
+0. Build the LLVM IR generator. NOTE: This step only needs to be performed once.
+```jq
+make llvmgen
+```
+
+2. Trace and lower to LLVM IR
 ```jq
 ./llvmgen -Cf /path/to/jq/file /path/to/json/file
 ```
@@ -14,6 +19,7 @@ Example:
 2. Compile to native machine code
 ```jq
 make run    # or 'make run_opt' for O3 clang optimizations
+            # could use -j flag to parallelize the compilation process (e.g. -j4)
 ```
 
 3. Run the binary executable on compatible JSON documents
