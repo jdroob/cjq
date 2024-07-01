@@ -1095,9 +1095,6 @@ void jq_set_nomem_handler(jq_state *jq, void (*nomem_handler)(void *), void *dat
 
 
 void jq_start(jq_state *jq, jv input, int flags) {
-  // printf("IN execute.jq_start():\n");
-  // jv_show(input, -1);
-  // printf("That was input^^\n\n");
   jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
   jq_reset(jq);
 

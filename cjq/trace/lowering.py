@@ -566,23 +566,25 @@ def compress_op_lis(op_lis):
 
     return compressed_op_lis
 
-def unique_subseq(sequence):
+def gen_unique_subseq_lis(sequence):
     subsequences = set()
     current_subsequence = []
+    CHUNK_SIZE = 10
 
-    for call in sequence:
-        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:  # TODO: This heuristic is fine but I wonder if there's something better I could use
-            current_subsequence.append(call)
-        else:
-            if current_subsequence:
-                subsequences.add(tuple(current_subsequence))
-            current_subsequence = [call]
+    for i, call in enumerate(sequence):
+        current_subsequence.append(call)
 
+        # check if we have formed a subsequence of size CHUNK_SIZE
+        if len(current_subsequence) == CHUNK_SIZE:
+            subsequences.add(tuple(current_subsequence))
+            current_subsequence = []
+
+    # add any remaining elements as the final subsequence
     if current_subsequence:
         subsequences.add(tuple(current_subsequence))
 
     return sorted(subsequences, key=len, reverse=True)
-           
+         
 def gen_dyn_op_lis(buffer, buffer_subseqs):
     dyn_op_lis = []
     i = 0
@@ -684,7 +686,7 @@ def save_trace(opcodes_ptr):
         buffer.append(CallType(Opcode.JQ_HALT.value))
 
     # 2. generate set of subsequences that appear in buffer
-    buffer_subseqs = set(unique_subseq(buffer))
+    buffer_subseqs = set(gen_unique_subseq_lis(buffer))
     
     # 3. generate a list of references to subsequences that matches 
     #    order of dynamic opcodes from buffer

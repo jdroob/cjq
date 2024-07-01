@@ -172,7 +172,7 @@ trace* init_trace() {
 }
 
 static void flush_trace(trace* opcode_trace, PyObject* pModule_llvmlite, PyObject* pModuleLowering) {
-  PyObject *pFuncSave = PyObject_GetAttrString(pModuleLowering, "save_trace");
+  PyObject* pFuncSave = PyObject_GetAttrString(pModuleLowering, "save_trace");
   PyObject* opcode_trace_ptr = PyLong_FromVoidPtr((void*)opcode_trace);
   PyObject* pRes = PyObject_CallFunctionObjArgs(pFuncSave, opcode_trace_ptr, NULL);
 
@@ -190,7 +190,7 @@ trace* update_opcode_list(trace* opcode_trace, uint8_t opcode, PyObject* pModule
       opcode_trace = init_trace();
   }
   if (opcode_trace->opcodes->capacity < opcode_trace->opcodes->count + 1) {
-    uint64_t oldCapacity = opcode_trace->opcodes->capacity;
+    uint64_t oldCapacity = opcode_trace->opcodes->capacity;   // Could use uint16_t instead if we never want capacity to exceed 1000
     opcode_trace->opcodes->capacity = GROW_CAPACITY(oldCapacity);
     opcode_trace->opcodes->ops = GROW_ARRAY(uint8_t, opcode_trace->opcodes->ops,
     oldCapacity, opcode_trace->opcodes->capacity);
@@ -208,8 +208,7 @@ void update_entry_list(trace* opcode_trace) {
     opcode_trace->entries->entry_locs = GROW_ARRAY(uint64_t, opcode_trace->entries->entry_locs,
     oldCapacity, opcode_trace->entries->capacity);
   }
-  opcode_trace->entries->entry_locs[opcode_trace->entries->count] = opcode_trace->opcodes->count;
-  opcode_trace->entries->count++;
+  opcode_trace->entries->entry_locs[opcode_trace->entries->count++] = opcode_trace->opcodes->count;
 }
 
 void update_input_list(trace* opcode_trace) {
@@ -219,12 +218,11 @@ void update_input_list(trace* opcode_trace) {
     opcode_trace->inputs->input_locs = GROW_ARRAY(uint64_t, opcode_trace->inputs->input_locs,
     oldCapacity, opcode_trace->inputs->capacity);
   }
-  opcode_trace->inputs->input_locs[opcode_trace->inputs->count] = opcode_trace->opcodes->count;
-  opcode_trace->inputs->count++;
+  opcode_trace->inputs->input_locs[opcode_trace->inputs->count++] = opcode_trace->opcodes->count;
 }
 
 void update_halt_loc(trace* opcode_trace) {
-  opcode_trace->jq_halt_loc = opcode_trace->opcodes->count-1; // Want jq_halt_loc to point to last opcode index
+  opcode_trace->jq_halt_loc = opcode_trace->opcodes->count-1;   // Want jq_halt_loc to point to last opcode index
 }
 
 void free_trace(trace* opcode_trace) {
@@ -417,7 +415,7 @@ static void serialize_sym_table(const char* filename, struct symbol_table* table
   fclose(file);
 }
 
-#define MAX_SERIALIZED_BCS 1000 // Adjust this as needed
+#define MAX_SERIALIZED_BCS 1000   // Adjust this as needed
 
 static struct bytecode* serialized_bcs[MAX_SERIALIZED_BCS];
 static int num_serialized_bcs = 0;
