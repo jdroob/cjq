@@ -624,7 +624,6 @@ int cjq_bootstrap(int argc, char* argv[], cjq_state *cjq) {
   }
 
   int dumpopts = JV_PRINT_INDENT_FLAGS(2);
-  const char* program = 0;
 
   cjq_input_state = jq_util_input_init(NULL, NULL); // XXX add err_cb
 
@@ -636,9 +635,7 @@ int cjq_bootstrap(int argc, char* argv[], cjq_state *cjq) {
   jv lib_search_paths = jv_null();
   for (int i=1; i<argc; i++, short_opts = 0) {
     if (args_done || !isoptish(argv[i])) {
-      if (!program) {
-        program = argv[i];
-      } else if (further_args_are_strings) {
+      if (further_args_are_strings) {
         ARGS = jv_array_append(ARGS, jv_string(argv[i]));
       } else if (further_args_are_json) {
         jv v =  jv_parse(argv[i]);
@@ -928,49 +925,6 @@ int cjq_bootstrap(int argc, char* argv[], cjq_state *cjq) {
   else
     jq_set_attr(jq, jv_string("VERSION_DIR"), jv_string_fmt("%.*s-master", (int)(strchr(JQ_VERSION, '-') - JQ_VERSION), JQ_VERSION));
 
-#ifdef USE_ISATTY
-  if (!program && (!isatty(STDOUT_FILENO) || !isatty(STDIN_FILENO)))
-    program = ".";
-#endif
-
-  if (!program) usage(2, 1);
-
-  if (options & FROM_FILE) {
-    char *program_origin = strdup(program);
-    if (program_origin == NULL) {
-      perror("malloc");
-      exit(2);
-    }
-
-    jv data = jv_load_file(program, 1);   // JOHN: This loads jq program from *.jq file
-    if (!jv_is_valid(data)) {
-      data = jv_invalid_get_msg(data);
-      fprintf(stderr, "%s: %s\n", progname, jv_string_value(data));
-      jv_free(data);
-      ret = JQ_ERROR_SYSTEM;
-      goto out;
-    }
-    jq_set_attr(jq, jv_string("PROGRAM_ORIGIN"), jq_realpath(jv_string(dirname(program_origin))));
-    ARGS = JV_OBJECT(jv_string("positional"), ARGS,
-                     jv_string("named"), jv_copy(program_arguments));
-    program_arguments = jv_object_set(program_arguments, jv_string("ARGS"), jv_copy(ARGS));
-    if (!jv_object_has(jv_copy(program_arguments), jv_string("JQ_BUILD_CONFIGURATION")))
-      program_arguments = jv_object_set(program_arguments,
-                                        jv_string("JQ_BUILD_CONFIGURATION"),
-                                        jv_string(JQ_CONFIG)); /* named arguments */
-    free(program_origin);
-    jv_free(data);
-  } else {
-    jq_set_attr(jq, jv_string("PROGRAM_ORIGIN"), jq_realpath(jv_string("."))); // XXX is this good?
-    ARGS = JV_OBJECT(jv_string("positional"), ARGS,
-                     jv_string("named"), jv_copy(program_arguments));
-    program_arguments = jv_object_set(program_arguments, jv_string("ARGS"), jv_copy(ARGS));
-    if (!jv_object_has(jv_copy(program_arguments), jv_string("JQ_BUILD_CONFIGURATION")))
-      program_arguments = jv_object_set(program_arguments,
-                                        jv_string("JQ_BUILD_CONFIGURATION"),
-                                        jv_string(JQ_CONFIG)); /* named arguments */
-  }
-  
   struct bytecode* bc = deserialize_bc("serialize.bin");    // TODO: Not a long-term solution
   jv_nomem_handler(jq->nomem_handler, jq->nomem_handler_data);
   _jq_reset(jq);

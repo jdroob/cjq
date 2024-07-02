@@ -56,7 +56,7 @@ for jq_file in cjq/tests/basic_ops/jq/prod_example/*.jq; do
     
     # Command 2: Run runjq and capture output
     # echo "Running cjq for $jq_filename..."  # Debug
-    cjq_output=$(./run -f -s "$jq_file" "$json_file1" "$json_file2" --debug-dump-disasm)
+    cjq_output=$(./run -s "$json_file1" "$json_file2" --debug-dump-disasm)
 
     # Command 3: Run jq and capture output
     # echo "Running jq for $jq_filename..." # Debug
@@ -140,7 +140,7 @@ for test_case in "${test_cases[@]}"; do
 
     # Command 2: Run runjq and capture output
     # echo "Running cjq for $jq_file..."  # Debug
-    cjq_output=$(./run -f "$jq_file" "$json_file" --debug-dump-disasm)
+    cjq_output=$(./run "$json_file" --debug-dump-disasm)
 
     # Command 3: Run jq and capture output
     # echo "Running jq for $jq_file..." # Debug
@@ -177,19 +177,19 @@ done
 # @base64 test
 echo '{"message": "This is a secret message"}' | ./llvmgen '.message |= @base64' > /dev/null
 make run -j4
-cjq_output=$(echo '{"message": "This is a secret message"}' | ./run '.message |= @base64')
+cjq_output=$(echo '{"message": "This is a secret message"}' | ./run)
 jq_output=$(echo '{"message": "This is a secret message"}' | jq '.message |= @base64')
 compare_outputs "$cjq_output" "$jq_output" "base64.jq"
 # @base64d test
 echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./llvmgen '.message |= @base64d' > /dev/null
 make run -j4
-cjq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./run '.message |= @base64d')
+cjq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | ./run)
 jq_output=$(echo '{"message": "VGhpcyBpcyBhIG1lc3NhZ2U="}' | jq '.message |= @base64d')
 compare_outputs "$cjq_output" "$jq_output" "base64d.jq"
 # @html test
 echo '{"message": "x<y"}' | ./llvmgen '.message |= @html' > /dev/null
 make run -j4
-cjq_output=$(echo '{"message": "x<y"}' | ./run '.message |= @html')
+cjq_output=$(echo '{"message": "x<y"}' | ./run)
 jq_output=$(echo '{"message": "x<y"}' | jq '.message |= @html')
 compare_outputs "$cjq_output" "$jq_output" "html.jq"
 
