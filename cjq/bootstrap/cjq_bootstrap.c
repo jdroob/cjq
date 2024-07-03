@@ -182,7 +182,7 @@ void cjq_free(cjq_state* cjq) {
   free(cjq->dumpopts); cjq->dumpopts = NULL;
   free(cjq->last_result); cjq->last_result = NULL;
   if (cjq->value) {
-    if (!cjq->value->u.ptr) 
+    if (!cjq->value->u.ptr)   // TODO: why is this notted?
       jv_free(*cjq->value);
     free(cjq->value);
     cjq->value = NULL;
