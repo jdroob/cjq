@@ -693,9 +693,7 @@ def save_trace(opcodes_ptr):
     dyn_op_lis = gen_dyn_op_lis(buffer, buffer_subseqs)
     
     # 4. subseqs_g := subseqs_g UNION buffer_subseqs
-    # subseqs_g.update(buffer_subseqs)
-    for subseq in buffer_subseqs:
-        subseqs_g.add(subseq)
+    subseqs_g.update(buffer_subseqs)
     
     # 5. update map of CallType object subsequences to corresponding subsequences of LLVM function calls
     for subseq in subseqs_g:
