@@ -182,7 +182,7 @@ void cjq_free(cjq_state* cjq) {
   free(cjq->dumpopts); cjq->dumpopts = NULL;
   free(cjq->last_result); cjq->last_result = NULL;
   if (cjq->value) {
-    if (!cjq->value->u.ptr)   // TODO: why is this notted?
+    if (!cjq->value->u.ptr)   // If this is not NULL, there's an alloc'd jvp value
       jv_free(*cjq->value);
     free(cjq->value);
     cjq->value = NULL;
@@ -366,7 +366,6 @@ static void _deserialize_jv(FILE* file, jv* value) {
       break;
     }
     case JV_KIND_INVALID: {
-      value->u.ptr = malloc(sizeof(jvp_invalid));
       int is_null;
       fread(&is_null, sizeof(int), 1, file);
       if (is_null) {
