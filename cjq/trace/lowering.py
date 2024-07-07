@@ -7,13 +7,16 @@ import os
 # set of unique subsequences of calls to opcode functions
 subseqs_g = set()
 
-dyn_op_subseq_to_op_func_subseq = {} # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
+# map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
+dyn_op_subseq_to_op_func_subseq = {}
 
+# global indices
 subseq_func_idx = 0
 loop_block_idx = 0
 block_idx = 0
 i_idx = 0
 
+# mapping from subseq -> subsequence_func containing corresponding opcode funcs (e.g. (CallType(1,0), CallType(2,0)) -> subseq_func30; def subseq_func30: call _opcode_DUP; call _opcode_DUPN; ret void;
 dyn_op_subseq_to_subseq_func = {}
 
 # set up llvmlite
@@ -398,7 +401,7 @@ class Opcode(Enum):
 
 class CallType:
     def __init__(self, opcode, backtracking=0):
-        self.opcode = opcode
+        self.opcode=opcode
         self.backtracking=backtracking
         
     def __str__(self):
@@ -609,7 +612,7 @@ def gen_dyn_op_lis(buffer, buffer_subseqs):
 
 def save_trace(opcodes_ptr):
     global subseqs
-    global dyn_op_subseq_to_op_func_subseq # map of subseq -> func (e.g. (CallType(1,0),CallType(2,0)) -> (_opcode_DUP, _opcode_DUPN))
+    global dyn_op_subseq_to_op_func_subseq
     global subseq_func_idx
     global loop_block_idx
     global block_idx
@@ -656,6 +659,7 @@ def save_trace(opcodes_ptr):
     jq_util_funcs._get_num_opcodes.restype = c_int
     
     # get value of NUM_OPCODES
+    # TODO: Make this global?
     num_opcodes = jq_util_funcs._get_num_opcodes()
     
     # trick to easily look up reference to backtracking opcode function given opcode
