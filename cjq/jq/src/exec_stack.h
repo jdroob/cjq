@@ -42,7 +42,7 @@ struct determine_alignment {
 };
 enum {ALIGNMENT = offsetof(struct determine_alignment, u)};
 
-static size_t align_round_up(size_t sz) {
+static __attribute__((always_inline)) inline size_t align_round_up(size_t sz) {
   return ((sz + (ALIGNMENT - 1)) / ALIGNMENT) * ALIGNMENT;
 }
 
@@ -54,13 +54,13 @@ struct stack {
   stack_ptr limit; // 0 - stack is empty
 };
 
-static void stack_init(struct stack* s) {
+static __attribute__((always_inline)) inline void stack_init(struct stack* s) {
   s->mem_end = 0;
   s->bound = ALIGNMENT;
   s->limit = 0;
 }
 
-static void stack_reset(struct stack* s) {
+static __attribute__((always_inline)) inline void stack_reset(struct stack* s) {
   assert(s->limit == 0 && "stack freed while not empty");
   if(s->mem_end != NULL) {
     char* mem_start = s->mem_end - ( -s->bound + ALIGNMENT);
@@ -69,11 +69,11 @@ static void stack_reset(struct stack* s) {
   stack_init(s);
 }
 
-static int stack_pop_will_free(struct stack* s, stack_ptr p) {
+static __attribute__((always_inline)) inline int stack_pop_will_free(struct stack* s, stack_ptr p) {
   return p == s->limit;
 }
 
-static void* stack_block(struct stack* s, stack_ptr p) {
+static __attribute__((always_inline)) inline void* stack_block(struct stack* s, stack_ptr p) {
   return (void*)(s->mem_end + p);
 }
 
@@ -81,7 +81,7 @@ static stack_ptr* stack_block_next(struct stack* s, stack_ptr p) {
   return &((stack_ptr*)stack_block(s, p))[-1];
 }
 
-static void stack_reallocate(struct stack* s, size_t sz) {
+static __attribute__((always_inline)) inline void stack_reallocate(struct stack* s, size_t sz) {
   int old_mem_length = -(s->bound) + ALIGNMENT;
   char* old_mem_start = (s->mem_end != NULL) ? (s->mem_end - old_mem_length) : NULL;
 
@@ -93,7 +93,7 @@ static void stack_reallocate(struct stack* s, size_t sz) {
   s->bound = -(new_mem_length - ALIGNMENT);
 }
 
-static stack_ptr stack_push_block(struct stack* s, stack_ptr p, size_t sz) {
+static __attribute__((always_inline)) inline stack_ptr stack_push_block(struct stack* s, stack_ptr p, size_t sz) {
   int alloc_sz = align_round_up(sz) + ALIGNMENT;
   stack_ptr r = s->limit - alloc_sz;
   if (r < s->bound) {
@@ -104,7 +104,7 @@ static stack_ptr stack_push_block(struct stack* s, stack_ptr p, size_t sz) {
   return r;
 }
 
-static stack_ptr stack_pop_block(struct stack* s, stack_ptr p, size_t sz) {
+static __attribute__((always_inline)) inline stack_ptr stack_pop_block(struct stack* s, stack_ptr p, size_t sz) {
   stack_ptr r = *stack_block_next(s, p);
   if (p == s->limit) {
     int alloc_sz = align_round_up(sz) + ALIGNMENT;
