@@ -9,7 +9,7 @@ PYTHON_LDFLAGS := $(shell python3-config --ldflags)
 PYTHON_VERSION := $(shell python3 -c "import sys; print('{}.{}'.format(sys.version_info.major, sys.version_info.minor))")
 
 # Compilation flags
-CFLAGS = -O3 -emit-llvm -c -g
+CFLAGS = -O0 -emit-llvm -c -g  #-fstrict-aliasing -ffast-math -funroll-loops -flto
 LDFLAGS = -lm -lpython$(PYTHON_VERSION) -lonig -g
 DEFINES = -DHAVE_STDIO_H=1 \
           -DHAVE_STDLIB_H=1 \
@@ -168,8 +168,10 @@ $(UNOPT_BC): $(BC_FILES)
 
 # Optimize the linked bitcode
 $(OPT_BC): $(UNOPT_BC)
-	@$(OPT) -passes='default<O3>,inline' -inline-threshold=1000 -o $@ $^
-	@$(OPT) -O3 -o $@ $@
+	@$(OPT) -passes='default<O0>,inline,always-inline' -inline-threshold=5000 -o $@ $^
+	@$(OPT) -passes='default<O0>,mem2reg' -o $@ $@
+	@$(OPT) -passes='default<O3>' -o $@ $@
+
 
 # Compile the linked bitcode to an executable (unoptimized)
 $(EXECUTABLE_UNOPT): $(BC_FILES)
