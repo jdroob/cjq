@@ -2,6 +2,7 @@
 CC = clang
 LINKER = llvm-link
 OPT = opt
+DIS = llvm-dis
 
 # Python flags
 PYTHON_INCLUDE := $(shell python3-config --includes)
@@ -9,7 +10,7 @@ PYTHON_LDFLAGS := $(shell python3-config --ldflags)
 PYTHON_VERSION := $(shell python3 -c "import sys; print('{}.{}'.format(sys.version_info.major, sys.version_info.minor))")
 
 # Compilation flags
-CFLAGS = -O0 -emit-llvm -c -g  #-fstrict-aliasing -ffast-math -funroll-loops -flto
+CFLAGS = -O0 -emit-llvm -c -g -flto  #-fstrict-aliasing -ffast-math -funroll-loops
 LDFLAGS = -lm -lpython$(PYTHON_VERSION) -lonig -g
 DEFINES = -DHAVE_STDIO_H=1 \
           -DHAVE_STDLIB_H=1 \
@@ -156,30 +157,40 @@ all: $(EXECUTABLE_UNOPT) $(EXECUTABLE_OPT)
 
 # Rule to compile .c files to .bc files
 %.bc: %.c
+	@echo "Compiling $< to $@"
 	@$(CC) $(CFLAGS) $(DEFINES) -o $@ $(PYTHON_INCLUDE) $<
 
 # Rule to compile the IR file to .bc
 ir.bc: $(IR_FILE)
+	@echo "Compiling IR file $< to $@"
 	@$(CC) $(CFLAGS) $(DEFINES) -o $@ $<
 
 # Link all .bc files for unoptimized version
 $(UNOPT_BC): $(BC_FILES)
+	@echo "Linking unoptimized bitcode to $@"
 	@$(LINKER) -o $@ $^
 
 # Optimize the linked bitcode
 $(OPT_BC): $(UNOPT_BC)
-	@$(OPT) -passes='default<O0>,inline,always-inline' -inline-threshold=5000 -o $@ $^
-	@$(OPT) -passes='default<O0>,mem2reg' -o $@ $@
-	@$(OPT) -passes='default<O3>' -o $@ $@
+	@echo "Optimizing bitcode to $@"
+	@$(OPT) -passes='default<O3>,inline,always-inline' -inline-threshold=1000 -o $@ $^
+	@$(OPT) -passes='default<O3>,mem2reg' -o $@ $@
+	@$(OPT) -passes='default<O3>,reassociate,instcombine,dce' -o $@ $@
 
 
 # Compile the linked bitcode to an executable (unoptimized)
 $(EXECUTABLE_UNOPT): $(BC_FILES)
+	@echo "Compiling unoptimized executable $@"
 	@$(CC) -g $(BC_FILES) -lm -lpython$(PYTHON_VERSION) -lonig -o $@ $(DEFINES) -lonig $(PYTHON_LDFLAGS) $(PYTHON_INCLUDE)
+
 
 # Compile the optimized bitcode to an executable
 $(EXECUTABLE_OPT): $(OPT_BC)
+	@echo "Compiling optimized executable $@"
+	@$(DIS) $<
 	@$(CC) -O3 $< $(LDFLAGS) -o $@
+
+
 
 # Rule to generate LLVM bitcode and compile to shared object
 llvmgen:
@@ -188,7 +199,7 @@ llvmgen:
 
 # Clean up
 clean:
-	@rm -f $(BC_FILES) $(UNOPT_BC) $(OPT_BC) $(EXECUTABLE_UNOPT) $(EXECUTABLE_OPT)
+	@rm -f $(BC_FILES) $(UNOPT_BC) $(OPT_BC) $(EXECUTABLE_UNOPT) $(EXECUTABLE_OPT) llvmgen *.ll *.s *.bin *.so
 
 # Recompile only if the source files change
 .PHONY: all clean llvmgen

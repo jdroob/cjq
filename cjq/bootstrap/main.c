@@ -11,7 +11,7 @@
 #include "../jq/src/common.h"
 #include "cjq_bootstrap.h"
 
-extern void jq_program();
+extern void jq_program(void*);
 
 static void clean_up(cjq_state* cjq) {
     jq_util_input_free(&(cjq->input_state));

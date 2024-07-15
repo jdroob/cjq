@@ -695,6 +695,7 @@ def save_trace(opcodes_ptr):
     # 3. generate a list of references to subsequences that matches 
     #    order of dynamic opcodes from buffer
     dyn_op_lis = gen_dyn_op_lis(buffer, buffer_subseqs)
+    del buffer
     
     # 4. subseqs_g := subseqs_g UNION buffer_subseqs
     subseqs_g.update(buffer_subseqs)
@@ -848,6 +849,7 @@ def save_trace(opcodes_ptr):
     
 def finalize_ir():
     # add in final instructions
+    global most_recent_block
     builder = ir.IRBuilder(most_recent_block)
     builder.call(_update_result_state, [_cjq])
     builder.ret_void()

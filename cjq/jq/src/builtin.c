@@ -89,7 +89,7 @@ static inline jv ret_error2(jv bad1, jv bad2, jv msg) {
   return jv_invalid_with_msg(msg);
 }
 
-jv binop_plus(jv a, jv b) {
+jv inline binop_plus(jv a, jv b) {
   if (jv_get_kind(a) == JV_KIND_NULL) {
     jv_free(a);
     return b;
