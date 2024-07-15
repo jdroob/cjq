@@ -158,3 +158,5 @@ cjq/tests/basic_ops/json/builtin_ops/flatten_large512k.json
 del.txt
 del2.txt
 bel.txt
+cjq/tests/basic_ops/jq/builtin_ops/add_example5.jq
+cjq/tests/basic_ops/json/builtin_ops/add_example5.json
