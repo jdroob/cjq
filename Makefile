@@ -2,6 +2,7 @@
 CC = clang
 LINKER = llvm-link
 OPT = opt
+DIS = llvm-dis
 
 # Python flags
 PYTHON_INCLUDE := $(shell python3-config --includes)
@@ -177,6 +178,8 @@ $(EXECUTABLE_UNOPT): $(BC_FILES)
 
 # Compile the optimized bitcode to an executable
 $(EXECUTABLE_OPT): $(OPT_BC)
+# Debugging output
+	@$(DIS) $<
 	@$(CC) -O3 $< $(LDFLAGS) -o $@
 
 # Rule to generate LLVM bitcode and compile to shared object
@@ -186,7 +189,7 @@ llvmgen:
 
 # Clean up
 clean:
-	@rm -f $(BC_FILES) $(UNOPT_BC) $(OPT_BC) $(EXECUTABLE_UNOPT) $(EXECUTABLE_OPT)
+	@rm -f $(BC_FILES) $(UNOPT_BC) $(OPT_BC) $(EXECUTABLE_UNOPT) $(EXECUTABLE_OPT) *.ll *.so
 
 # Recompile only if the source files change
 .PHONY: all clean llvmgen
