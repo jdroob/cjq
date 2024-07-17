@@ -169,7 +169,9 @@ $(UNOPT_BC): $(BC_FILES)
 
 # Optimize the linked bitcode
 $(OPT_BC): $(UNOPT_BC)
-	@$(OPT) -passes='default<O3>,inline' -inline-threshold=1000 -o $@ $^
+	@$(DIS) $<
+	@$(OPT) -passes='default<O3>,ipsccp' -o $@ $^
+	@$(OPT) -passes='default<O3>,inline,argpromotion,ipsccp,inferattrs,deadargelim,globaldce,mergefunc' -inline-threshold=1000 -o $@ $^
 	@$(OPT) -O3 -o $@ $@
 
 # Compile the linked bitcode to an executable (unoptimized)
@@ -189,7 +191,7 @@ llvmgen:
 
 # Clean up
 clean:
-	@rm -f $(BC_FILES) $(UNOPT_BC) $(OPT_BC) $(EXECUTABLE_UNOPT) $(EXECUTABLE_OPT) *.ll *.so
+	@rm -f $(BC_FILES) $(UNOPT_BC) $(OPT_BC) $(EXECUTABLE_UNOPT) $(EXECUTABLE_OPT) *.ll *.so *.bin
 
 # Recompile only if the source files change
 .PHONY: all clean llvmgen

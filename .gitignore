@@ -160,3 +160,5 @@ del2.txt
 bel.txt
 cjq/tests/basic_ops/jq/builtin_ops/add_example5.jq
 cjq/tests/basic_ops/json/builtin_ops/add_example5.json
+delete.json
+ir-8afc40bf.bc.tmp

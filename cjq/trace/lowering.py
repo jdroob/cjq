@@ -569,20 +569,37 @@ def compress_op_lis(op_lis):
 
     return compressed_op_lis
 
+# def gen_unique_subseq_lis(sequence):
+#     subsequences = set()
+#     current_subsequence = []
+#     CHUNK_SIZE = 10
+
+#     for i, call in enumerate(sequence):
+#         current_subsequence.append(call)
+
+#         # check if we have formed a subsequence of size CHUNK_SIZE
+#         if len(current_subsequence) == CHUNK_SIZE:
+#             subsequences.add(tuple(current_subsequence))
+#             current_subsequence = []
+
+#     # add any remaining elements as the final subsequence
+#     if current_subsequence:
+#         subsequences.add(tuple(current_subsequence))
+
+#     return sorted(subsequences, key=len, reverse=True)
+
 def gen_unique_subseq_lis(sequence):
     subsequences = set()
     current_subsequence = []
-    CHUNK_SIZE = 10
 
-    for i, call in enumerate(sequence):
-        current_subsequence.append(call)
+    for call in sequence:
+        if not current_subsequence or call.opcode > current_subsequence[-1].opcode:  # TODO: This heuristic is fine but I wonder if there's something better I could use
+            current_subsequence.append(call)
+        else:
+            if current_subsequence:
+                subsequences.add(tuple(current_subsequence))
+            current_subsequence = [call]
 
-        # check if we have formed a subsequence of size CHUNK_SIZE
-        if len(current_subsequence) == CHUNK_SIZE:
-            subsequences.add(tuple(current_subsequence))
-            current_subsequence = []
-
-    # add any remaining elements as the final subsequence
     if current_subsequence:
         subsequences.add(tuple(current_subsequence))
 
