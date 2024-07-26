@@ -58,7 +58,11 @@ make run_opt -j4   # compile with optimizations
 ./run_opt /path/to/openlibrary_example1.json    # no more long filter required!
 ```
 
-In case you're interested, `cjq` does perform quite well compared to the standard `jq` implementation. ![](cjq/tests/jq_vs_cjq_performance.png) The obvious caveat being the compile time overhead introduced by `cjq`. For very large opcode sequences that are not good candidates for compression, compilation can take hours... consider yourself warned⚠️
+In case you're interested, `cjq` does perform quite well compared to the standard `jq` implementation. 
+
+![](cjq/tests/jq_vs_cjq_performance.png) 
+
+The obvious caveat being the compile time overhead introduced by `cjq`. For very large opcode sequences that are not good candidates for compression, compilation can take hours... consider yourself warned⚠️
 
 ## Installation
 
@@ -71,7 +75,7 @@ In case you're interested, `cjq` does perform quite well compared to the standar
 - jq - this is optional but helpful for running tests - [install jq for mac](https://stackoverflow.com/questions/37668134/how-to-install-jq-on-mac-on-the-command-line)
 
 ### Instructions
-**NOTE**: There is currently an installation bug. Currently working on a Docker image first. Better installation instructions to come.
+**NOTE**: There is currently an installation bug. Currently working on a Docker image. Better installation instructions to come.
 ```console
 # clone the cjq repo
 make llvmgen    # run this command
