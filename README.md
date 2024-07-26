@@ -11,7 +11,7 @@ Example:
 make llvmgen
 ```
 
-2. Trace and lower to LLVM IR
+1. Trace and lower to LLVM IR
 ```jq
 ./llvmgen -Cf /path/to/jq/file /path/to/json/file
 ```
